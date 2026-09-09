@@ -1,0 +1,15 @@
+{
+  "name": "101tags-mobile",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "App móvil del comprador 101tags — Ionic + Angular + Capacitor",
+  "scripts": {
+    "dev": "echo 'A definir tras Fase SDD de la primera tarea'",
+    "build": "echo 'A definir tras Fase SDD de la primera tarea'",
+    "test": "echo 'A definir tras Fase SDD de la primera tarea'",
+    "lint": "echo 'A definir tras Fase SDD de la primera tarea'"
+  },
+  "keywords": ["ionic", "angular", "capacitor", "101tags"],
+  "license": "UNLICENSED"
+}
