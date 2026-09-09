@@ -15,19 +15,21 @@ Cualquier trabajo sobre este proyecto debe seguir:
 1. Leer este `AGENTS.md` completo.
 2. Leer `STATE.md`.
 3. Leer `PLAN.md`.
-4. Leer `TASKS.md` y localizar el ID de backlog relacionado.
-5. Leer `.agent/WORKFLOW.md`.
-6. Revisar `.spec/` y leer la spec activa si existe.
-7. Inspeccionar el código relacionado.
-8. Revisar `git status` y cambios sin commit.
-9. No asumir que cambios pendientes son tuyos.
-10. Preservar trabajo previo del usuario u otros agentes.
+4. Leer `DISCOVERY.md` para recuperar hallazgos, decisiones, riesgos y contexto técnico extra.
+5. Leer `TASKS.md` y localizar el ID de backlog relacionado.
+6. Leer `.agent/WORKFLOW.md`.
+7. Revisar `.spec/` y leer la spec activa si existe.
+8. Inspeccionar el código relacionado.
+9. Revisar `git status` y cambios sin commit.
+10. No asumir que cambios pendientes son tuyos.
+11. Preservar trabajo previo del usuario u otros agentes.
 
 ## Fuente de verdad documental
 
 - `AGENTS.md`: reglas de trabajo, alcance y seguridad.
 - `.agent/WORKFLOW.md`: metodología obligatoria.
 - `PLAN.md`: alcance, arquitectura, contratos y roadmap.
+- `DISCOVERY.md`: memoria técnica consolidada de hallazgos, decisiones, correcciones, riesgos y notas extra.
 - `TASKS.md`: backlog detallado, dependencias, estimaciones y aceptación.
 - `.spec/*.md`: definición ejecutable de cada tarea.
 - `STATE.md`: fase real, resultados y relevo.
@@ -147,6 +149,7 @@ La metodología importa más que la existencia física de subagentes.
 Notion es un espejo de seguimiento, no reemplaza las fuentes del repositorio.
 
 - Los IDs/títulos `[101M]` de Notion deben corresponder a `TASKS.md`.
-- Cambios de alcance se documentan primero en repo (`PLAN.md`/`TASKS.md`/spec) y después se reflejan en Notion.
+- Los hallazgos y contexto técnico extra se conservan primero en `DISCOVERY.md`.
+- Cambios de alcance se documentan primero en repo (`PLAN.md`/`DISCOVERY.md`/`TASKS.md`/spec) y después se reflejan en Notion.
 - No marcar una tarea Notion como `Done` si la spec/`STATE.md` no cumple la Definition of Done.
 - Si Notion y repo difieren, el agente debe reportar y reconciliar la diferencia antes de continuar.
