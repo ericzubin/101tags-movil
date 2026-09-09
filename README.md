@@ -14,6 +14,7 @@ La primera spec existe en estado `DRAFT`; no debe ejecutarse `ionic start` hasta
 |---|---|
 | [`AGENTS.md`](./AGENTS.md) | Reglas obligatorias para agentes, seguridad y alcance |
 | [`PLAN.md`](./PLAN.md) | Plan maestro, arquitectura, alcance, API y fases |
+| [`DISCOVERY.md`](./DISCOVERY.md) | Hallazgos, decisiones, correcciones, riesgos y todo el contexto técnico extra |
 | [`TASKS.md`](./TASKS.md) | Backlog detallado: 36 tareas, dependencias, estimaciones y aceptación |
 | [`STATE.md`](./STATE.md) | Estado real del proyecto y próximo paso |
 | [`.agent/WORKFLOW.md`](./.agent/WORKFLOW.md) | Flujo DISCOVERY → SDD → BDD → TDD → Verification |
