@@ -32,4 +32,25 @@ describe('Image', () => {
     render(<Image source="/storage/products/x.jpg" testID="relative" />);
     expect(screen.getByTestId('relative')).toBeTruthy();
   });
+
+  it('AC1: accessibilityLabel se expone en el nodo de imagen', () => {
+    render(
+      <Image source="https://cdn/x.jpg" accessibilityLabel="Foto de camisa" testID="img-a11y" />,
+    );
+    const node = screen.getByTestId('img-a11y');
+    expect(node.props.accessibilityLabel).toBe('Foto de camisa');
+    expect(node.props.accessible).toBe(true);
+  });
+
+  it('AC1: el placeholder también expone accessibilityLabel', () => {
+    render(<Image source={null} accessibilityLabel="Sin foto" testID="ph-a11y" />);
+    const node = screen.getByTestId('ph-a11y');
+    expect(node.props.accessibilityLabel).toBe('Sin foto');
+    expect(node.props.accessible).toBe(true);
+  });
+
+  it('AC1: sin accessibilityLabel el nodo no se marca como accessible', () => {
+    render(<Image source="https://cdn/x.jpg" testID="img-no-a11y" />);
+    expect(screen.getByTestId('img-no-a11y').props.accessible).toBe(false);
+  });
 });

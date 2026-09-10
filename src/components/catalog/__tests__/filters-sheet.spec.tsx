@@ -153,4 +153,11 @@ describe('FiltersSheet (M2.3 AC15)', () => {
     expect(screen.getByTestId('filters-sheet-loading')).toBeTruthy();
     expect(screen.queryByTestId('filter-size-M')).toBeNull();
   });
+
+  it('AC3: los switches exponen accessibilityLabel', () => {
+    renderSheet();
+
+    expect(screen.getByTestId('filter-in-stock').props.accessibilityLabel).toBe('Solo con stock');
+    expect(screen.getByTestId('filter-on-sale').props.accessibilityLabel).toBe('En oferta');
+  });
 });

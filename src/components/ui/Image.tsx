@@ -10,6 +10,7 @@ export interface ImageProps {
   height?: number;
   rounded?: boolean;
   contentFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  accessibilityLabel?: string;
   testID?: string;
 }
 
@@ -21,6 +22,7 @@ export function Image({
   height = 200,
   rounded = false,
   contentFit = 'cover',
+  accessibilityLabel,
   testID,
 }: ImageProps) {
   const url = resolveMediaUrl(source);
@@ -28,6 +30,8 @@ export function Image({
     return (
       <View
         testID={testID ?? 'image-placeholder'}
+        accessibilityLabel={accessibilityLabel}
+        accessible={!!accessibilityLabel}
         style={{
           width,
           height,
@@ -47,6 +51,8 @@ export function Image({
         backgroundColor: PLACEHOLDER_BG,
       }}
       contentFit={contentFit}
+      accessibilityLabel={accessibilityLabel}
+      accessible={!!accessibilityLabel}
       testID={testID ?? 'expo-image'}
     />
   );
