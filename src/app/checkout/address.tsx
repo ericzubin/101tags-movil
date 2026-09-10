@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { SHIPPING_COST } from '@/core/models/checkout.model';
 import { formatMXN } from '@/core/utils/format-currency';
+import { useAuthStore } from '@/stores/auth-store';
 import { selectTotalCount, selectTotalPrice, useCartStore } from '@/stores/cart-store';
 import { useCheckoutStore } from '@/stores/checkout-store';
 import { brandColors } from '@/theme/tokens';
@@ -91,6 +92,7 @@ export default function AddressScreen() {
   const validate = useCheckoutStore((s) => s.validate);
   const applyCoupon = useCheckoutStore((s) => s.applyCoupon);
   const clearCoupon = useCheckoutStore((s) => s.clearCoupon);
+  const user = useAuthStore((s) => s.user);
 
   const [couponInput, setCouponInput] = useState('');
 
@@ -273,7 +275,7 @@ export default function AddressScreen() {
               testID="coupon-apply"
               label="Aplicar"
               onPress={() => {
-                void applyCoupon(couponInput);
+                void applyCoupon(couponInput, user?.email);
               }}
               className="ml-brand-2"
             />

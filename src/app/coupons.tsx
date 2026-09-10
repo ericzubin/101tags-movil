@@ -175,7 +175,7 @@ export default function CouponsScreen() {
 
   const handleApply = (code: string) => {
     setAppliedCode(code);
-    void applyCoupon(code);
+    void applyCoupon(code, email);
   };
 
   return (

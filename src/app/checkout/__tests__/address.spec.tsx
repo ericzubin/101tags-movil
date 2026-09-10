@@ -63,6 +63,11 @@ jest.mock('@/stores/cart-store', () => {
   };
 });
 
+jest.mock('@/stores/auth-store', () => ({
+  useAuthStore: (selector: (s: { user: unknown }) => unknown) =>
+    selector({ user: { id: 1, name: 'Ada', email: 'ada@example.com' } }),
+}));
+
 function makeItem(overrides: Partial<CartItem> = {}): CartItem {
   return {
     variantId: 5,
@@ -211,7 +216,7 @@ describe('AddressScreen — checkout M3.2', () => {
     fireEvent.changeText(screen.getByTestId('coupon-input'), 'TAGS50');
     fireEvent.press(screen.getByTestId('coupon-apply'));
 
-    expect(mockApplyCoupon).toHaveBeenCalledWith('TAGS50');
+    expect(mockApplyCoupon).toHaveBeenCalledWith('TAGS50', 'ada@example.com');
   });
 
   it('AC4: cupón aplicado muestra mensaje y descuento', () => {

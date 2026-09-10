@@ -114,7 +114,7 @@ export interface CheckoutState {
   setAddressField: (field: AddressField, value: string) => Promise<void>;
   setAddress: (partial: Partial<ShippingAddress>) => void;
   validate: () => boolean;
-  applyCoupon: (code: string) => Promise<void>;
+  applyCoupon: (code: string, customerEmail?: string) => Promise<void>;
   clearCoupon: () => void;
   ensureIdempotencyKey: (fingerprint: string) => string;
   submit: (customer: CheckoutCustomer) => Promise<RequestOrdersResult | null>;
@@ -327,7 +327,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
     return Object.keys(fieldErrors).length === 0;
   },
 
-  applyCoupon: async (code) => {
+  applyCoupon: async (code, customerEmail) => {
     const trimmed = code.trim();
     if (!trimmed) return;
 
@@ -337,12 +337,18 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       quantity: item.quantity,
     }));
 
+    // Backend `isVisibleToCustomer` needs the email to unlock coupons assigned
+    // to an account (`assigned_emails`); the authenticated `user_id` alone is
+    // not enough (#30). Sent only when known (guest checkout may not have it yet).
+    const email = customerEmail?.trim();
+
     try {
       const result = await checkoutService.validateCoupon({
         code: trimmed,
         segment: CHECKOUT_SEGMENT,
         shipping_cost: SHIPPING_COST,
         items,
+        ...(email ? { customer_email: email } : {}),
       });
 
       if (result.valid) {

@@ -282,6 +282,30 @@ describe('checkout-store', () => {
     expect(s.couponMessage).toBe('Cupón aplicado.');
   });
 
+  it('AC4 (#30): applyCoupon envía customer_email cuando se conoce (cupones asignados)', async () => {
+    useCartStore.setState({ items: [makeItem({ variantId: 5, quantity: 2 })] });
+    mockedCheckoutService.validateCoupon.mockResolvedValueOnce(validCoupon);
+
+    await useCheckoutStore.getState().applyCoupon('TAGS50', 'ada@example.com');
+
+    expect(mockedCheckoutService.validateCoupon).toHaveBeenCalledWith({
+      code: 'TAGS50',
+      segment: 'basicos',
+      shipping_cost: 99,
+      items: [{ variant_id: 5, quantity: 2 }],
+      customer_email: 'ada@example.com',
+    });
+  });
+
+  it('AC4 (#30): applyCoupon sin email no envía customer_email', async () => {
+    mockedCheckoutService.validateCoupon.mockResolvedValueOnce(validCoupon);
+
+    await useCheckoutStore.getState().applyCoupon('TAGS50', '   ');
+
+    const body = mockedCheckoutService.validateCoupon.mock.calls.at(-1)?.[0];
+    expect(body).not.toHaveProperty('customer_email');
+  });
+
   it('AC4: cupón inválido guarda mensaje y no rompe (coupon null)', async () => {
     mockedCheckoutService.validateCoupon.mockResolvedValueOnce({
       valid: false,

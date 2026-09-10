@@ -187,6 +187,7 @@ describe('CouponsScreen — cuponera (M6.2)', () => {
         segment: 'basicos',
         shipping_cost: 99,
         items: [{ variant_id: 5, quantity: 2 }],
+        customer_email: 'j@test.com',
       });
     });
   });
