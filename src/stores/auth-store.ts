@@ -1,24 +1,7 @@
-/**
- * Auth store (Zustand).
- *
- * Mantiene user + token en memoria. La persistencia cifrada se delega a
- * src/core/storage/secure-store.ts (expo-secure-store). El logout limpia
- * tanto el store en memoria como las credenciales en Keychain/Keystore.
- *
- * NUNCA loggear el token ni la password. Ver AGENTS.md §Seguridad.
- */
-
 import { create } from 'zustand';
 
-import { secureClearAuth, secureGet, secureKeys, secureSet } from '@/core/storage/secure-store';
-
-export interface CustomerUser {
-  readonly id: number;
-  readonly name: string;
-  readonly email: string;
-  readonly phone: string | null;
-  readonly role: 'customer';
-}
+import { authService } from '@/core/services/auth-service';
+import type { AuthSession, CustomerUser, RegisterRequest } from '@/core/models/auth';
 
 export type AuthTokenProvider = () => string | null;
 
@@ -27,9 +10,12 @@ export interface AuthState {
   token: string | null;
   isHydrated: boolean;
   isLoading: boolean;
-  setSession: (token: string, user: CustomerUser) => Promise<void>;
+  setSession: (session: AuthSession) => Promise<void>;
   clearSession: () => Promise<void>;
   hydrate: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (payload: RegisterRequest) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -38,31 +24,45 @@ export const useAuthStore = create<AuthState>((set) => ({
   isHydrated: false,
   isLoading: false,
 
-  setSession: async (token, user) => {
-    await Promise.all([
-      secureSet(secureKeys.authToken, token),
-      secureSet(secureKeys.authUser, JSON.stringify(user)),
-    ]);
-    set({ user, token, isHydrated: true });
+  setSession: async (session) => {
+    await authService.persistSession(session);
+    set({ user: session.user, token: session.access_token, isHydrated: true });
   },
 
   clearSession: async () => {
-    await secureClearAuth();
+    await authService.clearPersistedSession();
     set({ user: null, token: null, isHydrated: true });
   },
 
   hydrate: async () => {
     set({ isLoading: true });
+    const [token, user] = await Promise.all([authService.getStoredToken(), authService.getStoredUser()]);
+    set({ token, user, isHydrated: true, isLoading: false });
+  },
+
+  login: async (email, password) => {
+    set({ isLoading: true });
     try {
-      const [token, userJson] = await Promise.all([
-        secureGet(secureKeys.authToken),
-        secureGet(secureKeys.authUser),
-      ]);
-      const user = userJson ? (JSON.parse(userJson) as CustomerUser) : null;
-      set({ user, token, isHydrated: true, isLoading: false });
-    } catch {
-      set({ user: null, token: null, isHydrated: true, isLoading: false });
+      const session = await authService.login(email, password);
+      set({ user: session.user, token: session.access_token });
+    } finally {
+      set({ isLoading: false });
     }
+  },
+
+  register: async (payload) => {
+    set({ isLoading: true });
+    try {
+      const session = await authService.register(payload);
+      set({ user: session.user, token: session.access_token });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  logout: async () => {
+    await authService.logout();
+    set({ user: null, token: null, isHydrated: true });
   },
 }));
 
