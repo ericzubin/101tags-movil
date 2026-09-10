@@ -19,6 +19,8 @@
     "test:ci": "jest --ci --watchAll=false",
     "validate": "pnpm typecheck && pnpm lint && pnpm test:ci",
     "validate:full": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test:ci",
+    "baseline": "node scripts/baseline.js",
+    "baseline:check": "pnpm typecheck && pnpm lint && node scripts/baseline.js",
     "eas:config": "eas config"
   },
   "dependencies": {

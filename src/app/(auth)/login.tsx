@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { brandColors } from '@/theme/tokens';
+
 /**
  * Login screen — scaffold M0.4-PIVOT refactorizado a Nativewind v4
  * en M0.5-PIVOT. Functional login lands in M1.3.
@@ -27,7 +29,7 @@ export default function LoginScreen() {
           <TextInput
             className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
             placeholder="tu@correo.com"
-            placeholderTextColor="#999"
+            placeholderTextColor={brandColors.dark}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -41,7 +43,7 @@ export default function LoginScreen() {
           <TextInput
             className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
             placeholder="••••••••"
-            placeholderTextColor="#999"
+            placeholderTextColor={brandColors.dark}
             value={password}
             onChangeText={setPassword}
             secureTextEntry

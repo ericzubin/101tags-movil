@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { brandColors } from '@/theme/tokens';
+
 /**
  * Register screen — scaffold M0.4-PIVOT refactorizado a Nativewind v4
  * en M0.5-PIVOT. Functional registration lands in M1.3.
@@ -27,7 +29,7 @@ export default function RegisterScreen() {
             value={name}
             onChangeText={setName}
             placeholder="Tu nombre"
-            placeholderTextColor="#999"
+            placeholderTextColor={brandColors.dark}
             testID="register-name"
           />
         </View>
@@ -39,7 +41,7 @@ export default function RegisterScreen() {
             value={email}
             onChangeText={setEmail}
             placeholder="tu@correo.com"
-            placeholderTextColor="#999"
+            placeholderTextColor={brandColors.dark}
             autoCapitalize="none"
             keyboardType="email-address"
             testID="register-email"
@@ -55,7 +57,7 @@ export default function RegisterScreen() {
             value={password}
             onChangeText={setPassword}
             placeholder="••••••••"
-            placeholderTextColor="#999"
+            placeholderTextColor={brandColors.dark}
             secureTextEntry
             testID="register-password"
           />
