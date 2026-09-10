@@ -52,11 +52,18 @@ describe('auth models', () => {
   });
 
   it('AuthError supports every documented code', () => {
-    const codes: AuthErrorCode[] = ['INVALID_CREDENTIALS', 'VALIDATION_ERROR', 'NETWORK_ERROR', 'TOKEN_EXPIRED', 'UNKNOWN'];
+    const codes: AuthErrorCode[] = ['INVALID_CREDENTIALS', 'VALIDATION_ERROR', 'NETWORK_ERROR', 'TOKEN_EXPIRED', 'CANCELED', 'UNKNOWN'];
     for (const code of codes) {
       const err = new AuthError(code, 'msg', 400);
       expect(err.code).toBe(code);
     }
+  });
+
+  it('AuthErrorCode includes CANCELED (M1.6 AC8)', () => {
+    const err = new AuthError('CANCELED', 'Operación cancelada', 0);
+    expect(err.code).toBe('CANCELED');
+    expect(err.status).toBe(0);
+    expect(err.name).toBe('AuthError');
   });
 
   it('AuthError JSON.stringify never contains a bearer token (AC9)', () => {

@@ -33,6 +33,7 @@ export type AuthErrorCode =
   | 'SERVER_ERROR'
   | 'NETWORK_ERROR'
   | 'TOKEN_EXPIRED'
+  | 'CANCELED'
   | 'UNKNOWN';
 
 export type AuthErrorFields = Record<string, string[]>;

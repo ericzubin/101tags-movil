@@ -29,6 +29,11 @@ describe('formatAuthError', () => {
     expect(formatAuthError(err)).toBe('Sin conexión. Verifica tu internet.');
   });
 
+  it('returns es-MX message for CANCELED (M1.6 AC9)', () => {
+    const err = new AuthError('CANCELED', 'Internal detail', 0);
+    expect(formatAuthError(err)).toBe('Operación cancelada.');
+  });
+
   it('returns es-MX message for UNKNOWN', () => {
     const err = new AuthError('UNKNOWN', 'Internal detail', 0);
     expect(formatAuthError(err)).toBe('Algo salió mal. Intenta de nuevo.');

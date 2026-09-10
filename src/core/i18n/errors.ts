@@ -17,6 +17,7 @@ const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   SERVER_ERROR: 'No pudimos contactar al servidor. Intenta más tarde.',
   NETWORK_ERROR: 'Sin conexión. Verifica tu internet.',
   TOKEN_EXPIRED: 'Tu sesión expiró. Inicia sesión de nuevo.',
+  CANCELED: 'Operación cancelada.',
   UNKNOWN: 'Algo salió mal. Intenta de nuevo.',
 };
 

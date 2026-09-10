@@ -174,6 +174,28 @@ describe('AuthService', () => {
       });
     });
 
+    it('maps HttpError(0, cause="timeout") to NETWORK_ERROR (M1.6 AC7)', async () => {
+      mockedHttpClient.post.mockRejectedValueOnce(
+        new HttpError(0, 'Timeout', null, 'Request timeout', 'timeout'),
+      );
+
+      await expect(authService.login('a@x.com', 'p')).rejects.toMatchObject({
+        code: 'NETWORK_ERROR',
+        status: 0,
+      });
+    });
+
+    it('maps HttpError(0, cause="canceled") to CANCELED (M1.6 AC6)', async () => {
+      mockedHttpClient.post.mockRejectedValueOnce(
+        new HttpError(0, 'Canceled', null, 'Request canceled', 'canceled'),
+      );
+
+      await expect(authService.login('a@x.com', 'p')).rejects.toMatchObject({
+        code: 'CANCELED',
+        status: 0,
+      });
+    });
+
     it('passes through existing AuthError instances untouched', async () => {
       const original = new AuthError('UNKNOWN', 'Custom', 500);
       mockedHttpClient.post.mockRejectedValueOnce(original);
