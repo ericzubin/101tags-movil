@@ -1,7 +1,7 @@
 import { Redirect, Tabs } from 'expo-router';
 
 import { authGuard } from '@/core/navigation/guards';
-import { useAuthStore } from '@/stores/auth-store';
+import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
 import { brandColors } from '@/theme/tokens';
 
 export default function TabsLayout() {
@@ -9,8 +9,8 @@ export default function TabsLayout() {
   const user = useAuthStore((s) => s.user);
   const isHydrated = useAuthStore((s) => s.isHydrated);
 
-  const isAuthenticated = !!token && !!user;
-  const guard = authGuard({ isAuthenticated, isHydrated });
+  const authed = isAuthenticated({ token, user });
+  const guard = authGuard({ isAuthenticated: authed, isHydrated });
 
   return (
     <>

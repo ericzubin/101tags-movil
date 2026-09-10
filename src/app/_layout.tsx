@@ -22,7 +22,19 @@ export default function RootLayout() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      httpClient.setAuthTokenProvider(() => authService.getStoredToken());
+      // M1.5 AC8 — httpClient reads the bearer token from the single source
+      // of truth (Zustand), not from SecureStore directly. This eliminates
+      // the dual-source divergence that caused the 401 bounce loop.
+      httpClient.setAuthTokenProvider(() => useAuthStore.getState().token);
+      // M1.5 AC11 — register the Zustand clearSession handler so that
+      // authService.handleUnauthorized() can synchronously wipe both
+      // SecureStore (its own job) and the in-memory store.
+      authService.setUnauthorizedHandler(async () => {
+        await useAuthStore.getState().clearSession();
+      });
+      // M1.5 AC1 — httpClient onUnauthorized delegates to authService
+      // (which clears SecureStore + invokes the registered Zustand handler),
+      // then routes to login. Single transaction from the UI's perspective.
       httpClient.setOnUnauthorized(async () => {
         await authService.handleUnauthorized();
         router.replace('/(auth)/login');
