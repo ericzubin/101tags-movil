@@ -13,6 +13,7 @@ jest.mock('@/core/services/auth-service', () => ({
     getStoredUser: jest.fn(),
     handleUnauthorized: jest.fn(),
     setUnauthorizedHandler: jest.fn(),
+    hydrate: jest.fn(),
   },
 }));
 
@@ -55,33 +56,35 @@ describe('auth-store', () => {
     expect(s.user).toBeNull();
   });
 
-  it('hydrate reads token + user in parallel and toggles isLoading', async () => {
-    mockedAuthService.getStoredToken.mockResolvedValueOnce('restored-tok');
-    mockedAuthService.getStoredUser.mockResolvedValueOnce(baseUser);
+  it('hydrate delegates to authService.hydrate and toggles isLoading while in flight', async () => {
+    mockedAuthService.hydrate.mockResolvedValueOnce(true);
+    mockedAuthService.getStoredToken.mockResolvedValue('restored-tok');
+    mockedAuthService.getStoredUser.mockResolvedValue(baseUser);
 
     const promise = useAuthStore.getState().hydrate();
     expect(useAuthStore.getState().isLoading).toBe(true);
 
-    await promise;
+    const restored = await promise;
+    expect(restored).toBe(true);
+    expect(mockedAuthService.hydrate).toHaveBeenCalledTimes(1);
     const s = useAuthStore.getState();
     expect(s.token).toBe('restored-tok');
     expect(s.user).toEqual(baseUser);
     expect(s.isHydrated).toBe(true);
     expect(s.isLoading).toBe(false);
-    expect(mockedAuthService.getStoredToken).toHaveBeenCalledTimes(1);
-    expect(mockedAuthService.getStoredUser).toHaveBeenCalledTimes(1);
   });
 
   it('hydrate handles no stored credentials', async () => {
-    mockedAuthService.getStoredToken.mockResolvedValueOnce(null);
-    mockedAuthService.getStoredUser.mockResolvedValueOnce(null);
+    mockedAuthService.hydrate.mockResolvedValueOnce(false);
 
-    await useAuthStore.getState().hydrate();
+    const restored = await useAuthStore.getState().hydrate();
 
+    expect(restored).toBe(false);
     const s = useAuthStore.getState();
     expect(s.token).toBeNull();
     expect(s.user).toBeNull();
     expect(s.isHydrated).toBe(true);
+    expect(s.isLoading).toBe(false);
   });
 
   it('login delegates to authService.login and updates memory on success', async () => {

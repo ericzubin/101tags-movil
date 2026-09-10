@@ -58,6 +58,34 @@ class AuthService {
     return httpClient.get<CustomerUser>(ENDPOINTS.me);
   }
 
+  /**
+   * Restores a session from secure storage on app boot.
+   *
+   * Flow (per spec M1.2 §Auth session lifecycle):
+   *   1. Read stored token. If absent → return `false` (guest boot).
+   *   2. Call `GET /auth/me`. On 200 we have a valid user; persist the
+   *      session back into storage and return `true`.
+   *   3. On any error (401 expired token, network failure, etc.) we clear
+   *      stored credentials and return `false` so the store can hydrate
+   *      as a guest.
+   *
+   * Note: when step 2 fails with 401 the global `setOnUnauthorized`
+   * handler (installed in `_layout.tsx`) also runs — it clears storage and
+   * navigates to login. Our `catch` is idempotent and safe.
+   */
+  async hydrate(): Promise<boolean> {
+    const token = await this.getStoredToken();
+    if (!token) return false;
+    try {
+      const user = await this.me();
+      await this.persistSession({ access_token: token, user });
+      return true;
+    } catch {
+      await this.clearPersistedSession();
+      return false;
+    }
+  }
+
   async refresh(): Promise<RefreshResponse> {
     const response = await httpClient.post<RefreshResponse>(ENDPOINTS.refresh);
     const tokenKey = secureStorageService.getKeys().authToken;

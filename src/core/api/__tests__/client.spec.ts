@@ -167,4 +167,43 @@ describe('http client', () => {
     await expect(client.get('/x')).rejects.toBeInstanceOf(HttpError);
     expect(handler).not.toHaveBeenCalled();
   });
+
+  describe('AC9 — no token leaks into console', () => {
+    let consoleSpies: jest.SpyInstance[];
+
+    beforeEach(() => {
+      consoleSpies = ['log', 'warn', 'error', 'info', 'debug'].map((m) =>
+        jest.spyOn(console, m as keyof Console).mockImplementation(() => undefined),
+      );
+    });
+
+    afterEach(() => {
+      consoleSpies.forEach((spy) => spy.mockRestore());
+    });
+
+    it('never emits the bearer token via console.* when making authenticated requests', async () => {
+      const secret = 'super-secret-token-XYZ';
+      const mockFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: () => Promise.resolve('null'),
+      });
+      globalThis.fetch = mockFetch as any;
+
+      const client = createHttpClient(() => secret);
+      await client.get('/api/auth/me');
+      await client.post('/api/auth/logout', {});
+      await expect(client.get('/api/auth/me')).resolves.toBeNull();
+
+      for (const spy of consoleSpies) {
+        for (const call of spy.mock.calls) {
+          for (const arg of call) {
+            const text = typeof arg === 'string' ? arg : JSON.stringify(arg);
+            expect(text).not.toContain(secret);
+          }
+        }
+      }
+    });
+  });
 });
