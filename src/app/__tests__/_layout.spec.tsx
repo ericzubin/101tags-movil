@@ -158,10 +158,14 @@ describe('RootLayout — wiring (M1.5 AC8, AC11)', () => {
   });
 });
 
-describe('RootLayout — rutas registradas (M3.4)', () => {
+describe('RootLayout — rutas registradas (M3.4 / M3.5)', () => {
   const layoutSource = fs.readFileSync(nodePath.join(__dirname, '..', '_layout.tsx'), 'utf8');
 
   it('registra checkout/payment-instructions en el root stack', () => {
     expect(layoutSource).toContain('name="checkout/payment-instructions"');
+  });
+
+  it('registra checkout/payment-proof en el root stack', () => {
+    expect(layoutSource).toContain('name="checkout/payment-proof"');
   });
 });

@@ -22,6 +22,7 @@ jest.mock('@/core/services/checkout-service', () => ({
     validateCoupon: jest.fn(),
     requestOrders: jest.fn(),
     getPaymentInstructions: jest.fn(),
+    uploadPaymentProof: jest.fn(),
   },
 }));
 
@@ -625,6 +626,178 @@ describe('checkout-store', () => {
       expect(s.copiedLabel).toBeNull();
       expect(s.clipboardError).toBeNull();
       expect(s.lastCustomerEmail).toBeNull();
+    });
+  });
+
+  describe('M3.5 — comprobante de pago', () => {
+    const asset = {
+      uri: 'file:///tmp/comprobante.pdf',
+      name: 'comprobante.pdf',
+      type: 'application/pdf',
+      size: 1024,
+    };
+
+    const proofResponse = {
+      message: 'Comprobante enviado. El proveedor revisará tu pago.',
+      paymentStatus: 'proof_submitted',
+      paymentProofUrl: 'https://cdn.test/proof.pdf',
+    };
+
+    const refreshed: PaymentInstructionsResult = {
+      orderNumber: 'ORD-1',
+      paymentStatus: 'proof_submitted',
+      paymentMethod: 'spei',
+      total: 259,
+      paymentDueAt: '2099-09-14T00:00:00Z',
+      paymentInstructions: null,
+      demoMode: false,
+    };
+
+    it('estado inicial: proof idle, sin error ni url', () => {
+      const s = useCheckoutStore.getState();
+      expect(s.proof).toEqual({ status: 'idle', error: null, url: null });
+    });
+
+    it('AC1/AC3: submitProof sube el comprobante y refresca las instrucciones', async () => {
+      mockedCheckoutService.uploadPaymentProof.mockResolvedValueOnce(proofResponse);
+      mockedCheckoutService.getPaymentInstructions.mockResolvedValueOnce(refreshed);
+
+      const ok = await useCheckoutStore
+        .getState()
+        .submitProof('ORD-1', 'ada@example.com', asset);
+
+      expect(ok).toBe(true);
+      expect(mockedCheckoutService.uploadPaymentProof).toHaveBeenCalledWith(
+        'ORD-1',
+        'ada@example.com',
+        asset,
+      );
+      const s = useCheckoutStore.getState();
+      expect(s.proof.status).toBe('success');
+      expect(s.proof.url).toBe('https://cdn.test/proof.pdf');
+      expect(s.proof.error).toBeNull();
+      expect(mockedCheckoutService.getPaymentInstructions).toHaveBeenCalledWith(
+        'ORD-1',
+        'ada@example.com',
+      );
+      expect(s.paymentInstructions?.paymentStatus).toBe('proof_submitted');
+    });
+
+    it('AC2: archivo >8 MB no llama al service y expone error inline', async () => {
+      const oversized = { ...asset, size: 8 * 1024 * 1024 + 1 };
+
+      const ok = await useCheckoutStore
+        .getState()
+        .submitProof('ORD-1', 'ada@example.com', oversized);
+
+      expect(ok).toBe(false);
+      expect(mockedCheckoutService.uploadPaymentProof).not.toHaveBeenCalled();
+      const s = useCheckoutStore.getState();
+      expect(s.proof.status).toBe('error');
+      expect(s.proof.error).toBeTruthy();
+      expect(s.proof.url).toBeNull();
+    });
+
+    it('AC2: tipo no permitido no llama al service y expone error inline', async () => {
+      const unsupported = {
+        uri: 'file:///tmp/contrato.docx',
+        name: 'contrato.docx',
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        size: 2048,
+      };
+
+      const ok = await useCheckoutStore
+        .getState()
+        .submitProof('ORD-1', 'ada@example.com', unsupported);
+
+      expect(ok).toBe(false);
+      expect(mockedCheckoutService.uploadPaymentProof).not.toHaveBeenCalled();
+      const s = useCheckoutStore.getState();
+      expect(s.proof.status).toBe('error');
+      expect(s.proof.error).toBeTruthy();
+    });
+
+    it('AC2: acepta por extensión cuando el asset no trae mimeType', async () => {
+      mockedCheckoutService.uploadPaymentProof.mockResolvedValueOnce(proofResponse);
+      mockedCheckoutService.getPaymentInstructions.mockResolvedValueOnce(refreshed);
+
+      const ok = await useCheckoutStore.getState().submitProof('ORD-1', 'a@b.com', {
+        uri: 'file:///tmp/foto.jpg',
+        name: 'FOTO.JPG',
+        type: null,
+        size: 2048,
+      });
+
+      expect(ok).toBe(true);
+      expect(mockedCheckoutService.uploadPaymentProof).toHaveBeenCalledTimes(1);
+    });
+
+    it('AC4: 422 expone el mensaje del backend y permite reintentar', async () => {
+      mockedCheckoutService.uploadPaymentProof.mockRejectedValueOnce(
+        new HttpError(
+          422,
+          'Unprocessable Entity',
+          { message: 'Este pedido no acepta comprobantes en este momento' },
+          'HTTP 422',
+        ),
+      );
+
+      const first = await useCheckoutStore
+        .getState()
+        .submitProof('ORD-1', 'ada@example.com', asset);
+
+      expect(first).toBe(false);
+      let s = useCheckoutStore.getState();
+      expect(s.proof.status).toBe('error');
+      expect(s.proof.error).toBe('Este pedido no acepta comprobantes en este momento');
+      expect(s.proof.url).toBeNull();
+
+      mockedCheckoutService.uploadPaymentProof.mockResolvedValueOnce(proofResponse);
+      mockedCheckoutService.getPaymentInstructions.mockResolvedValueOnce(refreshed);
+
+      const retry = await useCheckoutStore
+        .getState()
+        .submitProof('ORD-1', 'ada@example.com', asset);
+
+      expect(retry).toBe(true);
+      s = useCheckoutStore.getState();
+      expect(s.proof.status).toBe('success');
+      expect(s.proof.error).toBeNull();
+    });
+
+    it('AC4: error de red usa el mensaje del error', async () => {
+      mockedCheckoutService.uploadPaymentProof.mockRejectedValueOnce(new Error('network down'));
+
+      const ok = await useCheckoutStore
+        .getState()
+        .submitProof('ORD-1', 'ada@example.com', asset);
+
+      expect(ok).toBe(false);
+      expect(useCheckoutStore.getState().proof.error).toBe('network down');
+    });
+
+    it('AC4: error sin mensaje usa el fallback en español', async () => {
+      mockedCheckoutService.uploadPaymentProof.mockRejectedValueOnce(new HttpError(500, 'Server', null, 'HTTP 500'));
+
+      await useCheckoutStore.getState().submitProof('ORD-1', 'ada@example.com', asset);
+
+      expect(useCheckoutStore.getState().proof.error).toBe(
+        'No pudimos enviar tu comprobante. Intenta de nuevo.',
+      );
+    });
+
+    it('AC5: reset limpia el estado del comprobante', () => {
+      useCheckoutStore.setState({
+        proof: { status: 'success', error: null, url: 'https://cdn.test/proof.pdf' },
+      });
+
+      useCheckoutStore.getState().reset();
+
+      expect(useCheckoutStore.getState().proof).toEqual({
+        status: 'idle',
+        error: null,
+        url: null,
+      });
     });
   });
 });

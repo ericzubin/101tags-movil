@@ -3,6 +3,7 @@ import type {
   CouponValidation,
   PaymentInstructions,
   PaymentInstructionsResult,
+  PaymentProofResult,
   PostalCodeLookup,
   ShippingAddress,
 } from '@/core/models/checkout.model';
@@ -171,6 +172,18 @@ describe('checkout.model', () => {
     expect(result.paymentInstructions?.recipientName).toBe('Tags SA de CV');
     expect(result.paymentInstructions?.dueAt).toBe('2026-09-15T00:00:00Z');
     expect(result.demoMode).toBe(true);
+  });
+
+  it('PaymentProofResult mapea la respuesta snake de payment-proof (toCamel)', () => {
+    const result = toCamel<PaymentProofResult>({
+      message: 'Comprobante enviado. El proveedor revisará tu pago.',
+      payment_status: 'proof_submitted',
+      payment_proof_url: 'https://cdn.test/proof.jpg',
+    });
+
+    expect(result.message).toBe('Comprobante enviado. El proveedor revisará tu pago.');
+    expect(result.paymentStatus).toBe('proof_submitted');
+    expect(result.paymentProofUrl).toBe('https://cdn.test/proof.jpg');
   });
 
   it('ShippingAddress y constantes del checkout', () => {

@@ -14,6 +14,7 @@ import type {
   CouponValidation,
   PaymentInstructionsResult,
   PaymentMethod,
+  PaymentProofAsset,
   PostalSettlement,
   RequestOrdersPayload,
   RequestOrdersResult,
@@ -27,7 +28,47 @@ export type CheckoutSubmissionStatus = 'idle' | 'submitting' | 'success' | 'erro
 
 export type PaymentInstructionsStatus = 'idle' | 'loading' | 'ready' | 'error';
 
+export type PaymentProofStatus = 'idle' | 'submitting' | 'success' | 'error';
+
+export interface PaymentProofSubmission {
+  status: PaymentProofStatus;
+  error: string | null;
+  url: string | null;
+}
+
 const CLIPBOARD_ERROR = 'No pudimos copiar automáticamente. Selecciona el dato manualmente.';
+
+export const PAYMENT_PROOF_MAX_BYTES = 8 * 1024 * 1024;
+export const PAYMENT_PROOF_ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+] as const;
+export const PAYMENT_PROOF_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'pdf'] as const;
+export const PAYMENT_PROOF_TYPE_ERROR = 'Solo aceptamos imágenes JPG, PNG, WEBP o PDF.';
+export const PAYMENT_PROOF_SIZE_ERROR = 'El archivo supera el máximo de 8 MB.';
+
+/**
+ * Client-side UX validation for a picked proof. The backend remains the
+ * authority; this only avoids a doomed round-trip for obvious mistakes.
+ */
+export function paymentProofAssetError(asset: PaymentProofAsset): string | null {
+  if (typeof asset.size === 'number' && asset.size > PAYMENT_PROOF_MAX_BYTES) {
+    return PAYMENT_PROOF_SIZE_ERROR;
+  }
+
+  const mime = (asset.type ?? '').trim().toLowerCase();
+  const extension = (asset.name.split('.').pop() ?? '').trim().toLowerCase();
+  const mimeAllowed = (PAYMENT_PROOF_ALLOWED_MIME_TYPES as readonly string[]).includes(mime);
+  const extensionAllowed = (PAYMENT_PROOF_ALLOWED_EXTENSIONS as readonly string[]).includes(
+    extension,
+  );
+
+  if (!mimeAllowed && !extensionAllowed) return PAYMENT_PROOF_TYPE_ERROR;
+  return null;
+}
 
 /** Customer data captured on the review screen (prefilled for auth, editable for guest). */
 export interface CheckoutCustomer {
@@ -63,6 +104,7 @@ export interface CheckoutState {
   copiedLabel: string | null;
   clipboardError: string | null;
   lastCustomerEmail: string | null;
+  proof: PaymentProofSubmission;
   fetchConfig: () => Promise<void>;
   fetchPolicies: () => Promise<void>;
   setAddressField: (field: AddressField, value: string) => Promise<void>;
@@ -73,6 +115,7 @@ export interface CheckoutState {
   ensureIdempotencyKey: (fingerprint: string) => string;
   submit: (customer: CheckoutCustomer) => Promise<RequestOrdersResult | null>;
   fetchPaymentInstructions: (orderNumber: string, email: string) => Promise<void>;
+  submitProof: (orderNumber: string, email: string, asset: PaymentProofAsset) => Promise<boolean>;
   copyToClipboard: (label: string, value: string) => Promise<void>;
   reset: () => void;
 }
@@ -162,6 +205,7 @@ function initialState() {
     copiedLabel: null,
     clipboardError: null,
     lastCustomerEmail: null,
+    proof: { status: 'idle', error: null, url: null } as PaymentProofSubmission,
   };
 }
 
@@ -379,6 +423,37 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
           'No pudimos cargar las instrucciones de pago. Intenta de nuevo.',
         ),
       });
+    }
+  },
+
+  submitProof: async (orderNumber, email, asset) => {
+    const validationError = paymentProofAssetError(asset);
+    if (validationError) {
+      set({ proof: { status: 'error', error: validationError, url: null } });
+      return false;
+    }
+
+    const trimmedEmail = email.trim();
+    set({ proof: { status: 'submitting', error: null, url: null } });
+
+    try {
+      const result = await checkoutService.uploadPaymentProof(orderNumber, trimmedEmail, asset);
+      set({ proof: { status: 'success', error: null, url: result.paymentProofUrl ?? null } });
+      // Re-read the order so the instructions screen reflects `proof_submitted`.
+      await get().fetchPaymentInstructions(orderNumber, trimmedEmail);
+      return true;
+    } catch (err) {
+      set({
+        proof: {
+          status: 'error',
+          error: submissionErrorMessage(
+            err,
+            'No pudimos enviar tu comprobante. Intenta de nuevo.',
+          ),
+          url: null,
+        },
+      });
+      return false;
     }
   },
 

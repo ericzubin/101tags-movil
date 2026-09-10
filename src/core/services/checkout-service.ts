@@ -5,6 +5,8 @@ import type {
   CheckoutPolicies,
   CouponValidation,
   PaymentInstructionsResult,
+  PaymentProofAsset,
+  PaymentProofResult,
   PostalCodeLookup,
   RequestOrdersPayload,
   RequestOrdersResult,
@@ -62,6 +64,30 @@ export const checkoutService = {
     return httpClient.request<PaymentInstructionsResult>(
       `/checkout/payment-instructions/${encodeURIComponent(orderNumber)}`,
       { method: 'GET', query: { email } },
+    );
+  },
+
+  /**
+   * Upload a payment proof for a `supplier_*` order. The backend expects
+   * `multipart/form-data`, so we build a `FormData` with `email` + `proof`
+   * and let the runtime set the multipart boundary (no manual `Content-Type`).
+   */
+  async uploadPaymentProof(
+    orderNumber: string,
+    email: string,
+    file: PaymentProofAsset,
+  ): Promise<PaymentProofResult> {
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('proof', {
+      uri: file.uri,
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+    } as unknown as Blob);
+
+    return httpClient.request<PaymentProofResult>(
+      `/checkout/orders/${encodeURIComponent(orderNumber)}/payment-proof`,
+      { method: 'POST', body: formData },
     );
   },
 

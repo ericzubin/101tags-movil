@@ -231,4 +231,78 @@ describe('checkoutService', () => {
     const [path] = mockedHttpClient.request.mock.calls[0];
     expect(path).toBe('/checkout/payment-instructions/ORD%2F1%202');
   });
+
+  it('AC1 M3.5: uploadPaymentProof envía FormData(email, proof) al POST y sin Content-Type manual', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    const response = {
+      message: 'Comprobante enviado. El proveedor revisará tu pago.',
+      paymentStatus: 'proof_submitted',
+      paymentProofUrl: 'https://cdn.test/proof.jpg',
+    };
+    mockedHttpClient.request.mockResolvedValueOnce(response);
+
+    const asset = {
+      uri: 'file:///tmp/comprobante.pdf',
+      name: 'comprobante.pdf',
+      type: 'application/pdf',
+      size: 1024,
+    };
+
+    try {
+      const result = await checkoutService.uploadPaymentProof(
+        'ORD-1',
+        'ada@example.com',
+        asset,
+      );
+
+      const [path, options] = mockedHttpClient.request.mock.calls[0];
+      expect(path).toBe('/checkout/orders/ORD-1/payment-proof');
+      expect(options?.method).toBe('POST');
+      expect(options?.body).toBeInstanceOf(FormData);
+      expect(options?.headers).toBeUndefined();
+      expect(appendSpy).toHaveBeenCalledWith('email', 'ada@example.com');
+      expect(appendSpy).toHaveBeenCalledWith('proof', {
+        uri: 'file:///tmp/comprobante.pdf',
+        name: 'comprobante.pdf',
+        type: 'application/pdf',
+      });
+      expect(result).toEqual(response);
+    } finally {
+      appendSpy.mockRestore();
+    }
+  });
+
+  it('AC1 M3.5: uploadPaymentProof usa application/octet-stream cuando el asset no trae type', async () => {
+    const appendSpy = jest.spyOn(FormData.prototype, 'append');
+    mockedHttpClient.request.mockResolvedValueOnce({});
+
+    try {
+      await checkoutService.uploadPaymentProof('ORD-2', 'a@b.com', {
+        uri: 'file:///tmp/foto',
+        name: 'foto',
+        type: null,
+      });
+
+      expect(appendSpy).toHaveBeenCalledWith('proof', {
+        uri: 'file:///tmp/foto',
+        name: 'foto',
+        type: 'application/octet-stream',
+      });
+    } finally {
+      appendSpy.mockRestore();
+    }
+  });
+
+  it('AC1 M3.5: uploadPaymentProof codifica el orderNumber en la ruta', async () => {
+    mockedHttpClient.request.mockResolvedValueOnce({});
+
+    await checkoutService.uploadPaymentProof('ORD/1 2', 'a@b.com', {
+      uri: 'file:///tmp/x.pdf',
+      name: 'x.pdf',
+      type: 'application/pdf',
+    });
+
+    const [path] = mockedHttpClient.request.mock.calls[0];
+    expect(path).toBe('/checkout/orders/ORD%2F1%202/payment-proof');
+  });
 });

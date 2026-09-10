@@ -81,6 +81,24 @@ export interface PaymentInstructionsResult {
   readonly demoMode: boolean;
 }
 
+/** A locally-picked file ready to be uploaded as multipart form data. */
+export interface PaymentProofAsset {
+  readonly uri: string;
+  readonly name: string;
+  readonly type?: string | null;
+  readonly size?: number | null;
+}
+
+/**
+ * Response of `POST /checkout/orders/{orderNumber}/payment-proof`
+ * (after `toCamel`).
+ */
+export interface PaymentProofResult {
+  readonly message: string;
+  readonly paymentStatus: string;
+  readonly paymentProofUrl?: string | null;
+}
+
 export interface ShippingAddress {
   street: string;
   city: string;
