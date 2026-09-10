@@ -195,14 +195,15 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 - `.spec/2026-09-10-m1-10-splash-tabs.md` — **DONE** (PR #66)
 - `.spec/2026-09-11-p0-hydrate-boot-bearer.md` — **DONE** (PR #68)
 - `.spec/2026-09-11-m2-0-setup.md` — **DONE** (PR #70)
-- `.spec/2026-09-11-m2-1-home.md` — IN PROGRESS (Wave 1)
-- `.spec/2026-09-11-m2-4-detail.md` — IN PROGRESS (Wave 1)
+- `.spec/2026-09-11-m2-1-home.md` — **DONE** (PR #71)
+- `.spec/2026-09-11-m2-4-detail.md` — **DONE** (PR #72)
+- `.spec/2026-09-11-m2-2-categories.md` — IN PROGRESS (Wave 2)
 
 ## Current phase
-**F2 EN CURSO en rama `f2/catalogo`** (d67b623). M2.0-setup merged. Wave 1: M2.1-home (#12) + M2.4-detail (#15) en paralelo.
+**F2 EN CURSO en rama `f2/catalogo`** (a2f3996). M2.0-setup + Wave 1 (M2.1-home #12 + M2.4-detail #15) merged. Próximo: Wave 2 (M2.2-categories #13 → M2.3-list #14, secuencial — comparten `(tabs)/catalog.tsx`).
 
 ## Next actions (roadmap)
-1. **F2.x** — Home + catálogo + producto (issues #12-#16): M2.1-home + M2.4-detail (Wave 1) → M2.2-categories + M2.3-list (Wave 2) → M2.5-ux (Wave 3) → `f2/catalogo` → `developer` → `main`.
+1. **F2.x** — Catálogo (issues #13, #14, #16): M2.2-categories → M2.3-list (Wave 2) → M2.5-ux (Wave 3) → `f2/catalogo` → `developer` → `main`.
 2. **F3.x** — Cart + checkout + pagos (issues #17-#22).
 3. **F4.x** — Pedidos + cancelaciones + rating (issues #23-#25).
 4. **F5.x** — Chat + notificaciones in-app (issues #26-#28).
@@ -213,7 +214,7 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: **F2 EN CURSO en `f2/catalogo`** (d67b623). M2.0-setup merged (PR #70, +68 tests). Wave 1: M2.1-home (#12) + M2.4-detail (#15) en paralelo desde `f2/catalogo`. Tests totales: ~338 (270 + 68). Próximo: merge Wave 1 → Wave 2 (M2.2-categories #13 → M2.3-list #14) → M2.5-ux (#16) → `f2/catalogo` → `developer` → `main`.
+- Fase actual: **F2 EN CURSO en `f2/catalogo`** (a2f3996). M2.0-setup (PR #70) + Wave 1 (PR #71 home +65/PR #72 detail) merged. Issues #12 y #15 cerradas. Tests totales: ~385. Próximo: Wave 2 (M2.2-categories #13 → M2.3-list #14, secuencial por compartir `(tabs)/catalog.tsx`) → M2.5-ux (#16) → `f2/catalogo` → `developer` → `main`.
 - Componente actual: app + auth wiring + login/register con UX polish + 130 tests verdes (90 baseline + 40 nuevos en i18n/errors + validation/auth + login + register).
 - Stack: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6 + Zustand 5 + TanStack Query 5.
 - Decisiones pendientes: OpenPay nativo (M3.6), deep links reset (M1.4), EAS Update (F7), TS 6 upgrade (opcional).
