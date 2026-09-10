@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createRequire } from 'node:module';
 
@@ -38,11 +39,29 @@ describe('nativewind ↔ tokens sync', () => {
     expect(brand.black).toBe(brandColors.black);
   });
 
-  it('tailwind.config.js fontFamily.brand matches Montserrat + fallbacks', () => {
+  it('M1.8 AC7: tailwind.config.js fontFamily.brand uses unified family name + fallbacks', () => {
     expect(fontFamilies.brand).toBeDefined();
+    // Single family name `Montserrat` (not -Regular/-Bold) so CSS @font-face
+    // and native Font.loadAsync variants resolve via font-weight.
     expect(fontFamilies.brand?.[0]).toBe(brandFonts.brand);
+    expect(fontFamilies.brand?.[0]).toBe('Montserrat');
     expect(fontFamilies.brand).toContain('system-ui');
     expect(fontFamilies.brand).toContain('sans-serif');
+  });
+
+  it('M1.8 AC6: src/global.css declares @font-face for 400 and 700 weights', () => {
+    const css = fs.readFileSync(
+      path.resolve(__dirname, '../../global.css'),
+      'utf8',
+    );
+    // Family declaration
+    expect(css).toMatch(/@font-face[\s\S]*?font-family:\s*['"]Montserrat['"]/);
+    // Both weight sources must be present
+    expect(css).toMatch(/font-weight:\s*400/);
+    expect(css).toMatch(/font-weight:\s*700/);
+    // Both bundled .ttf assets must be referenced
+    expect(css).toMatch(/Montserrat-Regular\.ttf/);
+    expect(css).toMatch(/Montserrat-Bold\.ttf/);
   });
 
   it('tailwind.config.js exposes brand-1..brand-8 spacing scale', () => {
