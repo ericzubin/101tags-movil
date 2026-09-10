@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import type { RequestOrdersResult, RequestedOrder } from '@/core/models/checkout.model';
@@ -7,17 +7,20 @@ import type { CheckoutSubmission } from '@/stores/checkout-store';
 import ConfirmationScreen from '../confirmation';
 
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 
 jest.mock('expo-router', () => ({
-  router: { replace: mockReplace, push: jest.fn(), back: jest.fn() },
-  useRouter: () => ({ replace: mockReplace, push: jest.fn(), back: jest.fn() }),
+  router: { replace: mockReplace, push: mockPush, back: jest.fn() },
+  useRouter: () => ({ replace: mockReplace, push: mockPush, back: jest.fn() }),
 }));
 
 let mockSubmission: CheckoutSubmission;
+let mockEmail: string | null;
 
 jest.mock('@/stores/checkout-store', () => ({
-  useCheckoutStore: (selector: (s: { submission: CheckoutSubmission }) => unknown) =>
-    selector({ submission: mockSubmission }),
+  useCheckoutStore: (
+    selector: (s: { submission: CheckoutSubmission; lastCustomerEmail: string | null }) => unknown,
+  ) => selector({ submission: mockSubmission, lastCustomerEmail: mockEmail }),
 }));
 
 const order: RequestedOrder = {
@@ -27,6 +30,8 @@ const order: RequestedOrder = {
   paymentStatus: 'pending',
   total: 259,
 };
+
+const oxxoOrder: RequestedOrder = { ...order, paymentMethod: 'oxxo' };
 
 const guestResult: RequestOrdersResult = {
   message: 'Pedidos solicitados.',
@@ -44,6 +49,7 @@ describe('ConfirmationScreen — checkout M3.3', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSubmission = { status: 'success', error: null, result: guestResult };
+    mockEmail = 'ada@example.com';
   });
 
   it('muestra el purchase_number y los pedidos creados', () => {
@@ -72,5 +78,27 @@ describe('ConfirmationScreen — checkout M3.3', () => {
 
     expect(screen.getByTestId('confirmation-empty')).toBeTruthy();
     expect(screen.queryByTestId('confirmation-purchase-number')).toBeNull();
+  });
+
+  it('M3.4: pedido OXXO ofrece ver instrucciones y navega con orderNumber/email', () => {
+    mockSubmission = {
+      status: 'success',
+      error: null,
+      result: { ...guestResult, orders: [oxxoOrder] },
+    };
+    render(<ConfirmationScreen />);
+
+    fireEvent.press(screen.getByTestId('confirmation-instructions-ORD-1'));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/checkout/payment-instructions',
+      params: { orderNumber: 'ORD-1', email: 'ada@example.com' },
+    });
+  });
+
+  it('M3.4: pedido sin método manual no ofrece ver instrucciones', () => {
+    render(<ConfirmationScreen />);
+
+    expect(screen.queryByTestId('confirmation-instructions-ORD-1')).toBeNull();
   });
 });

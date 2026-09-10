@@ -106,6 +106,10 @@ export default function RootLayout() {
             <Stack.Screen name="checkout/address" options={{ title: 'Dirección de envío' }} />
             <Stack.Screen name="checkout/review" options={{ title: 'Revisar pedido' }} />
             <Stack.Screen name="checkout/confirmation" options={{ title: 'Pedido confirmado' }} />
+            <Stack.Screen
+              name="checkout/payment-instructions"
+              options={{ title: 'Instrucciones de pago' }}
+            />
           </Stack>
         </View>
       </QueryClientProvider>

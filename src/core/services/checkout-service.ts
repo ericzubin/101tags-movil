@@ -4,6 +4,7 @@ import type {
   CheckoutConfig,
   CheckoutPolicies,
   CouponValidation,
+  PaymentInstructionsResult,
   PostalCodeLookup,
   RequestOrdersPayload,
   RequestOrdersResult,
@@ -48,6 +49,20 @@ export const checkoutService = {
       shippingDiscount: res.shippingDiscount ?? 0,
       eligibleSubtotal: res.eligibleSubtotal ?? 0,
     };
+  },
+
+  /**
+   * Fetch the OXXO/SPEI payment instructions for an order. The backend scopes
+   * the order to the matching `email`, so it is required even for guests.
+   */
+  async getPaymentInstructions(
+    orderNumber: string,
+    email: string,
+  ): Promise<PaymentInstructionsResult> {
+    return httpClient.request<PaymentInstructionsResult>(
+      `/checkout/payment-instructions/${encodeURIComponent(orderNumber)}`,
+      { method: 'GET', query: { email } },
+    );
   },
 
   /**

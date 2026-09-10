@@ -1,8 +1,11 @@
+import * as Clipboard from 'expo-clipboard';
+
 import { HttpError } from '@/core/api/client';
 import type { CartItem } from '@/core/models/cart.model';
 import type {
   CheckoutConfig,
   CouponValidation,
+  PaymentInstructionsResult,
   PostalCodeLookup,
   RequestedOrder,
   RequestOrdersResult,
@@ -18,8 +21,15 @@ jest.mock('@/core/services/checkout-service', () => ({
     lookupPostalCode: jest.fn(),
     validateCoupon: jest.fn(),
     requestOrders: jest.fn(),
+    getPaymentInstructions: jest.fn(),
   },
 }));
+
+jest.mock('expo-clipboard', () => ({
+  setStringAsync: jest.fn(),
+}));
+
+const mockedClipboard = Clipboard as unknown as { setStringAsync: jest.Mock };
 
 const mockedCheckoutService = checkoutService as jest.Mocked<typeof checkoutService>;
 
@@ -503,6 +513,118 @@ describe('checkout-store', () => {
       const s = useCheckoutStore.getState();
       expect(s.idempotencyKey).toBeNull();
       expect(s.submission).toEqual({ status: 'idle', error: null, result: null });
+    });
+  });
+
+  describe('M3.4 — instrucciones de pago OXXO/SPEI', () => {
+    const instructions: PaymentInstructionsResult = {
+      orderNumber: 'ORD-1',
+      paymentStatus: 'pending',
+      paymentMethod: 'oxxo',
+      total: 259,
+      paymentDueAt: '2026-09-14T00:00:00Z',
+      paymentInstructions: {
+        type: 'supplier_manual',
+        method: 'oxxo',
+        reference: '1234567890',
+        barcodeUrl: 'https://cdn.test/barcode.png',
+        amount: 259,
+      },
+      demoMode: false,
+    };
+
+    it('estado inicial: sin instrucciones, idle, sin feedback de copiado', () => {
+      const s = useCheckoutStore.getState();
+      expect(s.paymentInstructions).toBeNull();
+      expect(s.instructionsStatus).toBe('idle');
+      expect(s.copiedLabel).toBeNull();
+      expect(s.clipboardError).toBeNull();
+    });
+
+    it('AC1: fetchPaymentInstructions(orderNumber, email) puebla el store y status ready', async () => {
+      mockedCheckoutService.getPaymentInstructions.mockResolvedValueOnce(instructions);
+
+      await useCheckoutStore.getState().fetchPaymentInstructions('ORD-1', 'ada@example.com');
+
+      expect(mockedCheckoutService.getPaymentInstructions).toHaveBeenCalledWith(
+        'ORD-1',
+        'ada@example.com',
+      );
+      const s = useCheckoutStore.getState();
+      expect(s.paymentInstructions).toEqual(instructions);
+      expect(s.instructionsStatus).toBe('ready');
+      expect(s.instructionsError).toBeNull();
+    });
+
+    it('AC6: error de red deja instructionsStatus error y mensaje', async () => {
+      mockedCheckoutService.getPaymentInstructions.mockRejectedValueOnce(new Error('network down'));
+
+      await useCheckoutStore.getState().fetchPaymentInstructions('ORD-1', 'a@b.com');
+
+      const s = useCheckoutStore.getState();
+      expect(s.instructionsStatus).toBe('error');
+      expect(s.instructionsError).toBe('network down');
+    });
+
+    it('AC4: copyToClipboard usa expo-clipboard con el valor correcto y registra feedback', async () => {
+      mockedClipboard.setStringAsync.mockResolvedValueOnce(true);
+
+      await useCheckoutStore.getState().copyToClipboard('CLABE', '012180000000000000');
+
+      expect(mockedClipboard.setStringAsync).toHaveBeenCalledWith('012180000000000000');
+      const s = useCheckoutStore.getState();
+      expect(s.copiedLabel).toBe('CLABE');
+      expect(s.clipboardError).toBeNull();
+    });
+
+    it('AC4: copyToClipboard hace no-op seguro si el portapapeles no está disponible (web)', async () => {
+      mockedClipboard.setStringAsync.mockResolvedValueOnce(false);
+
+      await useCheckoutStore.getState().copyToClipboard('CLABE', '012180000000000000');
+
+      const s = useCheckoutStore.getState();
+      expect(s.copiedLabel).toBeNull();
+      expect(s.clipboardError).toBeTruthy();
+    });
+
+    it('AC4: copyToClipboard no rompe si setStringAsync rechaza', async () => {
+      mockedClipboard.setStringAsync.mockRejectedValueOnce(new Error('denied'));
+
+      await expect(
+        useCheckoutStore.getState().copyToClipboard('Referencia', '123'),
+      ).resolves.toBeUndefined();
+
+      const s = useCheckoutStore.getState();
+      expect(s.copiedLabel).toBeNull();
+      expect(s.clipboardError).toBeTruthy();
+    });
+
+    it('M3.4: submit guarda el email del cliente para consultar instrucciones', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockResolvedValueOnce(successResult);
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+
+      expect(useCheckoutStore.getState().lastCustomerEmail).toBe('ada@example.com');
+    });
+
+    it('reset() limpia instrucciones, feedback y email del cliente', () => {
+      useCheckoutStore.setState({
+        paymentInstructions: instructions,
+        instructionsStatus: 'ready',
+        copiedLabel: 'CLABE',
+        clipboardError: 'x',
+        lastCustomerEmail: 'ada@example.com',
+      });
+
+      useCheckoutStore.getState().reset();
+
+      const s = useCheckoutStore.getState();
+      expect(s.paymentInstructions).toBeNull();
+      expect(s.instructionsStatus).toBe('idle');
+      expect(s.copiedLabel).toBeNull();
+      expect(s.clipboardError).toBeNull();
+      expect(s.lastCustomerEmail).toBeNull();
     });
   });
 });

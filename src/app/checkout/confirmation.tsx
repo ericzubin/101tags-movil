@@ -7,9 +7,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { formatMXN } from '@/core/utils/format-currency';
 import { useCheckoutStore } from '@/stores/checkout-store';
 
+const MANUAL_PAYMENT_METHODS = new Set(['oxxo', 'spei']);
+
 export default function ConfirmationScreen() {
   const router = useRouter();
   const result = useCheckoutStore((s) => s.submission.result);
+  const lastCustomerEmail = useCheckoutStore((s) => s.lastCustomerEmail);
 
   if (!result) {
     return (
@@ -61,6 +64,21 @@ export default function ConfirmationScreen() {
                 </Text>
               </View>
               <Text className="mt-1 font-brand text-sm text-brand-dark/60">{order.status}</Text>
+
+              {MANUAL_PAYMENT_METHODS.has((order.paymentMethod ?? '').toLowerCase()) ? (
+                <Button
+                  testID={`confirmation-instructions-${order.orderNumber}`}
+                  label="Ver instrucciones de pago"
+                  variant="secondary"
+                  className="mt-brand-3"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/checkout/payment-instructions',
+                      params: { orderNumber: order.orderNumber, email: lastCustomerEmail ?? '' },
+                    })
+                  }
+                />
+              ) : null}
             </View>
           ))}
         </View>

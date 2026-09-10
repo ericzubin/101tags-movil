@@ -64,6 +64,23 @@ export interface PaymentInstructions {
   readonly demo?: boolean;
 }
 
+/**
+ * Response of `GET /checkout/payment-instructions/{orderNumber}?email=`
+ * (after `toCamel`). Mirrors `storefront/src/types/payment.ts`.
+ */
+export interface PaymentInstructionsResult {
+  readonly orderNumber: string;
+  readonly paymentStatus: string;
+  readonly paymentMethod: string | null;
+  readonly total: number;
+  readonly paymentDueAt: string | null;
+  readonly paymentInstructions: PaymentInstructions | null;
+  readonly paymentProofUrl?: string | null;
+  readonly paymentProofSubmittedAt?: string | null;
+  readonly paymentRejectionReason?: string | null;
+  readonly demoMode: boolean;
+}
+
 export interface ShippingAddress {
   street: string;
   city: string;

@@ -2,6 +2,7 @@ import type {
   CheckoutConfig,
   CouponValidation,
   PaymentInstructions,
+  PaymentInstructionsResult,
   PostalCodeLookup,
   ShippingAddress,
 } from '@/core/models/checkout.model';
@@ -139,6 +140,37 @@ describe('checkout.model', () => {
     expect(instructions.dueAt).toBe('2026-09-12T00:00:00Z');
     expect(instructions.amount).toBe(150);
     expect(instructions.demo).toBe(true);
+  });
+
+  it('PaymentInstructionsResult mapea la respuesta snake de payment-instructions (toCamel)', () => {
+    const result = toCamel<PaymentInstructionsResult>({
+      order_number: 'ORD-1',
+      payment_status: 'pending',
+      payment_method: 'spei',
+      total: 480,
+      payment_due_at: '2026-09-15T00:00:00Z',
+      payment_instructions: {
+        type: 'supplier_manual',
+        method: 'spei',
+        clabe: '012180000000000000',
+        recipient_name: 'Tags SA de CV',
+        due_at: '2026-09-15T00:00:00Z',
+        amount: 480,
+      },
+      payment_proof_url: null,
+      payment_proof_submitted_at: null,
+      payment_rejection_reason: null,
+      demo_mode: true,
+    });
+
+    expect(result.orderNumber).toBe('ORD-1');
+    expect(result.paymentStatus).toBe('pending');
+    expect(result.paymentMethod).toBe('spei');
+    expect(result.paymentDueAt).toBe('2026-09-15T00:00:00Z');
+    expect(result.paymentInstructions?.clabe).toBe('012180000000000000');
+    expect(result.paymentInstructions?.recipientName).toBe('Tags SA de CV');
+    expect(result.paymentInstructions?.dueAt).toBe('2026-09-15T00:00:00Z');
+    expect(result.demoMode).toBe(true);
   });
 
   it('ShippingAddress y constantes del checkout', () => {

@@ -1,3 +1,4 @@
+import * as Clipboard from 'expo-clipboard';
 import { create } from 'zustand';
 
 import { HttpError } from '@/core/api/client';
@@ -11,6 +12,7 @@ import type {
   CheckoutOrderItem,
   CheckoutPolicies,
   CouponValidation,
+  PaymentInstructionsResult,
   PaymentMethod,
   PostalSettlement,
   RequestOrdersPayload,
@@ -22,6 +24,10 @@ import { CHECKOUT_SEGMENT, EMPTY_SHIPPING_ADDRESS, SHIPPING_COST } from '@/core/
 export type CheckoutStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export type CheckoutSubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
+
+export type PaymentInstructionsStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+const CLIPBOARD_ERROR = 'No pudimos copiar automáticamente. Selecciona el dato manualmente.';
 
 /** Customer data captured on the review screen (prefilled for auth, editable for guest). */
 export interface CheckoutCustomer {
@@ -51,6 +57,12 @@ export interface CheckoutState {
   idempotencyKey: string | null;
   idempotencyFingerprint: string | null;
   submission: CheckoutSubmission;
+  paymentInstructions: PaymentInstructionsResult | null;
+  instructionsStatus: PaymentInstructionsStatus;
+  instructionsError: string | null;
+  copiedLabel: string | null;
+  clipboardError: string | null;
+  lastCustomerEmail: string | null;
   fetchConfig: () => Promise<void>;
   fetchPolicies: () => Promise<void>;
   setAddressField: (field: AddressField, value: string) => Promise<void>;
@@ -60,6 +72,8 @@ export interface CheckoutState {
   clearCoupon: () => void;
   ensureIdempotencyKey: (fingerprint: string) => string;
   submit: (customer: CheckoutCustomer) => Promise<RequestOrdersResult | null>;
+  fetchPaymentInstructions: (orderNumber: string, email: string) => Promise<void>;
+  copyToClipboard: (label: string, value: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -142,6 +156,12 @@ function initialState() {
     idempotencyKey: null,
     idempotencyFingerprint: null,
     submission: { status: 'idle', error: null, result: null } as CheckoutSubmission,
+    paymentInstructions: null,
+    instructionsStatus: 'idle' as PaymentInstructionsStatus,
+    instructionsError: null,
+    copiedLabel: null,
+    clipboardError: null,
+    lastCustomerEmail: null,
   };
 }
 
@@ -309,6 +329,9 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       const result = await checkoutService.requestOrders(payload, idempotencyKey);
       set({
         submission: { status: 'success', error: null, result },
+        // Kept in memory so the confirmation screen can deep-link to the
+        // OXXO/SPEI instructions without asking the email again.
+        lastCustomerEmail: email,
         // Terminal success → a future checkout must use a fresh key.
         idempotencyKey: null,
         idempotencyFingerprint: null,
@@ -340,6 +363,35 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         },
       });
       return null;
+    }
+  },
+
+  fetchPaymentInstructions: async (orderNumber, email) => {
+    set({ instructionsStatus: 'loading', instructionsError: null });
+    try {
+      const paymentInstructions = await checkoutService.getPaymentInstructions(orderNumber, email);
+      set({ paymentInstructions, instructionsStatus: 'ready', instructionsError: null });
+    } catch (err) {
+      set({
+        instructionsStatus: 'error',
+        instructionsError: toErrorMessage(
+          err,
+          'No pudimos cargar las instrucciones de pago. Intenta de nuevo.',
+        ),
+      });
+    }
+  },
+
+  copyToClipboard: async (label, value) => {
+    try {
+      const copied = await Clipboard.setStringAsync(value);
+      if (copied === false) {
+        set({ copiedLabel: null, clipboardError: CLIPBOARD_ERROR });
+        return;
+      }
+      set({ copiedLabel: label, clipboardError: null });
+    } catch {
+      set({ copiedLabel: null, clipboardError: CLIPBOARD_ERROR });
     }
   },
 

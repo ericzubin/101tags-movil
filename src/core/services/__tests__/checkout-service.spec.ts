@@ -196,4 +196,39 @@ describe('checkoutService', () => {
     const [, options] = mockedHttpClient.request.mock.calls[0];
     expect(options?.headers).toBeUndefined();
   });
+
+  it('AC1 M3.4: getPaymentInstructions(orderNumber, email) llama GET con ?email=', async () => {
+    const response = {
+      orderNumber: 'ORD-1',
+      paymentStatus: 'pending',
+      paymentMethod: 'oxxo',
+      total: 259,
+      paymentDueAt: '2026-09-14T00:00:00Z',
+      paymentInstructions: {
+        type: 'supplier_manual',
+        method: 'oxxo',
+        reference: '1234567890',
+        amount: 259,
+      },
+      demoMode: false,
+    };
+    mockedHttpClient.request.mockResolvedValueOnce(response);
+
+    const result = await checkoutService.getPaymentInstructions('ORD-1', 'ada@example.com');
+
+    const [path, options] = mockedHttpClient.request.mock.calls[0];
+    expect(path).toBe('/checkout/payment-instructions/ORD-1');
+    expect(options?.method).toBe('GET');
+    expect(options?.query).toEqual({ email: 'ada@example.com' });
+    expect(result).toEqual(response);
+  });
+
+  it('AC1 M3.4: getPaymentInstructions codifica el orderNumber en la ruta', async () => {
+    mockedHttpClient.request.mockResolvedValueOnce({});
+
+    await checkoutService.getPaymentInstructions('ORD/1 2', 'a@b.com');
+
+    const [path] = mockedHttpClient.request.mock.calls[0];
+    expect(path).toBe('/checkout/payment-instructions/ORD%2F1%202');
+  });
 });
