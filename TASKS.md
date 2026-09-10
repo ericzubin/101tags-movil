@@ -214,13 +214,13 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M2.5 — UX transversal del catálogo
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** M2.1–M2.4
-**Status:** 🚧 IN PROGRESS (Wave 3; issue #16) — ver `.spec/2026-09-11-m2-5-ux.md`
+**Status:** ✅ DONE (PR #76; issue #16) — ver `.spec/2026-09-11-m2-5-ux.md`
 
 **Aceptación**
-- [ ] Estados loading/error/offline/empty son coherentes.
-- [ ] Imágenes usan resolver centralizado de media URL.
-- [ ] Controles críticos tienen labels/roles accesibles.
-- [ ] No hay errores visibles de layout en tamaños móviles objetivo.
+- [x] Estados loading/error/offline/empty son coherentes.
+- [x] Imágenes usan resolver centralizado de media URL.
+- [x] Controles críticos tienen labels/roles accesibles.
+- [x] No hay errores visibles de layout en tamaños móviles objetivo.
 
 ---
 
