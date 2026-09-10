@@ -34,9 +34,3 @@ export const chatKeys = {
   conversations: () => ['chat', 'conversations'] as const,
   conversation: (orderNumber: string) => ['chat', 'conversation', orderNumber] as const,
 };
-
-export const chatKeys = {
-  all: ['chat'] as const,
-  conversations: () => ['chat', 'conversations'] as const,
-  conversation: (orderNumber: string) => ['chat', 'conversation', orderNumber] as const,
-};

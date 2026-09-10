@@ -13,6 +13,7 @@ import type {
   ChatAttachmentAsset,
   ChatMessage,
   ConversationDetail,
+  SentAttachmentMessage,
   SentChatMessage,
 } from '@/core/models/chat.model';
 import type { SendAttachmentOptions } from '@/core/services/chat-service';
@@ -53,7 +54,25 @@ function toConfirmedMessage(message: SentChatMessage): ChatMessage {
     createdAt: message.createdAt,
     type: message.type,
     metadata: message.metadata,
-    attachments: message.attachment ? [message.attachment] : [],
+    attachments: [],
+  };
+}
+
+/**
+ * `storeAttachment` omits `sender_role` / `metadata` in its 201 response. The
+ * uploader is always the authenticated viewer, so we fill those locally.
+ */
+function toConfirmedAttachmentMessage(message: SentAttachmentMessage): ChatMessage {
+  return {
+    id: message.id,
+    body: message.body,
+    senderRole: 'customer',
+    senderName: 'Tú',
+    isMine: true,
+    createdAt: message.createdAt,
+    type: message.type,
+    metadata: null,
+    attachments: [message.attachment],
   };
 }
 
@@ -266,7 +285,7 @@ export function useConversationPolling(orderNumber?: string): ConversationPollin
           isSending: false,
           messages: mergeMessages(
             prev.messages.filter((m) => m.id !== optimisticId),
-            [toConfirmedMessage(response.data)],
+            [toConfirmedAttachmentMessage(response.data)],
           ),
         }));
         return true;

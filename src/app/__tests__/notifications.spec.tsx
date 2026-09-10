@@ -110,14 +110,38 @@ describe('NotificationsScreen — notificaciones in-app (M5.3)', () => {
     expect(screen.queryByTestId('notification-unread-2')).toBeNull();
   });
 
-  it('AC6: tocar con link marca leída y navega al link', () => {
-    mockState.notifications = [makeNotification({ id: 1, link: '/orders/ORD-0001' })];
+  it('AC6: tocar con link web de pedido marca leída y navega al detalle', () => {
+    mockState.notifications = [makeNotification({ id: 1, link: '/cuenta?pedido=ORD-0001' })];
 
     render(<NotificationsScreen />);
     fireEvent.press(screen.getByTestId('notification-item-1'));
 
     expect(mockMarkRead).toHaveBeenCalledWith(1);
     expect(mockPush).toHaveBeenCalledWith('/orders/ORD-0001');
+  });
+
+  it('AC6 (#28): tocar con link de chat navega a la conversación', () => {
+    mockState.notifications = [
+      makeNotification({ id: 2, link: '/cuenta?pedido=ORD-0001&chat=1' }),
+    ];
+
+    render(<NotificationsScreen />);
+    fireEvent.press(screen.getByTestId('notification-item-2'));
+
+    expect(mockMarkRead).toHaveBeenCalledWith(2);
+    expect(mockPush).toHaveBeenCalledWith('/chat/ORD-0001');
+  });
+
+  it('AC6 (#28): un link de proveedor marca leída pero no navega', () => {
+    mockState.notifications = [
+      makeNotification({ id: 4, link: '/proveedores/pedidos?estado=nuevo' }),
+    ];
+
+    render(<NotificationsScreen />);
+    fireEvent.press(screen.getByTestId('notification-item-4'));
+
+    expect(mockMarkRead).toHaveBeenCalledWith(4);
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('AC6: tocar sin link solo marca leída, no navega', () => {

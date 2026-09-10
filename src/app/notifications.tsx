@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { authGuard } from '@/core/navigation/guards';
+import { resolveNotificationLink } from '@/core/utils/notification-link';
 import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
 import { useNotificationStore } from '@/stores/notification-store';
 import { brandColors } from '@/theme/tokens';
@@ -104,7 +105,8 @@ export default function NotificationsScreen() {
 
   const handlePress = (notification: AppNotification) => {
     void markRead(notification.id);
-    if (notification.link) router.push(notification.link);
+    const href = resolveNotificationLink(notification.link);
+    if (href) router.push(href);
   };
 
   if (!isHydrated) return null;

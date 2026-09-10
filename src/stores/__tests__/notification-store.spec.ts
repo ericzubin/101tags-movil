@@ -1,5 +1,6 @@
 import type { AppNotification, NotificationsResponse } from '@/core/models/notification.model';
 import { notificationService } from '@/core/services/notification-service';
+import { runSessionResets } from '@/core/session/reset';
 import { useNotificationStore } from '@/stores/notification-store';
 
 jest.mock('@/core/services/notification-service', () => ({
@@ -196,5 +197,81 @@ describe('notification-store', () => {
     expect(s.unreadCount).toBe(2);
     expect(s.status).toBe('error');
     expect(s.error).toBe('fail');
+  });
+
+  it('T2: reset() vuelve al estado inicial (lista, unread, status, error)', () => {
+    useNotificationStore.setState({
+      notifications: [makeNotification()],
+      unreadCount: 1,
+      status: 'error',
+      error: 'boom',
+    });
+
+    useNotificationStore.getState().reset();
+
+    const s = useNotificationStore.getState();
+    expect(s.notifications).toEqual([]);
+    expect(s.unreadCount).toBe(0);
+    expect(s.status).toBe('idle');
+    expect(s.error).toBeNull();
+  });
+
+  it('T2: runSessionResets() limpia las notificaciones al cerrar sesión', async () => {
+    useNotificationStore.setState({
+      notifications: [makeNotification({ id: 1 }), makeNotification({ id: 2 })],
+      unreadCount: 2,
+      status: 'idle',
+      error: null,
+    });
+
+    await runSessionResets();
+
+    const s = useNotificationStore.getState();
+    expect(s.notifications).toEqual([]);
+    expect(s.unreadCount).toBe(0);
+    expect(s.status).toBe('idle');
+    expect(s.error).toBeNull();
+  });
+
+  it('T3: un rollback obsoleto no revierte una mutación más reciente', async () => {
+    useNotificationStore.setState({
+      notifications: [makeNotification({ id: 1 }), makeNotification({ id: 2 })],
+      unreadCount: 2,
+    });
+
+    let rejectFirst!: (err: Error) => void;
+    let resolveSecond!: (value: { message: string }) => void;
+    mockedNotificationService.markRead
+      .mockReturnValueOnce(
+        new Promise<{ message: string }>((_, reject) => {
+          rejectFirst = reject;
+        }),
+      )
+      .mockReturnValueOnce(
+        new Promise<{ message: string }>((resolve) => {
+          resolveSecond = resolve;
+        }),
+      );
+
+    const first = useNotificationStore.getState().markRead(1);
+    const second = useNotificationStore.getState().markRead(2);
+
+    rejectFirst(new Error('HTTP 500'));
+    await first;
+
+    // The stale (non-latest) failure must keep the newer optimistic change.
+    let s = useNotificationStore.getState();
+    expect(s.notifications.find((n) => n.id === 1)?.read).toBe(true);
+    expect(s.notifications.find((n) => n.id === 2)?.read).toBe(true);
+    expect(s.unreadCount).toBe(0);
+    expect(s.status).not.toBe('error');
+
+    resolveSecond({ message: 'ok' });
+    await second;
+
+    s = useNotificationStore.getState();
+    expect(s.notifications.every((n) => n.read)).toBe(true);
+    expect(s.unreadCount).toBe(0);
+    expect(s.status).toBe('idle');
   });
 });

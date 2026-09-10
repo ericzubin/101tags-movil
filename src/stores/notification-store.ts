@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { registerSessionReset } from '@/core/session/reset';
 import { notificationService } from '@/core/services/notification-service';
 
 import type { AppNotification } from '@/core/models/notification.model';
@@ -14,12 +15,20 @@ export interface NotificationState {
   fetchNotifications: () => Promise<void>;
   markRead: (id: number) => Promise<void>;
   markAllRead: () => Promise<void>;
+  reset: () => void;
 }
 
 function toErrorMessage(err: unknown): string {
   if (err instanceof Error && err.message) return err.message;
   return 'No pudimos actualizar las notificaciones.';
 }
+
+/**
+ * Monotonic sequence for optimistic mutations. A failing mutation rolls back
+ * only when it is still the most recent one; a slower stale failure must not
+ * undo a newer mutation that already succeeded.
+ */
+let notificationMutationSeq = 0;
 
 /**
  * Notifications store — single source of truth for the in-app notification list
@@ -52,6 +61,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     const target = previous.find((notification) => notification.id === id);
     if (!target || target.read) return;
 
+    const seq = ++notificationMutationSeq;
     set({
       notifications: previous.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification,
@@ -64,6 +74,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       await notificationService.markRead(id);
       set({ status: 'idle', error: null });
     } catch (err) {
+      // A newer mutation already superseded this one: keep its optimistic state.
+      if (seq !== notificationMutationSeq) return;
       set({
         notifications: previous,
         unreadCount: previousUnread,
@@ -78,6 +90,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     const previousUnread = get().unreadCount;
     if (previousUnread === 0) return;
 
+    const seq = ++notificationMutationSeq;
     set({
       notifications: previous.map((notification) => ({ ...notification, read: true })),
       unreadCount: 0,
@@ -88,6 +101,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       await notificationService.markAllRead();
       set({ status: 'idle', error: null });
     } catch (err) {
+      // A newer mutation already superseded this one: keep its optimistic state.
+      if (seq !== notificationMutationSeq) return;
       set({
         notifications: previous,
         unreadCount: previousUnread,
@@ -96,4 +111,15 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       });
     }
   },
+
+  reset: () => {
+    notificationMutationSeq += 1;
+    set({ notifications: [], unreadCount: 0, status: 'idle', error: null });
+  },
 }));
+
+/**
+ * Session-scoped state must not leak between accounts: signing out (or in as a
+ * different user) wipes the notification list and badge.
+ */
+registerSessionReset(() => useNotificationStore.getState().reset());

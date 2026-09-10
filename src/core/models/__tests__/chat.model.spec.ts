@@ -13,6 +13,7 @@ import {
   type ChatMessage,
   type Conversation,
   type ConversationDetail,
+  type SendAttachmentResponse,
 } from '@/core/models/chat.model';
 import { toCamel } from '@/core/utils/snake-camel';
 
@@ -252,5 +253,42 @@ describe('chat.model — adjuntos (M5.2)', () => {
     expect(canSendPaymentProof('card', 'pending')).toBe(false);
     expect(canSendPaymentProof(null, 'pending')).toBe(false);
     expect(canSendPaymentProof('supplier_oxxo', null)).toBe(false);
+  });
+
+  it('#27: storeAttachment data mapea el shape real (sin sender_role/metadata)', () => {
+    const raw = {
+      message: 'Archivo enviado',
+      data: {
+        id: 12,
+        type: 'proof_of_payment',
+        body: 'Comprobante de pago',
+        attachment: {
+          id: 5,
+          original_name: 'comprobante.pdf',
+          mime_type: 'application/pdf',
+          size: 4096,
+          download_url: 'https://tags.test/private/5',
+        },
+        created_at: '2026-09-11T10:05:00Z',
+      },
+    };
+
+    const response = toCamel<SendAttachmentResponse>(raw);
+
+    expect(response.data).toEqual({
+      id: 12,
+      type: 'proof_of_payment',
+      body: 'Comprobante de pago',
+      attachment: {
+        id: 5,
+        originalName: 'comprobante.pdf',
+        mimeType: 'application/pdf',
+        size: 4096,
+        downloadUrl: 'https://tags.test/private/5',
+      },
+      createdAt: '2026-09-11T10:05:00Z',
+    });
+    expect(response.data).not.toHaveProperty('senderRole');
+    expect(response.data).not.toHaveProperty('metadata');
   });
 });

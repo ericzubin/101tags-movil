@@ -158,8 +158,6 @@ export interface SentChatMessage {
   readonly type: string;
   readonly metadata: Record<string, unknown> | null;
   readonly createdAt: ISODateString;
-  /** Present only on `storeAttachment` responses (M5.2). */
-  readonly attachment?: ChatAttachment;
 }
 
 export interface SendMessageResponse {
@@ -167,8 +165,26 @@ export interface SendMessageResponse {
   readonly data: SentChatMessage;
 }
 
+/**
+ * `OrderMessageController::storeAttachment` 201 `data` block.
+ *
+ * Unlike `store`, the backend omits `sender_role` and `metadata` here and
+ * returns the created `attachment` inline. The client fills `senderRole` /
+ * `isMine` locally when building the optimistic-confirmed message.
+ */
+export interface SentAttachmentMessage {
+  readonly id: number;
+  readonly type: string;
+  readonly body: string;
+  readonly attachment: ChatAttachment;
+  readonly createdAt: ISODateString;
+}
+
 /** `POST /orders/{orderNumber}/messages/attachments` 201 `{ message, data }`. */
-export type SendAttachmentResponse = SendMessageResponse;
+export interface SendAttachmentResponse {
+  readonly message: string;
+  readonly data: SentAttachmentMessage;
+}
 
 /**
  * Client-side UX guard (AC4). The backend remains the authority

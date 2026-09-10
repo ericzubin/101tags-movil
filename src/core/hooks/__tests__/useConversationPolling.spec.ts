@@ -323,9 +323,7 @@ describe('useConversationPolling (M5.1)', () => {
         data: {
           id: 12,
           body: 'Archivo adjunto.',
-          senderRole: 'customer',
           type: 'text',
-          metadata: null,
           createdAt: '2026-09-11T10:05:00Z',
           attachment: {
             id: 5,
@@ -369,6 +367,10 @@ describe('useConversationPolling (M5.1)', () => {
       expect(result.current.messages).toHaveLength(1);
       expect(result.current.messages[0].id).toBe(12);
       expect(result.current.messages[0].pending).toBeFalsy();
+      // The backend omits sender_role/metadata for attachments; the client fills
+      // them so the bubble renders as the viewer's own message.
+      expect(result.current.messages[0].senderRole).toBe('customer');
+      expect(result.current.messages[0].metadata).toBeNull();
       expect(result.current.messages[0].attachments[0].downloadUrl).toBe(
         'https://tags.test/private/5',
       );
