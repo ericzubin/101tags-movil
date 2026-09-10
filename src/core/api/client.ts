@@ -1,12 +1,4 @@
-/**
- * HTTP client wrapper.
- *
- * Inyecta el bearer token Sanctum desde el auth store. Maneja timeout y errores tipados.
- * NO loggear tokens, passwords, ni datos sensibles. Ver AGENTS.md §Seguridad.
- */
-
 import { getApiBaseUrl, getApiTimeoutMs } from '@/constants/env';
-import type { AuthTokenProvider } from '@/stores/auth-store';
 
 export class HttpError extends Error {
   constructor(
@@ -35,61 +27,62 @@ export interface HttpClient {
   put<T = unknown>(path: string, body?: unknown, options?: Omit<HttpRequestOptions, 'method'>): Promise<T>;
   patch<T = unknown>(path: string, body?: unknown, options?: Omit<HttpRequestOptions, 'method'>): Promise<T>;
   delete<T = unknown>(path: string, options?: Omit<HttpRequestOptions, 'method' | 'body'>): Promise<T>;
+  setAuthTokenProvider(provider: () => string | null | Promise<string | null>): void;
+  setOnUnauthorized(handler: () => void | Promise<void>): void;
 }
 
-export function createHttpClient(getToken: AuthTokenProvider): HttpClient {
+type TokenProvider = () => string | null | Promise<string | null>;
+
+type ClientConfig = {
+  getToken?: TokenProvider;
+  onUnauthorized?: () => void | Promise<void>;
+};
+
+export function createHttpClient(getToken: TokenProvider = () => null, config: ClientConfig = {}): HttpClient {
+  let authTokenProvider = config.getToken ?? getToken;
+  let onUnauthorized = config.onUnauthorized ?? null;
+
   async function request<T>(path: string, options: HttpRequestOptions = {}): Promise<T> {
     const { method = 'GET', body, query, headers = {}, signal } = options;
-    const token = getToken();
+    const token = await authTokenProvider();
     const url = new URL(path.startsWith('http') ? path : `${getApiBaseUrl()}${path}`);
 
     if (query) {
-      for (const [k, v] of Object.entries(query)) {
-        if (v !== undefined) url.searchParams.set(k, String(v));
+      for (const [key, value] of Object.entries(query)) {
+        if (value !== undefined) url.searchParams.set(key, String(value));
       }
     }
 
     const controller = signal ? null : new AbortController();
-    const timeoutId = controller
-      ? setTimeout(() => controller.abort(), getApiTimeoutMs())
-      : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), getApiTimeoutMs()) : null;
+    const finalHeaders: Record<string, string> = { Accept: 'application/json', ...headers };
 
-    const finalHeaders: Record<string, string> = {
-      Accept: 'application/json',
-      ...headers,
-    };
-    if (body !== undefined && !(body instanceof FormData)) {
-      finalHeaders['Content-Type'] = 'application/json';
-    }
-    if (token) {
-      finalHeaders['Authorization'] = `Bearer ${token}`;
-    }
+    if (body !== undefined && !(body instanceof FormData)) finalHeaders['Content-Type'] = 'application/json';
+    if (token) finalHeaders.Authorization = `Bearer ${token}`;
 
     try {
-      const res = await fetch(url.toString(), {
+      const response = await fetch(url.toString(), {
         method,
         headers: finalHeaders,
         body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
         signal: signal ?? controller?.signal,
       });
 
-      if (timeoutId) clearTimeout(timeoutId);
-
-      const text = await res.text();
+      const text = await response.text();
       const parsed = text ? safeJsonParse(text) : null;
-
-      if (!res.ok) {
-        throw new HttpError(res.status, res.statusText, parsed, `HTTP ${res.status} ${res.statusText}`);
+      if (!response.ok) {
+        const error = new HttpError(response.status, response.statusText, parsed, `HTTP ${response.status} ${response.statusText}`);
+        if (response.status === 401 && onUnauthorized) await onUnauthorized();
+        throw error;
       }
-
       return parsed as T;
     } catch (err) {
       if (timeoutId) clearTimeout(timeoutId);
       if (err instanceof HttpError) throw err;
-      if (err instanceof Error && err.name === 'AbortError') {
-        throw new HttpError(0, 'Timeout', null, 'Request timeout');
-      }
+      if (err instanceof Error && err.name === 'AbortError') throw new HttpError(0, 'Timeout', null, 'Request timeout');
       throw err;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 
@@ -100,8 +93,16 @@ export function createHttpClient(getToken: AuthTokenProvider): HttpClient {
     put: (path, body, opts) => request(path, { ...opts, method: 'PUT', body }),
     patch: (path, body, opts) => request(path, { ...opts, method: 'PATCH', body }),
     delete: (path, opts) => request(path, { ...opts, method: 'DELETE' }),
+    setAuthTokenProvider: (provider) => {
+      authTokenProvider = provider;
+    },
+    setOnUnauthorized: (handler) => {
+      onUnauthorized = handler;
+    },
   };
 }
+
+export const httpClient = createHttpClient();
 
 function safeJsonParse(text: string): unknown {
   try {
