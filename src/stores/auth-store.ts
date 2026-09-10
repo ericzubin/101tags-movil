@@ -58,20 +58,48 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, token: null, isHydrated: true });
   },
 
+  /**
+   * Hydrate the session from secure storage on app boot.
+   *
+   * Flow:
+   *   1. Read the stored token. If absent → return false (guest boot).
+   *   2. Seed Zustand with `{ token: storedToken, user: null,
+   *      isHydrated: false, isLoading: true }` so the httpClient provider
+   *      can attach `Authorization: Bearer <token>` to the next request
+   *      (the /me call made by authService.hydrate()).
+   *   3. Call authService.hydrate(). On 200 we have a valid user; persist
+   *      the user back into storage and return true.
+   *   4. On HttpError(401) or HttpError(422) (token definitively invalid)
+   *      → clear stored credentials and return false.
+   *   5. On any other error (network status 0, 5xx, timeout, non-HttpError)
+   *      → keep stored token intact (transient failure) and return false.
+   *
+   * During step 2 the user is null while the token is set; this is a
+   * valid intermediate state. isAuthenticated() requires BOTH token AND
+   * user to be truthy, so guards correctly treat this as "not
+   * authenticated" and the user remains gated in /(auth) until /me
+   * confirms the session.
+   *
+   * @returns true if a valid session was restored, false otherwise.
+   */
   hydrate: async (): Promise<boolean> => {
     set({ isLoading: true });
     try {
-      const restored = await authService.hydrate();
-      if (restored) {
-        const [token, user] = await Promise.all([
-          authService.getStoredToken(),
-          authService.getStoredUser(),
-        ]);
-        set({ token, user, isHydrated: true, isLoading: false });
-      } else {
-        set({ token: null, user: null, isHydrated: true, isLoading: false });
+      const storedToken = await authService.getStoredToken();
+
+      if (storedToken) {
+        set({ token: storedToken, user: null, isHydrated: false, isLoading: true });
       }
-      return restored;
+
+      const restored = await authService.hydrate();
+
+      if (restored) {
+        const user = await authService.getStoredUser();
+        set({ token: storedToken, user, isHydrated: true, isLoading: false });
+        return true;
+      }
+      set({ token: null, user: null, isHydrated: true, isLoading: false });
+      return false;
     } catch {
       set({ token: null, user: null, isHydrated: true, isLoading: false });
       return false;
