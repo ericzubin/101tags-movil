@@ -94,4 +94,14 @@ describe('AccountTab — placeholder + logout (M1.10 AC6, AC7)', () => {
 
     expect(mockPushRouter).toHaveBeenCalledWith('/returns');
   });
+
+  it('M5.1: muestra "Mensajes" y navega a /chat', () => {
+    render(<AccountTab />);
+
+    expect(screen.getByText('Mensajes')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('account-chat'));
+
+    expect(mockPushRouter).toHaveBeenCalledWith('/chat');
+  });
 });

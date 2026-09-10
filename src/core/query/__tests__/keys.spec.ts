@@ -1,4 +1,4 @@
-import { catalogKeys, homeKeys, orderKeys } from '@/core/query/keys';
+import { catalogKeys, chatKeys, homeKeys, orderKeys } from '@/core/query/keys';
 
 describe('query keys factory', () => {
   describe('homeKeys', () => {
@@ -70,6 +70,23 @@ describe('query keys factory', () => {
       expect(orderKeys.returns(1)).not.toEqual(orderKeys.returns(2));
       expect(orderKeys.returns(null)).toEqual(['orders', 'returns', 'anonymous']);
       expect(orderKeys.returns(1)[0]).toBe(orderKeys.all[0]);
+    });
+  });
+
+  describe('chatKeys (M5.1)', () => {
+    it('chatKeys.conversations() es una key estable bajo el namespace chat', () => {
+      expect(chatKeys.conversations()).toEqual(['chat', 'conversations']);
+      expect(chatKeys.all).toEqual(['chat']);
+    });
+
+    it('chatKeys.conversation(orderNumber) incluye el número y difiere entre pedidos', () => {
+      expect(chatKeys.conversation('ORD-1')).toEqual(['chat', 'conversation', 'ORD-1']);
+      expect(chatKeys.conversation('ORD-1')).not.toEqual(chatKeys.conversation('ORD-2'));
+    });
+
+    it('chatKeys.all es prefijo de conversations y conversation (árbol invalidable)', () => {
+      expect(chatKeys.conversations()[0]).toBe(chatKeys.all[0]);
+      expect(chatKeys.conversation('ORD-1')[0]).toBe(chatKeys.all[0]);
     });
   });
 

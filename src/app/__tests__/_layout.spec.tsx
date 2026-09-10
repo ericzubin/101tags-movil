@@ -184,4 +184,12 @@ describe('RootLayout — rutas registradas (M3.4 / M3.5)', () => {
   it('M4.2: registra returns/index en el root stack', () => {
     expect(layoutSource).toContain('name="returns/index"');
   });
+
+  it('M5.1: registra chat/index en el root stack', () => {
+    expect(layoutSource).toContain('name="chat/index"');
+  });
+
+  it('M5.1: registra chat/[orderNumber] en el root stack', () => {
+    expect(layoutSource).toContain('name="chat/[orderNumber]"');
+  });
 });
