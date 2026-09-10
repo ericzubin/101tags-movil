@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import React from 'react';
+import { Dimensions } from 'react-native';
 
 import { HeroCarousel } from '@/components/home/HeroCarousel';
 import type { HomeContentItem } from '@/core/models/home-content.model';
@@ -76,5 +77,38 @@ describe('HeroCarousel (M2.1 AC3)', () => {
     fireEvent.press(screen.getByTestId('hero-item-7'));
 
     expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it('AC4: un banner sin ruta interna expone accessibilityState.disabled=true', () => {
+    render(<HeroCarousel items={[makeItem({ id: 8, link: 'https://example.com/promo' })]} />);
+
+    expect(screen.getByTestId('hero-item-8').props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('AC4: un banner con ruta interna no queda deshabilitado', () => {
+    render(<HeroCarousel items={[makeItem({ id: 9, link: '/product/camisa-x' })]} />);
+
+    expect(screen.getByTestId('hero-item-9').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('AC5: reacciona al ancho de ventana (useWindowDimensions)', () => {
+    const original = Dimensions.get('window');
+    render(<HeroCarousel items={[makeItem({ id: 10, link: '/product/camisa-x' })]} />);
+
+    expect(screen.getByTestId('hero-item-10').props.style.width).toBe(original.width);
+
+    act(() => {
+      Dimensions.set({
+        window: { width: 500, height: 800, scale: 1, fontScale: 1 },
+        screen: { width: 500, height: 800, scale: 1, fontScale: 1 },
+      });
+    });
+
+    expect(screen.getByTestId('hero-item-10').props.style.width).toBe(500);
+    expect(screen.getByTestId('expo-image').props.style.width).toBe(500);
+
+    act(() => {
+      Dimensions.set({ window: original, screen: original });
+    });
   });
 });

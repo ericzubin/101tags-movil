@@ -37,4 +37,12 @@ describe('SortChips (M2.3 AC14)', () => {
     expect(screen.getByTestId('mi-sort')).toBeTruthy();
     expect(screen.getByTestId('sort-price_asc').props.accessibilityState.selected).toBe(true);
   });
+
+  it('AC2: cada chip expone accessibilityLabel no vacío', () => {
+    render(<SortChips value="newest" onChange={jest.fn()} />);
+
+    expect(screen.getByTestId('sort-newest').props.accessibilityLabel).toBe('Recientes');
+    expect(screen.getByTestId('sort-price_asc').props.accessibilityLabel).toBe('Precio ↑');
+    expect(screen.getByTestId('sort-price_desc').props.accessibilityLabel).toBe('Precio ↓');
+  });
 });

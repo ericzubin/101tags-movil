@@ -235,6 +235,7 @@ export function FiltersSheet({
               <Text className="font-brand text-sm text-brand-dark">Solo con stock</Text>
               <Switch
                 testID="filter-in-stock"
+                accessibilityLabel="Solo con stock"
                 value={draft.inStock ?? false}
                 onValueChange={(next) => setDraft((d) => ({ ...d, inStock: next }))}
                 trackColor={{ true: brandColors.primary, false: brandColors.medium }}
@@ -244,6 +245,7 @@ export function FiltersSheet({
               <Text className="font-brand text-sm text-brand-dark">En oferta</Text>
               <Switch
                 testID="filter-on-sale"
+                accessibilityLabel="En oferta"
                 value={draft.onSale ?? false}
                 onValueChange={(next) => setDraft((d) => ({ ...d, onSale: next }))}
                 trackColor={{ true: brandColors.primary, false: brandColors.medium }}

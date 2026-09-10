@@ -1,4 +1,4 @@
-import { Dimensions, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 
 import { Image } from '@/components/ui/Image';
 import type { HomeContentItem } from '@/core/models/home-content.model';
@@ -12,7 +12,8 @@ export interface CategoryGridProps {
 }
 
 export function CategoryGrid({ items, onSelect, testID }: CategoryGridProps) {
-  const tileWidth = Math.floor(Dimensions.get('window').width / 2) - 16;
+  const { width } = useWindowDimensions();
+  const tileWidth = Math.floor(width / 2) - 16;
 
   if (items.length === 0) return null;
 

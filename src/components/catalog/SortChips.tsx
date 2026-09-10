@@ -24,6 +24,7 @@ export function SortChips({ value, onChange, testID }: SortChipsProps) {
             key={option.key}
             testID={`sort-${option.key}`}
             accessibilityRole="button"
+            accessibilityLabel={option.label}
             accessibilityState={{ selected }}
             onPress={() => onChange(option.key)}
             className={`mr-brand-2 rounded-brand-pill px-brand-3 py-brand-1 active:opacity-80 ${

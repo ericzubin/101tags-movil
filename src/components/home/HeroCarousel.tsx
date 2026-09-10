@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Dimensions, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 
 import { Image } from '@/components/ui/Image';
@@ -22,7 +22,7 @@ export interface HeroCarouselProps {
 
 export function HeroCarousel({ items, testID }: HeroCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const width = Dimensions.get('window').width;
+  const { width } = useWindowDimensions();
 
   if (items.length === 0) return null;
 
@@ -47,6 +47,7 @@ export function HeroCarousel({ items, testID }: HeroCarouselProps) {
               testID={`hero-item-${item.id}`}
               accessibilityRole="button"
               accessibilityLabel={item.title ?? item.alt ?? 'Promoción'}
+              accessibilityState={{ disabled: !route }}
               disabled={!route}
               onPress={() => {
                 if (route) router.push(route);

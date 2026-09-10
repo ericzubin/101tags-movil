@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
+import { Dimensions } from 'react-native';
 
 import { CategoryGrid } from '@/components/home/CategoryGrid';
 import type { HomeContentItem } from '@/core/models/home-content.model';
@@ -74,5 +75,39 @@ describe('CategoryGrid (M2.1 AC4)', () => {
     render(<CategoryGrid items={[]} onSelect={jest.fn()} />);
 
     expect(screen.queryByTestId('category-grid')).toBeNull();
+  });
+
+  it('AC5: reacciona a cambios de ancho de ventana (useWindowDimensions)', () => {
+    const original = Dimensions.get('window');
+    render(
+      <CategoryGrid
+        items={[
+          makeItem({
+            id: 31,
+            title: 'Ropa',
+            category: { id: 3, slug: 'ropa', name: 'Ropa' },
+          }),
+        ]}
+        onSelect={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('category-tile-ropa')).toBeTruthy();
+    expect(screen.getByTestId('expo-image').props.style.width).toBe(
+      Math.floor(original.width / 2) - 16,
+    );
+
+    act(() => {
+      Dimensions.set({
+        window: { width: 400, height: 800, scale: 1, fontScale: 1 },
+        screen: { width: 400, height: 800, scale: 1, fontScale: 1 },
+      });
+    });
+
+    expect(screen.getByTestId('expo-image').props.style.width).toBe(184);
+
+    act(() => {
+      Dimensions.set({ window: original, screen: original });
+    });
   });
 });
