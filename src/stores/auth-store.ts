@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { runSessionResets } from '@/core/session/reset';
 import { authService } from '@/core/services/auth-service';
 import type { AuthSession, CustomerUser, RegisterRequest } from '@/core/models/auth';
 
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (__DEV__) console.warn('[auth-store] clearPersistedSession failed', err);
     }
     set({ user: null, token: null, isHydrated: true });
+    await runSessionResets();
   },
 
   /**

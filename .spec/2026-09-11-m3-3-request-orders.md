@@ -1,4 +1,4 @@
-# Spec: M3.3-request-orders — Idempotencia y guest checkout (#19)
+# Spec: M3.3-request-orders — Idempotencia y checkout autenticado (#19)
 
 **Status**: APPROVED · **Spec ID**: 2026-09-11-m3-3-request-orders
 **Issue**: #19 · **Branch**: `feat/f3` · **Depends**: M3.2
@@ -7,11 +7,11 @@
 
 ## Objetivo
 
-Crear pedidos con `POST /checkout/request-orders` garantizando **idempotencia** (sin duplicados por reintento/timeout) y soportando **auth y guest**.
+Crear pedidos con `POST /checkout/request-orders` garantizando **idempotencia** (sin duplicados por reintento/timeout). La app **exige sesión autenticada**: no hay guest checkout.
 
 ## Contratos
 
-`POST /checkout/request-orders` (auth **opcional**; `guest` permitido)
+`POST /checkout/request-orders` (auth **requerida**, bearer Sanctum)
 - Header `Idempotency-Key` opcional, regex `^[A-Za-z0-9._:-]{8,100}$`.
 - Body: `{ segment:'basicos', items:[{variant_id,quantity}], customer_name, customer_email, customer_phone?, coupon_code?, shipping_address:{street,city,state,zip,neighborhood?}, house_payment_method?, source_id?, device_session_id? }`.
 - `201` → `{ message, purchase_number, access_token, idempotent_replay?, orders:[{order_number, supplier_id, status, payment_status, payment_mode?, payment_method?, payment_instructions?, total}], house_payment? }`.
@@ -24,10 +24,10 @@ Crear pedidos con `POST /checkout/request-orders` garantizando **idempotencia** 
 - Helper local `generateIdempotencyKey()` (sin dependencia): string estable `[A-Za-z0-9._:-]{8,100}` (p. ej. `ck_<epoch>_<rand36>`), longitud ≤100.
 - Reintento por timeout usa la **misma** key → backend responde `idempotent_replay:true` sin duplicar.
 
-## Auth vs guest
+## Sesión
 
-- Auth: usa el flujo normal (bearer). Guarda `purchase_number` + `orders` en el store.
-- Guest (sin token): mismo endpoint; guarda `access_token` para consulta/claim posterior. No requiere login para continuar.
+- Checkout autenticado con bearer token. Guarda `purchase_number` + `orders` en el store.
+- El backend sigue devolviendo `access_token` en el contrato; el móvil no lo reclama ni lo muestra (sin guest).
 
 ## Arquitectura
 
@@ -46,7 +46,7 @@ Crear pedidos con `POST /checkout/request-orders` garantizando **idempotencia** 
 - **AC2**: dos submits seguidos con el mismo carrito → **misma** key (no se regenera).
 - **AC3**: timeout → reintento con la **misma** key (el store no genera otra).
 - **AC4**: cambio de carrito/email/cupón → **nueva** key.
-- **AC5**: guest sin token → submit exitoso guarda `access_token`.
+- **AC5**: usuario autenticado → submit exitoso guarda `purchase_number`/`orders` (sin claim de guest).
 - **AC6**: `422`/`409`/`429`/`5xx` → estado de error con acción de recuperación segura (sin crear pedido local).
 
 ## Definition of Done

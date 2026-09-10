@@ -177,6 +177,26 @@ describe('cart-store', () => {
     expect(useCartStore.getState().items).toEqual([updated]);
   });
 
+  it('carrera: la respuesta de un updateItem viejo no pisa al más reciente', async () => {
+    useCartStore.setState({ items: [makeItem({ quantity: 1, lineTotal: 80 })] });
+    const firstResponse = deferred<CartResponse>();
+    const secondResponse = deferred<CartResponse>();
+    mockedCartService.updateItem
+      .mockReturnValueOnce(firstResponse.promise)
+      .mockReturnValueOnce(secondResponse.promise);
+
+    const first = useCartStore.getState().updateItem(5, 3);
+    const second = useCartStore.getState().updateItem(5, 5);
+
+    secondResponse.resolve({ items: [makeItem({ quantity: 5, lineTotal: 400 })] });
+    await second;
+
+    firstResponse.resolve({ items: [makeItem({ quantity: 3, lineTotal: 240 })] });
+    await first;
+
+    expect(useCartStore.getState().items[0].quantity).toBe(5);
+  });
+
   it('AC3: removeItem llama al service y refleja la respuesta', async () => {
     useCartStore.setState({ items: [makeItem()] });
     mockedCartService.removeItem.mockResolvedValueOnce({ items: [] });

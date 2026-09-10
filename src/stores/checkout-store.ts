@@ -95,6 +95,7 @@ export interface CheckoutState {
   coupon: CouponValidation | null;
   couponCode: string | null;
   couponMessage: string | null;
+  couponCartFingerprint: string | null;
   fieldErrors: AddressFieldErrors;
   status: CheckoutStatus;
   error: string | null;
@@ -204,6 +205,19 @@ function digitsOnly(value: string): string {
   return value.replace(/\D/g, '');
 }
 
+/**
+ * Stable signature of the cart contents a coupon was validated against. Used to
+ * detect that the cart changed after applying a coupon so a stale discount is
+ * never submitted (#18). Sorting by `variantId` keeps it order-independent.
+ */
+export function cartSignature(items: { variantId: number; quantity: number }[]): string {
+  return JSON.stringify(
+    items
+      .map((item) => [item.variantId, item.quantity] as [number, number])
+      .sort((a, b) => a[0] - b[0]),
+  );
+}
+
 function initialState() {
   return {
     config: null,
@@ -213,6 +227,7 @@ function initialState() {
     coupon: null,
     couponCode: null,
     couponMessage: null,
+    couponCartFingerprint: null,
     fieldErrors: {} as AddressFieldErrors,
     status: 'idle' as CheckoutStatus,
     error: null,
@@ -274,6 +289,8 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
 
     try {
       const lookup = await checkoutService.lookupPostalCode(cp);
+      // A slower response must not overwrite a newer postal code (#18).
+      if (digitsOnly(get().address.zip) !== cp) return;
       set((state) => ({
         address: {
           ...state.address,
@@ -283,6 +300,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         settlements: lookup.settlements,
       }));
     } catch {
+      if (digitsOnly(get().address.zip) !== cp) return;
       set((state) => ({
         settlements: [],
         fieldErrors: { ...state.fieldErrors, zip: POSTAL_NOT_FOUND },
@@ -313,9 +331,11 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
     const trimmed = code.trim();
     if (!trimmed) return;
 
-    const items = useCartStore
-      .getState()
-      .items.map((item) => ({ variant_id: item.variantId, quantity: item.quantity }));
+    const cartItems = useCartStore.getState().items;
+    const items = cartItems.map((item) => ({
+      variant_id: item.variantId,
+      quantity: item.quantity,
+    }));
 
     try {
       const result = await checkoutService.validateCoupon({
@@ -326,20 +346,32 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       });
 
       if (result.valid) {
-        set({ coupon: result, couponCode: trimmed, couponMessage: result.message });
+        set({
+          coupon: result,
+          couponCode: trimmed,
+          couponMessage: result.message,
+          couponCartFingerprint: cartSignature(cartItems),
+        });
       } else {
-        set({ coupon: null, couponCode: null, couponMessage: result.message });
+        set({
+          coupon: null,
+          couponCode: null,
+          couponMessage: result.message,
+          couponCartFingerprint: null,
+        });
       }
     } catch (err) {
       set({
         coupon: null,
         couponCode: null,
         couponMessage: toErrorMessage(err, 'No pudimos validar el cupón. Intenta de nuevo.'),
+        couponCartFingerprint: null,
       });
     }
   },
 
-  clearCoupon: () => set({ coupon: null, couponCode: null, couponMessage: null }),
+  clearCoupon: () =>
+    set({ coupon: null, couponCode: null, couponMessage: null, couponCartFingerprint: null }),
 
   ensureIdempotencyKey: (fingerprint) => {
     const { idempotencyKey, idempotencyFingerprint } = get();
@@ -351,15 +383,31 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
   },
 
   submit: async (customer) => {
-    const items = useCartStore
-      .getState()
-      .items.map((item) => ({ variant_id: item.variantId, quantity: item.quantity }));
+    if (get().submission.status === 'submitting') return null;
+
+    const cartItems = useCartStore.getState().items;
+    const items = cartItems.map((item) => ({
+      variant_id: item.variantId,
+      quantity: item.quantity,
+    }));
 
     if (items.length === 0) {
       set({
         submission: { status: 'error', error: 'Tu carrito está vacío.', result: null },
       });
       return null;
+    }
+
+    // Drop a coupon whose cart no longer matches the one it was validated
+    // against; a stale fingerprint must not be submitted (#18).
+    const fingerprintBefore = get().couponCartFingerprint;
+    if (get().coupon && fingerprintBefore && fingerprintBefore !== cartSignature(cartItems)) {
+      set({
+        coupon: null,
+        couponCode: null,
+        couponMessage: null,
+        couponCartFingerprint: null,
+      });
     }
 
     const name = customer.name.trim();
@@ -447,6 +495,8 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
   },
 
   submitProof: async (orderNumber, email, asset) => {
+    if (get().proof.status === 'submitting') return false;
+
     const validationError = paymentProofAssetError(asset);
     if (validationError) {
       set({ proof: { status: 'error', error: validationError, url: null } });
@@ -492,3 +542,21 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
 
   reset: () => set({ ...initialState() }),
 }));
+
+/**
+ * Clear a coupon as soon as the cart it was validated against changes (#18).
+ * Only runs when there is an applied coupon, so it cannot loop: it mutates the
+ * checkout store, never the cart store it is subscribed to.
+ */
+useCartStore.subscribe((state) => {
+  const { coupon, couponCartFingerprint } = useCheckoutStore.getState();
+  if (!coupon || !couponCartFingerprint) return;
+  if (cartSignature(state.items) === couponCartFingerprint) return;
+
+  useCheckoutStore.setState({
+    coupon: null,
+    couponCode: null,
+    couponMessage: null,
+    couponCartFingerprint: null,
+  });
+});

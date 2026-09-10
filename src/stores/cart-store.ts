@@ -43,17 +43,27 @@ function withQuantity(item: CartItem, quantity: number): CartItem {
   return { ...item, quantity, lineTotal: round(item.price * quantity) };
 }
 
+/**
+ * Monotonic sequence for cart mutations/fetches. A response is only applied
+ * when it still belongs to the latest operation, so a slow request cannot
+ * clobber the state produced by a newer one (#18).
+ */
+let cartMutationSeq = 0;
+
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   status: 'idle',
   error: null,
 
   fetchCart: async () => {
+    const seq = ++cartMutationSeq;
     set({ status: 'loading', error: null });
     try {
       const { items } = await cartService.getCart();
+      if (seq !== cartMutationSeq) return;
       set({ items, status: 'idle', error: null });
     } catch (err) {
+      if (seq !== cartMutationSeq) return;
       set({ status: 'error', error: toErrorMessage(err) });
     }
   },
@@ -72,6 +82,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       return;
     }
 
+    const seq = ++cartMutationSeq;
     const previous = get().items;
     const nextQuantity = Math.min(existing.quantity + quantity, existing.stock);
     set({
@@ -83,13 +94,16 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     try {
       const { items } = await cartService.updateItem(variantId, nextQuantity);
+      if (seq !== cartMutationSeq) return;
       set({ items, status: 'idle', error: null });
     } catch (err) {
+      if (seq !== cartMutationSeq) return;
       set({ items: previous, status: 'error', error: toErrorMessage(err) });
     }
   },
 
   updateItem: async (variantId, quantity) => {
+    const seq = ++cartMutationSeq;
     const previous = get().items;
     const optimistic =
       quantity <= 0
@@ -101,8 +115,10 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     try {
       const { items } = await cartService.updateItem(variantId, quantity);
+      if (seq !== cartMutationSeq) return;
       set({ items, status: 'idle', error: null });
     } catch (err) {
+      if (seq !== cartMutationSeq) return;
       set({ items: previous, status: 'error', error: toErrorMessage(err) });
     }
   },

@@ -12,7 +12,7 @@ import type {
 } from '@/core/models/checkout.model';
 import { checkoutService } from '@/core/services/checkout-service';
 import { useCartStore } from '@/stores/cart-store';
-import { paymentProofAssetError, useCheckoutStore } from '@/stores/checkout-store';
+import { cartSignature, paymentProofAssetError, useCheckoutStore } from '@/stores/checkout-store';
 
 jest.mock('@/core/services/checkout-service', () => ({
   checkoutService: {
@@ -91,6 +91,16 @@ function makeItem(overrides: Partial<CartItem> = {}): CartItem {
     lineTotal: 160,
     ...overrides,
   };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
 }
 
 describe('checkout-store', () => {
@@ -188,6 +198,34 @@ describe('checkout-store', () => {
     expect(s.fieldErrors.zip).toBeTruthy();
   });
 
+  it('descarta el lookup de un CP viejo cuando la respuesta llega después (carrera)', async () => {
+    const slow = deferred<PostalCodeLookup>();
+    const fast = deferred<PostalCodeLookup>();
+    mockedCheckoutService.lookupPostalCode
+      .mockReturnValueOnce(slow.promise)
+      .mockReturnValueOnce(fast.promise);
+
+    const first = useCheckoutStore.getState().setAddressField('zip', '06600');
+    const second = useCheckoutStore.getState().setAddressField('zip', '99999');
+
+    fast.resolve({
+      ...lookup,
+      postalCode: '99999',
+      state: 'Último Estado',
+      city: 'Última Ciudad',
+      settlements: [],
+    });
+    await second;
+
+    slow.resolve({ ...lookup, state: 'Ciudad de México', city: 'Ciudad de México' });
+    await first;
+
+    const s = useCheckoutStore.getState();
+    expect(s.address.zip).toBe('99999');
+    expect(s.address.state).toBe('Último Estado');
+    expect(s.address.city).toBe('Última Ciudad');
+  });
+
   it('setAddress hace merge parcial (selección de colonia)', () => {
     useCheckoutStore.getState().setAddress({ neighborhood: 'Juárez' });
 
@@ -282,6 +320,53 @@ describe('checkout-store', () => {
     const s = useCheckoutStore.getState();
     expect(s.coupon).toBeNull();
     expect(s.couponMessage).toBeNull();
+  });
+
+  describe('cupón ligado al carrito (#18)', () => {
+    it('limpia el cupón cuando cambia el carrito', async () => {
+      useCartStore.setState({ items: [makeItem({ variantId: 5, quantity: 2 })] });
+      mockedCheckoutService.validateCoupon.mockResolvedValueOnce(validCoupon);
+
+      await useCheckoutStore.getState().applyCoupon('TAGS50');
+      expect(useCheckoutStore.getState().coupon).toEqual(validCoupon);
+
+      useCartStore.setState({ items: [makeItem({ variantId: 6, quantity: 1 })] });
+
+      const s = useCheckoutStore.getState();
+      expect(s.coupon).toBeNull();
+      expect(s.couponCode).toBeNull();
+      expect(s.couponCartFingerprint).toBeNull();
+    });
+
+    it('conserva el cupón cuando el carrito no cambia', async () => {
+      useCartStore.setState({ items: [makeItem({ variantId: 5, quantity: 2 })] });
+      mockedCheckoutService.validateCoupon.mockResolvedValueOnce(validCoupon);
+
+      await useCheckoutStore.getState().applyCoupon('TAGS50');
+
+      const s = useCheckoutStore.getState();
+      expect(s.coupon).toEqual(validCoupon);
+      expect(s.couponCartFingerprint).toBe(cartSignature([{ variantId: 5, quantity: 2 }]));
+    });
+
+    it('submit no manda coupon_code si el cupón quedó obsoleto', async () => {
+      useCartStore.setState({ items: [makeItem({ variantId: 5, quantity: 2 })] });
+      useCheckoutStore.setState({
+        coupon: validCoupon,
+        couponCode: 'TAGS50',
+        couponMessage: 'Cupón aplicado.',
+        couponCartFingerprint: cartSignature([{ variantId: 999, quantity: 1 }]),
+      });
+      mockedCheckoutService.requestOrders.mockResolvedValueOnce(successResult);
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+
+      const [payload] = mockedCheckoutService.requestOrders.mock.calls[0];
+      expect(payload.coupon_code).toBeUndefined();
+      const s = useCheckoutStore.getState();
+      expect(s.coupon).toBeNull();
+      expect(s.couponCode).toBeNull();
+    });
   });
 
   it('reset() vuelve al estado inicial', () => {
@@ -682,6 +767,26 @@ describe('checkout-store', () => {
         'ada@example.com',
       );
       expect(s.paymentInstructions?.paymentStatus).toBe('proof_submitted');
+    });
+
+    it('doble submitProof concurrente sólo sube el comprobante una vez (#21)', async () => {
+      const d = deferred<typeof proofResponse>();
+      mockedCheckoutService.uploadPaymentProof.mockReturnValueOnce(d.promise);
+      mockedCheckoutService.getPaymentInstructions.mockResolvedValueOnce(refreshed);
+
+      const first = useCheckoutStore
+        .getState()
+        .submitProof('ORD-1', 'ada@example.com', asset);
+      const second = useCheckoutStore
+        .getState()
+        .submitProof('ORD-1', 'ada@example.com', asset);
+
+      d.resolve(proofResponse);
+      const [firstResult, secondResult] = await Promise.all([first, second]);
+
+      expect(firstResult).toBe(true);
+      expect(secondResult).toBe(false);
+      expect(mockedCheckoutService.uploadPaymentProof).toHaveBeenCalledTimes(1);
     });
 
     it('AC2: archivo >8 MB no llama al service y expone error inline', async () => {

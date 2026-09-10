@@ -59,7 +59,15 @@
           }
         }
       ],
-      "expo-image"
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a 101tags acceder a tus fotos para adjuntar el comprobante de tu pago.",
+          "cameraPermission": "Permite a 101tags usar la cámara para tomar la foto del comprobante de tu pago.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

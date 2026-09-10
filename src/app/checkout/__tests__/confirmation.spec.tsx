@@ -33,22 +33,17 @@ const order: RequestedOrder = {
 
 const oxxoOrder: RequestedOrder = { ...order, paymentMethod: 'oxxo' };
 
-const guestResult: RequestOrdersResult = {
+const successResult: RequestOrdersResult = {
   message: 'Pedidos solicitados.',
   purchaseNumber: 'PUR-1',
-  accessToken: 'guest-token-123',
-  orders: [order],
-};
-
-const authResult: RequestOrdersResult = {
-  ...guestResult,
   accessToken: null,
+  orders: [order],
 };
 
 describe('ConfirmationScreen — checkout M3.3', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSubmission = { status: 'success', error: null, result: guestResult };
+    mockSubmission = { status: 'success', error: null, result: successResult };
     mockEmail = 'ada@example.com';
   });
 
@@ -59,14 +54,7 @@ describe('ConfirmationScreen — checkout M3.3', () => {
     expect(screen.getByTestId('confirmation-order-ORD-1')).toBeTruthy();
   });
 
-  it('AC5: guest muestra el aviso del token de acceso', () => {
-    render(<ConfirmationScreen />);
-
-    expect(screen.getByTestId('confirmation-access-token-notice')).toBeTruthy();
-  });
-
-  it('usuario autenticado no muestra el aviso de token de acceso', () => {
-    mockSubmission = { status: 'success', error: null, result: authResult };
+  it('no muestra el aviso de token de acceso (checkout autenticado, sin guest)', () => {
     render(<ConfirmationScreen />);
 
     expect(screen.queryByTestId('confirmation-access-token-notice')).toBeNull();
@@ -84,7 +72,7 @@ describe('ConfirmationScreen — checkout M3.3', () => {
     mockSubmission = {
       status: 'success',
       error: null,
-      result: { ...guestResult, orders: [oxxoOrder] },
+      result: { ...successResult, orders: [oxxoOrder] },
     };
     render(<ConfirmationScreen />);
 

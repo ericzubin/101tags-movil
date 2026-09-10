@@ -83,18 +83,6 @@ export default function ConfirmationScreen() {
           ))}
         </View>
 
-        {result.accessToken ? (
-          <View
-            testID="confirmation-access-token-notice"
-            className="mb-brand-4 rounded-brand-lg border border-brand-warning/40 bg-brand-white p-brand-4"
-          >
-            <Text className="font-brand text-sm text-brand-dark">
-              Guardamos un enlace de acceso a tu compra. Consérvalo para consultar el estado de tus
-              pedidos como invitado.
-            </Text>
-          </View>
-        ) : null}
-
         <Button
           testID="confirmation-continue"
           label="Seguir comprando"
