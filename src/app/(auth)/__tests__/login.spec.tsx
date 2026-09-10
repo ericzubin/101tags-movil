@@ -186,7 +186,7 @@ describe('LoginScreen — happy path (AC12)', () => {
     mockReplace.mockReset();
   });
 
-  it('navigates to /\\(tabs\\) and never sets the busy state on success', async () => {
+  it('navigates to /\(tabs\) and never sets the busy state on success', async () => {
     mockLogin.mockResolvedValueOnce(undefined);
 
     render(<LoginScreen />);
@@ -198,5 +198,20 @@ describe('LoginScreen — happy path (AC12)', () => {
       expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
     });
     expect(screen.queryByTestId('login-form-error')).toBeNull();
+  });
+});
+
+describe('LoginScreen — recuperación de contraseña (M1.9 AC9)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPush.mockReset();
+  });
+
+  it('renderiza link "¿Olvidaste tu contraseña?" que navega a /\\(auth\\)/forgot-password (AC9)', () => {
+    render(<LoginScreen />);
+    const link = screen.getByTestId('login-forgot-link');
+    expect(link).toBeTruthy();
+    fireEvent.press(link);
+    expect(mockPush).toHaveBeenCalledWith('/(auth)/forgot-password');
   });
 });

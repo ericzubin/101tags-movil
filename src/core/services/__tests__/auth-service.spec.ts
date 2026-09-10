@@ -158,6 +158,21 @@ describe('AuthService', () => {
     });
   });
 
+  describe('forgotPassword (M1.9 AC10)', () => {
+    it('posts to /auth/customer/forgot-password with body {email}', async () => {
+      mockedHttpClient.post.mockResolvedValueOnce({
+        message: 'Si el correo está registrado, recibirás instrucciones...',
+      });
+
+      const response = await authService.forgotPassword('user@x.com');
+
+      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/customer/forgot-password', {
+        email: 'user@x.com',
+      });
+      expect(response.message).toMatch(/Si el correo está registrado/);
+    });
+  });
+
   describe('refresh (AC4 — removed)', () => {
     it('refresh method does not exist on authService', () => {
       expect((authService as unknown as Record<string, unknown>).refresh).toBeUndefined();

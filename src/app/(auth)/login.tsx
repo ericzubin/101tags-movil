@@ -163,6 +163,18 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable
+          onPress={() => router.push('/(auth)/forgot-password')}
+          className="items-center mt-brand-4"
+          disabled={isSubmitting}
+          accessibilityRole="link"
+          accessibilityLabel="Recuperar contraseña"
+          accessibilityHint="Abre la pantalla para enviarte un enlace de recuperación"
+          testID="login-forgot-link"
+        >
+          <Text className="text-brand-primary text-sm">¿Olvidaste tu contraseña?</Text>
+        </Pressable>
+
+        <Pressable
           onPress={() => router.push('/(auth)/register')}
           className="items-center mt-brand-4"
           disabled={isSubmitting}
