@@ -60,4 +60,14 @@ describe('auth models', () => {
       expect(err.code).toBe(code);
     }
   });
+
+  it('AuthError JSON.stringify never contains a bearer token (AC9)', () => {
+    const secret = 'bearer-token-should-never-leak';
+    const err = new AuthError('INVALID_CREDENTIALS', 'Invalid credentials', 401, {
+      email: ['invalid'],
+    });
+    const serialized = JSON.stringify(err);
+    expect(serialized).not.toContain(secret);
+    expect(serialized).toContain('INVALID_CREDENTIALS');
+  });
 });

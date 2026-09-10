@@ -1,5 +1,25 @@
 import { getApiBaseUrl, getApiTimeoutMs } from '@/constants/env';
 
+/**
+ * Endpoints that must NOT carry an `Authorization` header.
+ *
+ * Sanctum rejects `Authorization` on public auth endpoints when the token
+ * is invalid/expired. Sending it anyway wastes a round-trip and produces
+ * confusing 401s for credentials the server never asked for.
+ *
+ * Order matters only when two patterns could match the same path; today's
+ * set is disjoint so order is irrelevant.
+ *
+ * @see .spec/2026-09-09-m1-2-session-restore-guards.md §Bearer injection scope
+ */
+export const PUBLIC_PATH_PATTERNS: readonly RegExp[] = [
+  /^\/api\/auth\/(login|register|refresh)$/,
+];
+
+export function isPublicPath(path: string): boolean {
+  return PUBLIC_PATH_PATTERNS.some((re) => re.test(path));
+}
+
 export class HttpError extends Error {
   constructor(
     public readonly status: number,
@@ -58,7 +78,8 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
     const finalHeaders: Record<string, string> = { Accept: 'application/json', ...headers };
 
     if (body !== undefined && !(body instanceof FormData)) finalHeaders['Content-Type'] = 'application/json';
-    if (token) finalHeaders.Authorization = `Bearer ${token}`;
+    const authHeader = getAuthHeader(path, token);
+    if (authHeader) finalHeaders.Authorization = authHeader;
 
     try {
       const response = await fetch(url.toString(), {
@@ -103,6 +124,12 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
 }
 
 export const httpClient = createHttpClient();
+
+function getAuthHeader(path: string, token: string | null): string | null {
+  if (!token) return null;
+  if (isPublicPath(path)) return null;
+  return `Bearer ${token}`;
+}
 
 function safeJsonParse(text: string): unknown {
   try {

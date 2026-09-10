@@ -241,4 +241,54 @@ describe('AuthService', () => {
       await expect(authService.getStoredUser()).resolves.toBeNull();
     });
   });
+
+  describe('hydrate (boot restore)', () => {
+    it('returns false without calling me() when no token is stored (AC3)', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce(null);
+
+      const restored = await authService.hydrate();
+
+      expect(restored).toBe(false);
+      expect(mockedHttpClient.get).not.toHaveBeenCalled();
+      expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    });
+
+    it('returns true and re-persists session when me() succeeds with stored token (AC1)', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (key: string) =>
+        key === '101tags.auth.token' ? 'stored-tok' : null,
+      );
+      mockedHttpClient.get.mockResolvedValueOnce(baseSession.user);
+
+      const restored = await authService.hydrate();
+
+      expect(restored).toBe(true);
+      expect(mockedHttpClient.get).toHaveBeenCalledWith('/auth/me');
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('101tags.auth.token', 'stored-tok');
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+        '101tags.auth.user',
+        JSON.stringify(baseSession.user),
+      );
+    });
+
+    it('returns false and clears stored credentials when me() fails with 401 (AC2)', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('expired-tok');
+      mockedHttpClient.get.mockRejectedValueOnce(new HttpError(401, 'Unauthorized', null, 'HTTP 401'));
+
+      const restored = await authService.hydrate();
+
+      expect(restored).toBe(false);
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.token');
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.user');
+    });
+
+    it('returns false and clears stored credentials when me() throws a network error', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('any-tok');
+      mockedHttpClient.get.mockRejectedValueOnce(new Error('boom'));
+
+      const restored = await authService.hydrate();
+
+      expect(restored).toBe(false);
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.token');
+    });
+  });
 });

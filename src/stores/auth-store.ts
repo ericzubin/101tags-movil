@@ -12,7 +12,7 @@ export interface AuthState {
   isLoading: boolean;
   setSession: (session: AuthSession) => Promise<void>;
   clearSession: () => Promise<void>;
-  hydrate: () => Promise<void>;
+  hydrate: () => Promise<boolean>;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
@@ -34,10 +34,24 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, token: null, isHydrated: true });
   },
 
-  hydrate: async () => {
+  hydrate: async (): Promise<boolean> => {
     set({ isLoading: true });
-    const [token, user] = await Promise.all([authService.getStoredToken(), authService.getStoredUser()]);
-    set({ token, user, isHydrated: true, isLoading: false });
+    try {
+      const restored = await authService.hydrate();
+      if (restored) {
+        const [token, user] = await Promise.all([
+          authService.getStoredToken(),
+          authService.getStoredUser(),
+        ]);
+        set({ token, user, isHydrated: true, isLoading: false });
+      } else {
+        set({ token: null, user: null, isHydrated: true, isLoading: false });
+      }
+      return restored;
+    } catch {
+      set({ token: null, user: null, isHydrated: true, isLoading: false });
+      return false;
+    }
   },
 
   login: async (email, password) => {
