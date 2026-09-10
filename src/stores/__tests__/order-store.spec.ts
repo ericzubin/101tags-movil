@@ -59,9 +59,11 @@ describe('order-store — devoluciones/cancelaciones (M4.2)', () => {
     expect(state.message).toBe('Pedido cancelado');
     expect(state.error).toBeNull();
 
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders', 'returns'] });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['orders', 'detail', 'ORD-0001'],
+      queryKey: ['orders', 'returns', 'anonymous'],
+    });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['orders', 'detail', 'anonymous', 'ORD-0001'],
     });
   });
 
@@ -182,7 +184,7 @@ describe('order-store — calificación de proveedor (M4.3)', () => {
     expect(useOrderStore.getState().ratingError).toBeNull();
 
     expect(mockSetQueryData).toHaveBeenCalledWith(
-      ['orders', 'detail', 'ORD-0001'],
+      ['orders', 'detail', 'anonymous', 'ORD-0001'],
       expect.any(Function),
     );
     const updater = mockSetQueryData.mock.calls[0][1] as (prev: unknown) => {
@@ -193,8 +195,10 @@ describe('order-store — calificación de proveedor (M4.3)', () => {
     });
     expect(next.supplierRating.hasRated).toBe(true);
 
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders', 'detail', 'ORD-0001'] });
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders', 'list'] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['orders', 'detail', 'anonymous', 'ORD-0001'],
+    });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders', 'list', 'anonymous'] });
   });
 
   it('AC5: 422 se guarda como error con el mensaje del backend (nunca success)', async () => {

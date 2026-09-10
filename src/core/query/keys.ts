@@ -22,7 +22,15 @@ export const catalogKeys = {
 
 export const orderKeys = {
   all: ['orders'] as const,
-  list: () => ['orders', 'list'] as const,
-  detail: (orderNumber: string) => ['orders', 'detail', orderNumber] as const,
-  returns: () => ['orders', 'returns'] as const,
+  list: (userId: string | number | null) => ['orders', 'list', userId ?? 'anonymous'] as const,
+  detail: (userId: string | number | null, orderNumber: string) =>
+    ['orders', 'detail', userId ?? 'anonymous', orderNumber] as const,
+  returns: (userId: string | number | null) =>
+    ['orders', 'returns', userId ?? 'anonymous'] as const,
+};
+
+export const chatKeys = {
+  all: ['chat'] as const,
+  conversations: () => ['chat', 'conversations'] as const,
+  conversation: (orderNumber: string) => ['chat', 'conversation', orderNumber] as const,
 };

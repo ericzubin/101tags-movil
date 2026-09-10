@@ -9,8 +9,6 @@ import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
 import { useOrderStore } from '@/stores/order-store';
 import { brandColors } from '@/theme/tokens';
 
-import type { ReturnType } from '@/core/models/order.model';
-
 const REASON_MAX = 255;
 const DESCRIPTION_MAX = 2000;
 
@@ -18,8 +16,12 @@ const REASON_REQUIRED_ERROR = 'Ingresa el motivo.';
 const REASON_MAX_ERROR = `El motivo no puede exceder ${REASON_MAX} caracteres.`;
 const DESCRIPTION_MAX_ERROR = `La descripción no puede exceder ${DESCRIPTION_MAX} caracteres.`;
 
-function normalizeType(value: string | string[] | undefined): ReturnType {
-  return value === 'cancellation' ? 'cancellation' : 'return';
+type RequestType = 'return' | 'cancellation';
+
+function parseRequestType(value: string | string[] | undefined): RequestType | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === 'return' || raw === 'cancellation') return raw;
+  return null;
 }
 
 function normalizeParam(value: string | string[] | undefined): string {
@@ -31,8 +33,9 @@ export default function RequestReturnScreen() {
   const params = useLocalSearchParams<{ orderNumber?: string; type?: string }>();
 
   const orderNumber = normalizeParam(params.orderNumber);
-  const type = normalizeType(params.type);
+  const type = parseRequestType(params.type);
   const isCancellation = type === 'cancellation';
+  const hasValidLink = orderNumber.length > 0 && type !== null;
 
   const token = useAuthStore((s) => s.token);
   const user = useAuthStore((s) => s.user);
@@ -62,6 +65,29 @@ export default function RequestReturnScreen() {
 
   if (!isHydrated) return null;
   if (guard !== true) return <Redirect href={guard.redirect} />;
+
+  if (!hasValidLink) {
+    return (
+      <>
+        <Stack.Screen options={{ title: 'Enlace inválido' }} />
+        <SafeAreaView className="flex-1 bg-brand-medium" edges={['top', 'left', 'right']}>
+          <View className="flex-1 justify-center p-brand-4" testID="request-invalid">
+            <Text
+              testID="request-invalid-title"
+              className="mb-brand-2 text-[22px] font-brand-bold text-brand-dark"
+            >
+              Enlace inválido
+            </Text>
+            <Text testID="request-invalid-message" className="mb-brand-4 text-base text-brand-dark/80">
+              El enlace de esta solicitud no es válido o está incompleto. Vuelve a tu pedido e
+              intenta de nuevo.
+            </Text>
+            <Button testID="request-invalid-back" label="Volver" onPress={() => router.back()} />
+          </View>
+        </SafeAreaView>
+      </>
+    );
+  }
 
   const onSubmit = () => {
     if (submission.status === 'submitting') return;

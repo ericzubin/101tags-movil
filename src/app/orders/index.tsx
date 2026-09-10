@@ -78,7 +78,7 @@ export default function OrdersScreen() {
   const guard = authGuard({ isAuthenticated: authed, isHydrated });
 
   const query = useInfiniteQuery({
-    queryKey: orderKeys.list(),
+    queryKey: orderKeys.list(user?.id ?? null),
     queryFn: ({ pageParam }) => orderService.getOrders(pageParam),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>

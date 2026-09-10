@@ -74,7 +74,7 @@ export default function ReturnsScreen() {
   const guard = authGuard({ isAuthenticated: authed, isHydrated });
 
   const query = useInfiniteQuery({
-    queryKey: orderKeys.returns(),
+    queryKey: orderKeys.returns(user?.id ?? null),
     queryFn: ({ pageParam }) => orderService.getReturnRequests(pageParam),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>

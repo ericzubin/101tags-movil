@@ -2,8 +2,10 @@ import { create } from 'zustand';
 
 import { HttpError } from '@/core/api/client';
 import { queryClient } from '@/core/query/client';
-import { orderKeys } from '@/core/query/keys';
+import { chatKeys, orderKeys } from '@/core/query/keys';
 import { orderService } from '@/core/services/order-service';
+import { registerSessionReset } from '@/core/session/reset';
+import { useAuthStore } from '@/stores/auth-store';
 
 import type {
   OrderDetail,
@@ -72,10 +74,15 @@ export function returnErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
+function currentUserId(): string | number | null {
+  return useAuthStore.getState().user?.id ?? null;
+}
+
 function invalidateAfterSubmit(orderNumber: string): void {
-  void queryClient.invalidateQueries({ queryKey: orderKeys.returns() });
-  void queryClient.invalidateQueries({ queryKey: orderKeys.list() });
-  void queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderNumber) });
+  const userId = currentUserId();
+  void queryClient.invalidateQueries({ queryKey: orderKeys.returns(userId) });
+  void queryClient.invalidateQueries({ queryKey: orderKeys.list(userId) });
+  void queryClient.invalidateQueries({ queryKey: orderKeys.detail(userId, orderNumber) });
 }
 
 /**
@@ -83,7 +90,8 @@ function invalidateAfterSubmit(orderNumber: string): void {
  * "ya calificado" without waiting for a refetch (AC6).
  */
 function applyRatingToDetail(orderNumber: string, result: SupplierRatingResult): void {
-  queryClient.setQueryData<OrderDetail | undefined>(orderKeys.detail(orderNumber), (prev) => {
+  const userId = currentUserId();
+  queryClient.setQueryData<OrderDetail | undefined>(orderKeys.detail(userId, orderNumber), (prev) => {
     if (!prev) return prev;
     return {
       ...prev,
@@ -93,8 +101,8 @@ function applyRatingToDetail(orderNumber: string, result: SupplierRatingResult):
       },
     };
   });
-  void queryClient.invalidateQueries({ queryKey: orderKeys.list() });
-  void queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderNumber) });
+  void queryClient.invalidateQueries({ queryKey: orderKeys.list(userId) });
+  void queryClient.invalidateQueries({ queryKey: orderKeys.detail(userId, orderNumber) });
 }
 
 /**
@@ -206,3 +214,14 @@ export const useOrderStore = create<OrderReturnsState>((set, get) => ({
   resetRatingSubmission: () =>
     set({ ratingStatus: 'idle', ratingError: null, ratingMessage: null }),
 }));
+
+/**
+ * Wipe every session-scoped query cache on logout so user B never reads user A's
+ * orders/returns/details (TanStack staleTime 30s/gcTime 5m would otherwise serve
+ * them). Registered at import time; executed by `auth-store.clearSession`.
+ */
+registerSessionReset(() => {
+  void queryClient.cancelQueries();
+  queryClient.removeQueries({ queryKey: orderKeys.all });
+  queryClient.removeQueries({ queryKey: chatKeys.all });
+});

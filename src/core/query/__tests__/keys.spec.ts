@@ -45,24 +45,31 @@ describe('query keys factory', () => {
   });
 
   describe('orderKeys', () => {
-    it('orderKeys.list() es una key estable bajo el namespace orders', () => {
-      expect(orderKeys.list()).toEqual(['orders', 'list']);
+    it('orderKeys.list(userId) aísla la key por usuario bajo el namespace orders', () => {
+      expect(orderKeys.list(1)).toEqual(['orders', 'list', 1]);
+      expect(orderKeys.list(2)).toEqual(['orders', 'list', 2]);
+      expect(orderKeys.list(1)).not.toEqual(orderKeys.list(2));
+      expect(orderKeys.list(null)).toEqual(['orders', 'list', 'anonymous']);
       expect(orderKeys.all).toEqual(['orders']);
     });
 
-    it('orderKeys.detail(orderNumber) incluye el número y difiere entre pedidos', () => {
-      expect(orderKeys.detail('ORD-1')).toEqual(['orders', 'detail', 'ORD-1']);
-      expect(orderKeys.detail('ORD-1')).not.toEqual(orderKeys.detail('ORD-2'));
+    it('orderKeys.detail(userId, orderNumber) incluye usuario y número, y difiere entre pedidos', () => {
+      expect(orderKeys.detail(1, 'ORD-1')).toEqual(['orders', 'detail', 1, 'ORD-1']);
+      expect(orderKeys.detail(1, 'ORD-1')).not.toEqual(orderKeys.detail(1, 'ORD-2'));
+      expect(orderKeys.detail(1, 'ORD-1')).not.toEqual(orderKeys.detail(2, 'ORD-1'));
+      expect(orderKeys.detail(null, 'ORD-1')).toEqual(['orders', 'detail', 'anonymous', 'ORD-1']);
     });
 
     it('orderKeys.all es prefijo de list y detail (árbol invalidable)', () => {
-      expect(orderKeys.list()[0]).toBe(orderKeys.all[0]);
-      expect(orderKeys.detail('ORD-1')[0]).toBe(orderKeys.all[0]);
+      expect(orderKeys.list(1)[0]).toBe(orderKeys.all[0]);
+      expect(orderKeys.detail(1, 'ORD-1')[0]).toBe(orderKeys.all[0]);
     });
 
-    it('M4.2: orderKeys.returns() es una key estable bajo el namespace orders', () => {
-      expect(orderKeys.returns()).toEqual(['orders', 'returns']);
-      expect(orderKeys.returns()[0]).toBe(orderKeys.all[0]);
+    it('M4.2: orderKeys.returns(userId) aísla la key por usuario bajo el namespace orders', () => {
+      expect(orderKeys.returns(1)).toEqual(['orders', 'returns', 1]);
+      expect(orderKeys.returns(1)).not.toEqual(orderKeys.returns(2));
+      expect(orderKeys.returns(null)).toEqual(['orders', 'returns', 'anonymous']);
+      expect(orderKeys.returns(1)[0]).toBe(orderKeys.all[0]);
     });
   });
 

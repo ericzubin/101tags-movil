@@ -179,4 +179,51 @@ describe('RequestReturnScreen — devolución/cancelación (M4.2 AC1, AC3, AC4, 
 
     expect(mockRedirect).toHaveBeenCalledWith({ href: '/(auth)/login' });
   });
+
+  it('T2: orderNumber vacío muestra estado inválido y no el formulario', () => {
+    mockParams = { type: 'return' };
+
+    render(<RequestReturnScreen />);
+
+    expect(screen.getByTestId('request-invalid-title').props.children).toBe('Enlace inválido');
+    expect(screen.queryByTestId('request-submit')).toBeNull();
+    expect(mockSubmitReturn).not.toHaveBeenCalled();
+  });
+
+  it('T2: type inválido muestra estado inválido y no el formulario', () => {
+    mockParams = { orderNumber: 'ORD-0001', type: 'bogus' };
+
+    render(<RequestReturnScreen />);
+
+    expect(screen.getByTestId('request-invalid')).toBeTruthy();
+    expect(screen.queryByTestId('request-submit')).toBeNull();
+  });
+
+  it('T2: type ausente muestra estado inválido y no el formulario', () => {
+    mockParams = { orderNumber: 'ORD-0001' };
+
+    render(<RequestReturnScreen />);
+
+    expect(screen.getByTestId('request-invalid')).toBeTruthy();
+    expect(screen.queryByTestId('request-submit')).toBeNull();
+  });
+
+  it('T2: type válido + orderNumber renderiza el formulario', () => {
+    mockParams = { orderNumber: 'ORD-0009', type: 'cancellation' };
+
+    render(<RequestReturnScreen />);
+
+    expect(screen.queryByTestId('request-invalid')).toBeNull();
+    expect(screen.getByTestId('request-submit')).toBeTruthy();
+  });
+
+  it('T2: el authGuard tiene prioridad sobre el enlace inválido', () => {
+    mockIsAuthenticated = false;
+    mockParams = { type: 'return' };
+
+    render(<RequestReturnScreen />);
+
+    expect(mockRedirect).toHaveBeenCalledWith({ href: '/(auth)/login' });
+    expect(screen.queryByTestId('request-invalid')).toBeNull();
+  });
 });

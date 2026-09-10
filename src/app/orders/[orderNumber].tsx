@@ -403,7 +403,7 @@ export default function OrderDetailScreen() {
   const guard = authGuard({ isAuthenticated: authed, isHydrated });
 
   const query = useQuery({
-    queryKey: orderKeys.detail(orderNumber ?? ''),
+    queryKey: orderKeys.detail(user?.id ?? null, orderNumber ?? ''),
     queryFn: () => orderService.getOrder(orderNumber),
     enabled: authed && !!orderNumber,
   });
