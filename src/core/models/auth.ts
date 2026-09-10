@@ -3,9 +3,7 @@ export type CustomerUser = {
   readonly name: string;
   readonly email: string;
   readonly phone?: string | null;
-  readonly email_verified_at?: string | null;
-  readonly created_at?: string;
-  readonly updated_at?: string;
+  readonly role: string;
 };
 
 export type LoginRequest = {
@@ -23,7 +21,7 @@ export type RegisterRequest = {
 };
 
 export type AuthSession = {
-  access_token: string;
+  accessToken: string;
   user: CustomerUser;
   expires_at?: string;
 };
