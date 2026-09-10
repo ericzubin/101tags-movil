@@ -8,6 +8,12 @@ import CartTab from '../cart';
 const mockFetchCart = jest.fn().mockResolvedValue(undefined);
 const mockUpdateItem = jest.fn().mockResolvedValue(undefined);
 const mockRemoveItem = jest.fn().mockResolvedValue(undefined);
+const mockPush = jest.fn();
+
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn() }),
+  router: { push: mockPush, replace: jest.fn(), back: jest.fn() },
+}));
 
 let mockState: {
   items: CartItem[];
@@ -130,5 +136,13 @@ describe('CartTab — pantalla de carrito (M3.1 AC6)', () => {
     expect(screen.getByTestId('cart-item-5')).toBeTruthy();
     expect(screen.getByTestId('cart-item-6')).toBeTruthy();
     expect(screen.getByTestId('cart-total-value').props.children).toBe('$260.00');
+  });
+
+  it('M3.2: "Continuar" navega a /checkout/address', () => {
+    mockState.items = [makeItem()];
+    render(<CartTab />);
+
+    fireEvent.press(screen.getByTestId('cart-continue'));
+    expect(mockPush).toHaveBeenCalledWith('/checkout/address');
   });
 });

@@ -1,8 +1,10 @@
+import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { QuantityStepper } from '@/components/product/QuantityStepper';
+import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -92,6 +94,7 @@ function CartSkeleton() {
 }
 
 export default function CartTab() {
+  const router = useRouter();
   const items = useCartStore((s) => s.items);
   const status = useCartStore((s) => s.status);
   const fetchCart = useCartStore((s) => s.fetchCart);
@@ -162,6 +165,12 @@ export default function CartTab() {
             {formatMXN(totalPrice)}
           </Text>
         </View>
+        <Button
+          testID="cart-continue"
+          label="Continuar"
+          onPress={() => router.push('/checkout/address')}
+          className="mt-brand-3"
+        />
       </View>
     </SafeAreaView>
   );

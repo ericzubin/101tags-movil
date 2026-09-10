@@ -103,6 +103,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="product/[slug]" />
+            <Stack.Screen name="checkout/address" options={{ title: 'Dirección de envío' }} />
           </Stack>
         </View>
       </QueryClientProvider>
