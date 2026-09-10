@@ -59,6 +59,11 @@ describe('query keys factory', () => {
       expect(orderKeys.list()[0]).toBe(orderKeys.all[0]);
       expect(orderKeys.detail('ORD-1')[0]).toBe(orderKeys.all[0]);
     });
+
+    it('M4.2: orderKeys.returns() es una key estable bajo el namespace orders', () => {
+      expect(orderKeys.returns()).toEqual(['orders', 'returns']);
+      expect(orderKeys.returns()[0]).toBe(orderKeys.all[0]);
+    });
   });
 
   it('AC22: homeKeys.all es prefijo de cualquier homeKeys.* (árbol invalidable)', () => {

@@ -81,6 +81,92 @@ export interface OrderDetail extends OrderSummary {
 /** Flat Laravel paginator of `OrderSummary` (see common.model `Paginated<T>`). */
 export type OrderListResponse = Paginated<OrderSummary>;
 
+/* ------------------------------------------------------------------ *
+ * Returns / cancellations (M4.2) — mirror of ReturnRequestController
+ *   GET  /api/return-requests
+ *   POST /api/orders/{orderNumber}/returns
+ *   POST /api/orders/{orderNumber}/cancellations
+ * @see .spec/2026-09-11-m4-2-returns.md §Contratos
+ * ------------------------------------------------------------------ */
+
+/** `ReturnRequest::TYPE_*` — backend emits the raw string. */
+export type ReturnType = 'return' | 'cancellation';
+
+/** `ReturnRequest::STATUS_*` — `(string & {})` keeps unknown statuses renderable. */
+export type ReturnStatus = 'requested' | 'approved' | 'rejected' | 'refunded';
+
+/** `ReturnRequestService::format()` after `toCamel`. */
+export interface ReturnRequest {
+  readonly id: number;
+  readonly folio: string;
+  readonly type: ReturnType;
+  readonly orderNumber: string | null;
+  readonly orderStatus: string | null;
+  readonly reason: string;
+  readonly description: string | null;
+  readonly status: ReturnStatus | string;
+  readonly resolutionNotes: string | null;
+  readonly createdAt: string;
+  readonly resolvedAt: string | null;
+}
+
+/** Flat Laravel paginator of `ReturnRequest`. */
+export type ReturnListResponse = Paginated<ReturnRequest>;
+
+/** Body shared by returns and cancellations (`reason` required, ≤255; `description` ≤2000). */
+export interface ReturnRequestInput {
+  readonly reason: string;
+  readonly description?: string;
+}
+
+/** `POST /orders/{orderNumber}/returns` → `201 { message, data }`. */
+export interface ReturnSubmissionResponse {
+  readonly message: string;
+  readonly data: ReturnRequest;
+}
+
+/** `POST /orders/{orderNumber}/cancellations` → `201 { message, applied, data }`. */
+export interface CancellationSubmissionResponse extends ReturnSubmissionResponse {
+  readonly applied: boolean;
+}
+
+/**
+ * Cancellation is offered for any state except `cancelled`. `shipped`/`delivered`
+ * still reach the backend, which answers 422 and the UI surfaces the message —
+ * the client only hides the action once the order is already cancelled.
+ */
+export function canCancelOrder(status: string | null | undefined): boolean {
+  return status !== 'cancelled';
+}
+
+/**
+ * Returns are rejected by `createReturn` when the order is `cancelled` or
+ * `pending`, so the action is hidden in those states (AC2).
+ */
+export function canReturnOrder(status: string | null | undefined): boolean {
+  return status !== 'cancelled' && status !== 'pending';
+}
+
+const RETURN_TYPE_LABELS: Record<ReturnType, string> = {
+  return: 'Devolución',
+  cancellation: 'Cancelación',
+};
+
+const RETURN_STATUS_LABELS: Record<ReturnStatus, string> = {
+  requested: 'Solicitada',
+  approved: 'Aprobada',
+  rejected: 'Rechazada',
+  refunded: 'Reembolsada',
+};
+
+export function returnTypeLabel(type: string): string {
+  return RETURN_TYPE_LABELS[type as ReturnType] ?? type;
+}
+
+export function returnStatusLabel(status: string): string {
+  return RETURN_STATUS_LABELS[status as ReturnStatus] ?? status;
+}
+
 /**
  * True when the order carries any shippable tracking data. Used by the detail
  * screen to render the tracking block only when it exists (AC4).

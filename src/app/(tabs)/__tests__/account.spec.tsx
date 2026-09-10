@@ -84,4 +84,14 @@ describe('AccountTab — placeholder + logout (M1.10 AC6, AC7)', () => {
 
     expect(mockPushRouter).toHaveBeenCalledWith('/orders');
   });
+
+  it('M4.2: muestra "Mis devoluciones" y navega a /returns', () => {
+    render(<AccountTab />);
+
+    expect(screen.getByText('Mis devoluciones')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('account-returns'));
+
+    expect(mockPushRouter).toHaveBeenCalledWith('/returns');
+  });
 });

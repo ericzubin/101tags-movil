@@ -1,7 +1,12 @@
 import {
+  canCancelOrder,
+  canReturnOrder,
   hasTracking,
+  returnStatusLabel,
+  returnTypeLabel,
   type OrderDetail,
   type OrderSummary,
+  type ReturnRequest,
 } from '@/core/models/order.model';
 import { toCamel } from '@/core/utils/snake-camel';
 
@@ -138,5 +143,78 @@ describe('order.model', () => {
         timeline: [{ key: 'shipped', label: 'Enviado', completed: true, current: true }],
       }),
     ).toBe(true);
+  });
+});
+
+const rawReturn = {
+  id: 7,
+  folio: 'RET-7',
+  type: 'return',
+  order_number: 'ORD-0001',
+  order_status: 'delivered',
+  reason: 'Producto dañado',
+  description: 'Llegó roto',
+  status: 'requested',
+  resolution_notes: null,
+  created_at: '2026-09-11T10:00:00Z',
+  resolved_at: null,
+};
+
+describe('order.model — ReturnRequest (M4.2)', () => {
+  it('ReturnRequest mapea el contrato camelCase de ReturnRequestService::format', () => {
+    const request = toCamel<ReturnRequest>(rawReturn);
+
+    expect(request.id).toBe(7);
+    expect(request.folio).toBe('RET-7');
+    expect(request.type).toBe('return');
+    expect(request.orderNumber).toBe('ORD-0001');
+    expect(request.orderStatus).toBe('delivered');
+    expect(request.reason).toBe('Producto dañado');
+    expect(request.description).toBe('Llegó roto');
+    expect(request.status).toBe('requested');
+    expect(request.resolutionNotes).toBeNull();
+    expect(request.createdAt).toBe('2026-09-11T10:00:00Z');
+    expect(request.resolvedAt).toBeNull();
+  });
+
+  it('ReturnRequest tolera order/description/resolutionNotes nulos', () => {
+    const request = toCamel<ReturnRequest>({
+      ...rawReturn,
+      order_number: null,
+      order_status: null,
+      description: null,
+      resolution_notes: 'Cancelación automática',
+    });
+
+    expect(request.orderNumber).toBeNull();
+    expect(request.orderStatus).toBeNull();
+    expect(request.description).toBeNull();
+    expect(request.resolutionNotes).toBe('Cancelación automática');
+  });
+
+  it('canCancelOrder permite cualquier estado distinto de cancelled', () => {
+    expect(canCancelOrder('paid')).toBe(true);
+    expect(canCancelOrder('pending')).toBe(true);
+    expect(canCancelOrder('shipped')).toBe(true);
+    expect(canCancelOrder('cancelled')).toBe(false);
+    expect(canCancelOrder(null)).toBe(true);
+  });
+
+  it('canReturnOrder oculta la devolución en cancelled y pending', () => {
+    expect(canReturnOrder('paid')).toBe(true);
+    expect(canReturnOrder('shipped')).toBe(true);
+    expect(canReturnOrder('delivered')).toBe(true);
+    expect(canReturnOrder('pending')).toBe(false);
+    expect(canReturnOrder('cancelled')).toBe(false);
+  });
+
+  it('returnTypeLabel y returnStatusLabel traducen y caen al valor crudo', () => {
+    expect(returnTypeLabel('return')).toBe('Devolución');
+    expect(returnTypeLabel('cancellation')).toBe('Cancelación');
+    expect(returnStatusLabel('requested')).toBe('Solicitada');
+    expect(returnStatusLabel('approved')).toBe('Aprobada');
+    expect(returnStatusLabel('rejected')).toBe('Rechazada');
+    expect(returnStatusLabel('refunded')).toBe('Reembolsada');
+    expect(returnStatusLabel('otro')).toBe('otro');
   });
 });

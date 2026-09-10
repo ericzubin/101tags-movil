@@ -116,6 +116,8 @@ export default function RootLayout() {
             />
             <Stack.Screen name="orders/index" options={{ title: 'Mis pedidos' }} />
             <Stack.Screen name="orders/[orderNumber]" options={{ title: 'Pedido' }} />
+            <Stack.Screen name="orders/request" options={{ title: 'Solicitar' }} />
+            <Stack.Screen name="returns/index" options={{ title: 'Mis devoluciones' }} />
           </Stack>
         </View>
       </QueryClientProvider>

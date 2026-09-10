@@ -24,4 +24,5 @@ export const orderKeys = {
   all: ['orders'] as const,
   list: () => ['orders', 'list'] as const,
   detail: (orderNumber: string) => ['orders', 'detail', orderNumber] as const,
+  returns: () => ['orders', 'returns'] as const,
 };

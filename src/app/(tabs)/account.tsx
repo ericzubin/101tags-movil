@@ -52,6 +52,19 @@ export default function AccountTab() {
           <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
         </Pressable>
         <Pressable
+          onPress={() => router.push('/returns')}
+          className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
+          testID="account-returns"
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="swap-horizontal-outline" size={20} color={brandColors.dark} />
+            <Text className="font-brand-bold text-base text-brand-dark ml-brand-3">
+              Mis devoluciones
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
+        </Pressable>
+        <Pressable
           onPress={handleLogout}
           disabled={loggingOut}
           className="bg-brand-primary rounded-brand-lg px-brand-6 py-3 active:opacity-80 mt-auto flex-row justify-center items-center"

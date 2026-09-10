@@ -3,6 +3,7 @@ import { Redirect, Stack, router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -14,7 +15,7 @@ import { formatMXN } from '@/core/utils/format-currency';
 import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
 
 import type { OrderDetail, OrderItem } from '@/core/models/order.model';
-import { hasTracking } from '@/core/models/order.model';
+import { canCancelOrder, canReturnOrder, hasTracking } from '@/core/models/order.model';
 
 function DetailSkeleton() {
   return (
@@ -163,6 +164,35 @@ function DetailBody({ order }: { order: OrderDetail }) {
               <Text testID="order-tracking-number" className="font-brand text-sm text-brand-dark/70">
                 {order.tracking.number}
               </Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        {canReturnOrder(order.status) || canCancelOrder(order.status) ? (
+          <View testID="order-actions" className="mt-brand-4">
+            {canReturnOrder(order.status) ? (
+              <Button
+                testID="order-return-action"
+                label="Solicitar devolución"
+                onPress={() =>
+                  router.push(
+                    `/orders/request?orderNumber=${encodeURIComponent(order.orderNumber)}&type=return`,
+                  )
+                }
+              />
+            ) : null}
+            {canCancelOrder(order.status) ? (
+              <Button
+                testID="order-cancel-action"
+                label="Cancelar pedido"
+                variant="secondary"
+                className="mt-brand-2"
+                onPress={() =>
+                  router.push(
+                    `/orders/request?orderNumber=${encodeURIComponent(order.orderNumber)}&type=cancellation`,
+                  )
+                }
+              />
             ) : null}
           </View>
         ) : null}

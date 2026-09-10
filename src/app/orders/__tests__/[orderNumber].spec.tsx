@@ -8,6 +8,7 @@ import OrderDetailScreen from '../[orderNumber]';
 
 const mockRefetch = jest.fn();
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 const mockRedirect = jest.fn();
 
 let mockIsAuthenticated = true;
@@ -58,7 +59,11 @@ jest.mock('expo-router', () => {
   return {
     Stack: MockStack,
     Redirect: MockRedirect,
-    router: { replace: (...args: unknown[]) => mockReplace(...args), push: jest.fn(), back: jest.fn() },
+    router: {
+      replace: (...args: unknown[]) => mockReplace(...args),
+      push: (...args: unknown[]) => mockPush(...args),
+      back: jest.fn(),
+    },
     useLocalSearchParams: () => ({ orderNumber: 'ORD-0001' }),
   };
 });
@@ -216,5 +221,47 @@ describe('OrderDetailScreen — detalle, timeline y tracking (M4.1 AC3, AC4, AC5
     render(<OrderDetailScreen />);
 
     expect(mockRedirect).toHaveBeenCalledWith({ href: '/(auth)/login' });
+  });
+
+  it('AC1: en paid ofrece cancelar y devolver y navega al request con su tipo', () => {
+    mockQueryState = { ...mockQueryState, data: makeDetail({ status: 'paid' }) };
+
+    render(<OrderDetailScreen />);
+
+    fireEvent.press(screen.getByTestId('order-cancel-action'));
+    expect(mockPush).toHaveBeenCalledWith(
+      '/orders/request?orderNumber=ORD-0001&type=cancellation',
+    );
+
+    fireEvent.press(screen.getByTestId('order-return-action'));
+    expect(mockPush).toHaveBeenCalledWith('/orders/request?orderNumber=ORD-0001&type=return');
+  });
+
+  it('AC2: en cancelled oculta cancelar y devolver', () => {
+    mockQueryState = { ...mockQueryState, data: makeDetail({ status: 'cancelled' }) };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.queryByTestId('order-cancel-action')).toBeNull();
+    expect(screen.queryByTestId('order-return-action')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('AC2: en pending oculta devolver pero mantiene cancelar', () => {
+    mockQueryState = { ...mockQueryState, data: makeDetail({ status: 'pending' }) };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.queryByTestId('order-return-action')).toBeNull();
+    expect(screen.getByTestId('order-cancel-action')).toBeTruthy();
+  });
+
+  it('AC2: en shipped mantiene devolver y cancelar', () => {
+    mockQueryState = { ...mockQueryState, data: makeDetail({ status: 'shipped' }) };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.getByTestId('order-return-action')).toBeTruthy();
+    expect(screen.getByTestId('order-cancel-action')).toBeTruthy();
   });
 });
