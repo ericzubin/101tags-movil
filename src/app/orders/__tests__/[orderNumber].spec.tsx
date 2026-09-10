@@ -276,13 +276,22 @@ describe('OrderDetailScreen — detalle, timeline y tracking (M4.1 AC3, AC4, AC5
     expect(screen.getByTestId('order-cancel-action')).toBeTruthy();
   });
 
-  it('AC2: en shipped mantiene devolver y cancelar', () => {
+  it('AC2 (#24): en shipped mantiene devolver pero oculta cancelar', () => {
     mockQueryState = { ...mockQueryState, data: makeDetail({ status: 'shipped' }) };
 
     render(<OrderDetailScreen />);
 
     expect(screen.getByTestId('order-return-action')).toBeTruthy();
-    expect(screen.getByTestId('order-cancel-action')).toBeTruthy();
+    expect(screen.queryByTestId('order-cancel-action')).toBeNull();
+  });
+
+  it('AC2 (#24): en delivered mantiene devolver pero oculta cancelar', () => {
+    mockQueryState = { ...mockQueryState, data: makeDetail({ status: 'delivered' }) };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.getByTestId('order-return-action')).toBeTruthy();
+    expect(screen.queryByTestId('order-cancel-action')).toBeNull();
   });
 });
 

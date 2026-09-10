@@ -194,10 +194,13 @@ describe('order.model — ReturnRequest (M4.2)', () => {
     expect(request.resolutionNotes).toBe('Cancelación automática');
   });
 
-  it('canCancelOrder permite cualquier estado distinto de cancelled', () => {
-    expect(canCancelOrder('paid')).toBe(true);
+  it('canCancelOrder solo en estados que el backend acepta (#24)', () => {
     expect(canCancelOrder('pending')).toBe(true);
-    expect(canCancelOrder('shipped')).toBe(true);
+    expect(canCancelOrder('paid')).toBe(true);
+    expect(canCancelOrder('preparing')).toBe(true);
+    expect(canCancelOrder('confirmed')).toBe(true);
+    expect(canCancelOrder('shipped')).toBe(false);
+    expect(canCancelOrder('delivered')).toBe(false);
     expect(canCancelOrder('cancelled')).toBe(false);
     expect(canCancelOrder(null)).toBe(true);
   });

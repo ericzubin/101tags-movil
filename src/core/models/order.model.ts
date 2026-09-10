@@ -131,12 +131,15 @@ export interface CancellationSubmissionResponse extends ReturnSubmissionResponse
 }
 
 /**
- * Cancellation is offered for any state except `cancelled`. `shipped`/`delivered`
- * still reach the backend, which answers 422 and the UI surfaces the message —
- * the client only hides the action once the order is already cancelled.
+ * Cancellation is offered only while the backend accepts it. `shipped` and
+ * `delivered` are rejected by `ReturnRequestService::requestOrApplyCancellation`
+ * (it answers 422 directing customers to a return), so the action is hidden in
+ * those states along with `cancelled` — the UI must not surface an action the
+ * backend will refuse (AC #24). `pending`/`paid` cancel immediately; `preparing`
+ * and earlier wait for approval.
  */
 export function canCancelOrder(status: string | null | undefined): boolean {
-  return status !== 'cancelled';
+  return status !== 'cancelled' && status !== 'shipped' && status !== 'delivered';
 }
 
 /**
