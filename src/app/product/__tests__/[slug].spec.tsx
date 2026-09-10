@@ -112,6 +112,68 @@ const singleOptionProduct: ProductDetail = {
   ],
 };
 
+const disjointProduct: ProductDetail = {
+  ...baseProduct,
+  name: 'Producto Disjunto',
+  minPrice: 80,
+  maxPrice: 100,
+  availableSizes: ['S', 'M'],
+  availableColors: ['Azul', 'Rojo'],
+  variants: [
+    {
+      id: 20,
+      size: 'S',
+      color: 'Azul',
+      sku: 'S-A',
+      stock: 3,
+      inStock: true,
+      price: 80,
+      priceOverride: null,
+    },
+    {
+      id: 21,
+      size: 'M',
+      color: 'Rojo',
+      sku: 'M-R',
+      stock: 3,
+      inStock: true,
+      price: 100,
+      priceOverride: null,
+    },
+  ],
+};
+
+const twoPriceProduct: ProductDetail = {
+  ...baseProduct,
+  name: 'Producto Dos Precios',
+  minPrice: 80,
+  maxPrice: 100,
+  availableSizes: ['S', 'M'],
+  availableColors: ['Negro', 'Blanco'],
+  variants: [
+    {
+      id: 30,
+      size: 'S',
+      color: 'Negro',
+      sku: 'S-N',
+      stock: 3,
+      inStock: true,
+      price: 80,
+      priceOverride: null,
+    },
+    {
+      id: 31,
+      size: 'M',
+      color: 'Blanco',
+      sku: 'M-B',
+      stock: 3,
+      inStock: true,
+      price: 100,
+      priceOverride: null,
+    },
+  ],
+};
+
 describe('ProductDetailScreen — estados (M2.4)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -197,5 +259,48 @@ describe('ProductDetailScreen — estados (M2.4)', () => {
       expect(screen.getByTestId('stock-hint')).toBeTruthy();
     });
     expect(screen.getByTestId('product-price').props.children).toBe('$80.00');
+  });
+
+  it('AC2 (M2-review): muestra el precio efectivo de la variante seleccionada (no minPrice)', async () => {
+    mockQueryState = { isLoading: false, isError: false, error: null, data: twoPriceProduct };
+    render(<ProductDetailScreen />);
+
+    fireEvent.press(screen.getByTestId('variant-size-M'));
+    fireEvent.press(screen.getByTestId('variant-color-Blanco'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('product-price').props.children).toBe('$100.00');
+    });
+  });
+
+  it('AC5 (M2-review): ruta desbloqueada con combinaciones disjuntas', async () => {
+    mockQueryState = { isLoading: false, isError: false, error: null, data: disjointProduct };
+    render(<ProductDetailScreen />);
+
+    fireEvent.press(screen.getByTestId('variant-size-S'));
+    fireEvent.press(screen.getByTestId('variant-color-Azul'));
+
+    fireEvent.press(screen.getByTestId('variant-size-M'));
+    await waitFor(() => {
+      expect(screen.getByTestId('variant-size-M').props.accessibilityState).toMatchObject({
+        selected: true,
+      });
+    });
+
+    fireEvent.press(screen.getByTestId('variant-color-Rojo'));
+    await waitFor(() => {
+      expect(screen.getByTestId('variant-color-Rojo').props.accessibilityState).toMatchObject({
+        selected: true,
+      });
+    });
+    expect(screen.getByTestId('variant-size-M').props.accessibilityState).toMatchObject({
+      selected: true,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('add-to-cart').props.accessibilityState).toMatchObject({
+        disabled: false,
+      });
+    });
   });
 });

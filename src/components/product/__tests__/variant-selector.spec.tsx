@@ -86,4 +86,49 @@ describe('VariantSelector', () => {
     render(<VariantSelector {...baseProps} variants={[]} />);
     expect(screen.queryByTestId(/^variant-/)).toBeNull();
   });
+
+  it('AC3 (M2-review): chip cruzado-deshabilitado es pulsable y dispara onSelectSize', () => {
+    const disjoint: ProductVariantSummary[] = [
+      variant({ id: 1, size: 'S', color: 'Azul', stock: 3 }),
+      variant({ id: 2, size: 'M', color: 'Rojo', stock: 3 }),
+    ];
+    const onSelectSize = jest.fn();
+
+    render(
+      <VariantSelector
+        variants={disjoint}
+        selectedSize="S"
+        selectedColor="Azul"
+        onSelectSize={onSelectSize}
+        onSelectColor={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('variant-size-M').props.accessibilityState).toMatchObject({
+      disabled: true,
+    });
+    fireEvent.press(screen.getByTestId('variant-size-M'));
+    expect(onSelectSize).toHaveBeenCalledWith('M');
+  });
+
+  it('AC4 (M2-review): chip globalmente sin stock no dispara onSelectSize', () => {
+    const withOutOfStock: ProductVariantSummary[] = [
+      variant({ id: 1, size: 'S', color: 'Azul', stock: 3 }),
+      variant({ id: 2, size: 'X', color: 'Azul', stock: 0, inStock: false }),
+    ];
+    const onSelectSize = jest.fn();
+
+    render(
+      <VariantSelector
+        variants={withOutOfStock}
+        selectedSize={null}
+        selectedColor={null}
+        onSelectSize={onSelectSize}
+        onSelectColor={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('variant-size-X'));
+    expect(onSelectSize).not.toHaveBeenCalled();
+  });
 });

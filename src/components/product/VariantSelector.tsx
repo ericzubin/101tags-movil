@@ -24,15 +24,16 @@ export function VariantSelector({
   const inStockSizes = availableSizes(variants);
   const inStockColors = availableColors(variants);
 
-  const isSizeDisabled = (size: string) =>
-    selectedColor === null
-      ? !inStockSizes.includes(size)
-      : !isSelectable(variants, size, selectedColor);
+  const isSizeUnavailable = (size: string) => !inStockSizes.includes(size);
+  const isColorUnavailable = (color: string) => !inStockColors.includes(color);
 
-  const isColorDisabled = (color: string) =>
-    selectedSize === null
-      ? !inStockColors.includes(color)
-      : !isSelectable(variants, selectedSize, color);
+  const isSizeCrossDisabled = (size: string) =>
+    selectedColor !== null && !isSelectable(variants, size, selectedColor);
+  const isColorCrossDisabled = (color: string) =>
+    selectedSize !== null && !isSelectable(variants, selectedSize, color);
+
+  const isSizeDimmed = (size: string) => isSizeUnavailable(size) || isSizeCrossDisabled(size);
+  const isColorDimmed = (color: string) => isColorUnavailable(color) || isColorCrossDisabled(color);
 
   return (
     <View>
@@ -42,21 +43,26 @@ export function VariantSelector({
           <View className="flex-row flex-wrap gap-2">
             {sizes.map((size) => {
               const selected = selectedSize === size;
-              const disabled = isSizeDisabled(size);
+              const unavailable = isSizeUnavailable(size);
+              const crossDisabled = isSizeCrossDisabled(size);
+              const dimmed = isSizeDimmed(size);
               return (
                 <Pressable
                   key={size}
                   testID={`variant-size-${size}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Talla ${size}`}
-                  accessibilityState={{ selected, disabled }}
-                  disabled={disabled}
+                  accessibilityState={{ selected, disabled: dimmed }}
+                  accessibilityHint={
+                    crossDisabled ? 'Cambia la selección de color si es necesario' : undefined
+                  }
+                  disabled={unavailable ? true : undefined}
                   onPress={() => onSelectSize(size)}
                   className={`rounded-brand-pill border px-4 py-2 ${
                     selected
                       ? 'border-brand-primary bg-brand-primary'
                       : 'border-brand-dark/20 bg-white'
-                  } ${disabled ? 'opacity-40' : ''}`}
+                  } ${dimmed ? 'opacity-40' : ''}`}
                 >
                   <Text
                     className={`font-brand text-sm ${selected ? 'text-white' : 'text-brand-dark'}`}
@@ -76,21 +82,26 @@ export function VariantSelector({
           <View className="flex-row flex-wrap gap-2">
             {colors.map((color) => {
               const selected = selectedColor === color;
-              const disabled = isColorDisabled(color);
+              const unavailable = isColorUnavailable(color);
+              const crossDisabled = isColorCrossDisabled(color);
+              const dimmed = isColorDimmed(color);
               return (
                 <Pressable
                   key={color}
                   testID={`variant-color-${color}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Color ${color}`}
-                  accessibilityState={{ selected, disabled }}
-                  disabled={disabled}
+                  accessibilityState={{ selected, disabled: dimmed }}
+                  accessibilityHint={
+                    crossDisabled ? 'Cambia la selección de talla si es necesario' : undefined
+                  }
+                  disabled={unavailable ? true : undefined}
                   onPress={() => onSelectColor(color)}
                   className={`rounded-brand-pill border px-4 py-2 ${
                     selected
                       ? 'border-brand-primary bg-brand-primary'
                       : 'border-brand-dark/20 bg-white'
-                  } ${disabled ? 'opacity-40' : ''}`}
+                  } ${dimmed ? 'opacity-40' : ''}`}
                 >
                   <Text
                     className={`font-brand text-sm ${selected ? 'text-white' : 'text-brand-dark'}`}

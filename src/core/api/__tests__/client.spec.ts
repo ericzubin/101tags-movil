@@ -81,6 +81,43 @@ describe('http client', () => {
     expect(data).toEqual({ a: 1, b: 2 });
   });
 
+  it('AC1 (M2-review): convierte un paginator Laravel flat a camelCase plano (/catalog/products)', async () => {
+    const mockFetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            current_page: 2,
+            data: [{ id: 1, min_price: 100 }],
+            last_page: 5,
+            per_page: 12,
+            total: 60,
+            from: 13,
+            to: 24,
+            next_page_url: 'https://api.test/api/catalog/products?page=3',
+            prev_page_url: 'https://api.test/api/catalog/products?page=1',
+          }),
+        ),
+    });
+    globalThis.fetch = mockFetch as any;
+
+    const client = createHttpClient(() => null);
+    const page = await client.get<Record<string, unknown>>('/catalog/products?page=2');
+
+    expect(page.currentPage).toBe(2);
+    expect(page.lastPage).toBe(5);
+    expect(page.perPage).toBe(12);
+    expect(page.total).toBe(60);
+    expect(page.from).toBe(13);
+    expect(page.to).toBe(24);
+    expect(page.nextPageUrl).toBe('https://api.test/api/catalog/products?page=3');
+    expect(page.prevPageUrl).toBe('https://api.test/api/catalog/products?page=1');
+    expect((page.data as { minPrice: number }[])[0].minPrice).toBe(100);
+    expect(page.meta).toBeUndefined();
+  });
+
   it('setAuthTokenProvider re-assigns the bearer token without re-instantiating', async () => {
     const mockFetch = jest
       .fn()
