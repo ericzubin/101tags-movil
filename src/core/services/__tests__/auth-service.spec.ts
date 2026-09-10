@@ -21,10 +21,11 @@ jest.mock('@/core/api/client', () => {
 
 const mockedHttpClient = httpClient as jest.Mocked<typeof httpClient>;
 
+const baseUser = { id: 1, name: 'Ana', email: 'a@x.com', phone: null, role: 'customer' as const };
 const baseSession: AuthSession = {
-  access_token: 'tok-abc',
+  accessToken: 'tok-abc',
   expires_at: '2026-12-31T00:00:00Z',
-  user: { id: 1, name: 'Ana', email: 'a@x.com', phone: null },
+  user: baseUser,
 };
 
 describe('AuthService', () => {
@@ -37,12 +38,12 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('posts to /auth/login with default device_name and persists session', async () => {
+    it('posts to /auth/customer/login with default device_name and persists session (AC1, AC2)', async () => {
       mockedHttpClient.post.mockResolvedValueOnce(baseSession);
 
       const session = await authService.login('a@x.com', 'secret');
 
-      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/login', {
+      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/customer/login', {
         email: 'a@x.com',
         password: 'secret',
         device_name: 'mobile-app',
@@ -60,7 +61,7 @@ describe('AuthService', () => {
 
       await authService.login({ email: 'a@x.com', password: 'p', device_name: 'ipad-test' });
 
-      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/login', {
+      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/customer/login', {
         email: 'a@x.com',
         password: 'p',
         device_name: 'ipad-test',
@@ -99,7 +100,7 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('posts payload and persists session', async () => {
+    it('posts to /auth/customer/register and persists session', async () => {
       mockedHttpClient.post.mockResolvedValueOnce(baseSession);
 
       const session = await authService.register({
@@ -110,7 +111,7 @@ describe('AuthService', () => {
         phone: '+5255...',
       });
 
-      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/register', {
+      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/customer/register', {
         name: 'Ana',
         email: 'a@x.com',
         password: 'secret123',
@@ -128,7 +129,7 @@ describe('AuthService', () => {
 
       await expect(authService.logout()).resolves.toBeUndefined();
 
-      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/logout');
+      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/customer/logout');
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.token');
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.user');
     });
@@ -138,46 +139,28 @@ describe('AuthService', () => {
 
       await authService.logout();
 
-      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/logout');
+      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/customer/logout');
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.token');
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.user');
     });
   });
 
   describe('me', () => {
-    it('gets /auth/me and returns the parsed user', async () => {
-      mockedHttpClient.get.mockResolvedValueOnce(baseSession.user);
+    it('gets /auth/customer/me and UNWRAPS { user } → user (AC3)', async () => {
+      const wrapped = { user: baseSession.user };
+      mockedHttpClient.get.mockResolvedValueOnce(wrapped);
 
       const user = await authService.me();
 
-      expect(mockedHttpClient.get).toHaveBeenCalledWith('/auth/me');
+      expect(mockedHttpClient.get).toHaveBeenCalledWith('/auth/customer/me');
       expect(user).toEqual(baseSession.user);
+      expect(user).not.toHaveProperty('user');
     });
   });
 
-  describe('refresh', () => {
-    it('posts to /auth/refresh and persists new token while keeping stored user', async () => {
-      (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (key: string) => {
-        if (key === '101tags.auth.user') return JSON.stringify(baseSession.user);
-        return null;
-      });
-      mockedHttpClient.post.mockResolvedValueOnce({ access_token: 'tok-new', expires_at: '2027-01-01T00:00:00Z' });
-
-      const response = await authService.refresh();
-
-      expect(mockedHttpClient.post).toHaveBeenCalledWith('/auth/refresh');
-      expect(response).toEqual({ access_token: 'tok-new', expires_at: '2027-01-01T00:00:00Z' });
-      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('101tags.auth.token', 'tok-new');
-      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('101tags.auth.user', JSON.stringify(baseSession.user));
-    });
-
-    it('updates token even when no user is stored', async () => {
-      mockedHttpClient.post.mockResolvedValueOnce({ access_token: 'tok-new' });
-
-      const response = await authService.refresh();
-
-      expect(response.access_token).toBe('tok-new');
-      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('101tags.auth.token', 'tok-new');
+  describe('refresh (AC4 — removed)', () => {
+    it('refresh method does not exist on authService', () => {
+      expect((authService as unknown as Record<string, unknown>).refresh).toBeUndefined();
     });
   });
 
@@ -257,12 +240,12 @@ describe('AuthService', () => {
       (SecureStore.getItemAsync as jest.Mock).mockImplementation(async (key: string) =>
         key === '101tags.auth.token' ? 'stored-tok' : null,
       );
-      mockedHttpClient.get.mockResolvedValueOnce(baseSession.user);
+      mockedHttpClient.get.mockResolvedValueOnce({ user: baseSession.user });
 
       const restored = await authService.hydrate();
 
       expect(restored).toBe(true);
-      expect(mockedHttpClient.get).toHaveBeenCalledWith('/auth/me');
+      expect(mockedHttpClient.get).toHaveBeenCalledWith('/auth/customer/me');
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('101tags.auth.token', 'stored-tok');
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
         '101tags.auth.user',

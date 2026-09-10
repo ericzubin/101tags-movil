@@ -19,8 +19,8 @@ jest.mock('@/core/services/auth-service', () => ({
 
 const mockedAuthService = authService as jest.Mocked<typeof authService>;
 
-const baseUser = { id: 1, name: 'Ana', email: 'a@x.com', phone: null };
-const baseSession: AuthSession = { access_token: 'tok-abc', user: baseUser };
+const baseUser = { id: 1, name: 'Ana', email: 'a@x.com', phone: null, role: 'customer' as const };
+const baseSession: AuthSession = { accessToken: 'tok-abc', user: baseUser };
 
 describe('auth-store', () => {
   beforeEach(() => {
@@ -36,7 +36,7 @@ describe('auth-store', () => {
     expect(s.isLoading).toBe(false);
   });
 
-  it('setSession delegates to authService.persistSession and updates memory', async () => {
+  it('setSession delegates to authService.persistSession and reads session.accessToken', async () => {
     await useAuthStore.getState().setSession(baseSession);
 
     expect(mockedAuthService.persistSession).toHaveBeenCalledWith(baseSession);
@@ -87,7 +87,7 @@ describe('auth-store', () => {
     expect(s.isLoading).toBe(false);
   });
 
-  it('login delegates to authService.login and updates memory on success', async () => {
+  it('login delegates to authService.login and reads session.accessToken', async () => {
     mockedAuthService.login.mockResolvedValueOnce(baseSession);
 
     await useAuthStore.getState().login('a@x.com', 'pwd');
@@ -109,7 +109,7 @@ describe('auth-store', () => {
     expect(s.token).toBeNull();
   });
 
-  it('register delegates to authService.register and updates memory', async () => {
+  it('register delegates to authService.register and reads session.accessToken', async () => {
     mockedAuthService.register.mockResolvedValueOnce(baseSession);
 
     await useAuthStore

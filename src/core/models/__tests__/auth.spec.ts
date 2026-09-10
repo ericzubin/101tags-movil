@@ -1,19 +1,17 @@
 import { AuthError, type AuthErrorCode, type AuthSession, type CustomerUser, type LoginRequest, type RegisterRequest } from '@/core/models/auth';
 
 describe('auth models', () => {
-  it('CustomerUser supports required + optional fields', () => {
+  it('CustomerUser supports required + optional fields (role required; legacy snake_case removed)', () => {
     const user: CustomerUser = {
       id: 1,
       name: 'Ana',
       email: 'a@x.com',
       phone: null,
-      email_verified_at: null,
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-02T00:00:00Z',
+      role: 'customer',
     };
     expect(user.id).toBe(1);
     expect(user.phone).toBeNull();
-    expect(user.email_verified_at).toBeNull();
+    expect(user.role).toBe('customer');
   });
 
   it('LoginRequest requires email + password and supports device_name', () => {
@@ -32,13 +30,13 @@ describe('auth models', () => {
     expect(payload.password_confirmation).toBe('secret123');
   });
 
-  it('AuthSession holds access_token + user + optional expires_at', () => {
+  it('AuthSession holds accessToken (camelCase) + user + optional expires_at', () => {
     const session: AuthSession = {
-      access_token: 'tok-1',
-      user: { id: 1, name: 'Ana', email: 'a@x.com' },
+      accessToken: 'tok-1',
+      user: { id: 1, name: 'Ana', email: 'a@x.com', phone: null, role: 'customer' },
       expires_at: '2026-12-31T00:00:00Z',
     };
-    expect(session.access_token).toBe('tok-1');
+    expect(session.accessToken).toBe('tok-1');
     expect(session.expires_at).toBe('2026-12-31T00:00:00Z');
   });
 

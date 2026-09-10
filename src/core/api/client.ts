@@ -7,13 +7,14 @@ import { getApiBaseUrl, getApiTimeoutMs } from '@/constants/env';
  * is invalid/expired. Sending it anyway wastes a round-trip and produces
  * confusing 401s for credentials the server never asked for.
  *
- * Order matters only when two patterns could match the same path; today's
- * set is disjoint so order is irrelevant.
+ * Patterns match the path string exactly as the caller passes it to the
+ * http client (relative — `getApiBaseUrl()` already terminates in `/api`,
+ * so we do NOT include the `/api` prefix here).
  *
- * @see .spec/2026-09-09-m1-2-session-restore-guards.md §Bearer injection scope
+ * @see .spec/2026-09-10-m1-4-hardening.md §Bearer injection scope
  */
 export const PUBLIC_PATH_PATTERNS: readonly RegExp[] = [
-  /^\/api\/auth\/(login|register|refresh)$/,
+  /^\/auth\/customer\/(login|register)$/,
 ];
 
 export function isPublicPath(path: string): boolean {
@@ -65,7 +66,8 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
   async function request<T>(path: string, options: HttpRequestOptions = {}): Promise<T> {
     const { method = 'GET', body, query, headers = {}, signal } = options;
     const token = await authTokenProvider();
-    const url = new URL(path.startsWith('http') ? path : `${getApiBaseUrl()}${path}`);
+    const resolvedBaseUrl = getApiBaseUrl();
+    const url = new URL(path.startsWith('http') ? path : `${resolvedBaseUrl}${path}`);
 
     if (query) {
       for (const [key, value] of Object.entries(query)) {
@@ -78,7 +80,7 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
     const finalHeaders: Record<string, string> = { Accept: 'application/json', ...headers };
 
     if (body !== undefined && !(body instanceof FormData)) finalHeaders['Content-Type'] = 'application/json';
-    const authHeader = getAuthHeader(path, token);
+    const authHeader = getAuthHeader(path, token, resolvedBaseUrl);
     if (authHeader) finalHeaders.Authorization = authHeader;
 
     try {
@@ -125,8 +127,19 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
 
 export const httpClient = createHttpClient();
 
-function getAuthHeader(path: string, token: string | null): string | null {
+function getAuthHeader(path: string, token: string | null, baseUrl: string): string | null {
   if (!token) return null;
+
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    try {
+      const requestUrl = new URL(path);
+      const baseHost = new URL(baseUrl).host;
+      if (requestUrl.host !== baseHost) return null;
+    } catch {
+      return null;
+    }
+  }
+
   if (isPublicPath(path)) return null;
   return `Bearer ${token}`;
 }

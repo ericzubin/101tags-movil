@@ -10,14 +10,11 @@ import {
 import { secureStorageService } from './secure-storage-service';
 
 const ENDPOINTS = {
-  login: '/auth/login',
-  register: '/auth/register',
-  logout: '/auth/logout',
-  me: '/auth/me',
-  refresh: '/auth/refresh',
+  login: '/auth/customer/login',
+  register: '/auth/customer/register',
+  logout: '/auth/customer/logout',
+  me: '/auth/customer/me',
 } as const;
-
-type RefreshResponse = { access_token: string; expires_at?: string };
 
 class AuthService {
   private unauthorizedHandler: (() => void | Promise<void>) | null = null;
@@ -55,7 +52,8 @@ class AuthService {
   }
 
   async me(): Promise<CustomerUser> {
-    return httpClient.get<CustomerUser>(ENDPOINTS.me);
+    const response = await httpClient.get<{ user: CustomerUser }>(ENDPOINTS.me);
+    return response.user;
   }
 
   /**
@@ -63,7 +61,7 @@ class AuthService {
    *
    * Flow (per spec M1.2 §Auth session lifecycle):
    *   1. Read stored token. If absent → return `false` (guest boot).
-   *   2. Call `GET /auth/me`. On 200 we have a valid user; persist the
+   *   2. Call `GET /auth/customer/me`. On 200 we have a valid user; persist the
    *      session back into storage and return `true`.
    *   3. On any error (401 expired token, network failure, etc.) we clear
    *      stored credentials and return `false` so the store can hydrate
@@ -78,24 +76,12 @@ class AuthService {
     if (!token) return false;
     try {
       const user = await this.me();
-      await this.persistSession({ access_token: token, user });
+      await this.persistSession({ accessToken: token, user });
       return true;
     } catch {
       await this.clearPersistedSession();
       return false;
     }
-  }
-
-  async refresh(): Promise<RefreshResponse> {
-    const response = await httpClient.post<RefreshResponse>(ENDPOINTS.refresh);
-    const tokenKey = secureStorageService.getKeys().authToken;
-    await secureStorageService.setItem(tokenKey, response.access_token);
-    const user = await this.getStoredUser();
-    if (user) {
-      const userKey = secureStorageService.getKeys().authUser;
-      await secureStorageService.setItem(userKey, JSON.stringify(user));
-    }
-    return response;
   }
 
   async getStoredToken(): Promise<string | null> {
@@ -115,7 +101,7 @@ class AuthService {
   async persistSession(session: AuthSession): Promise<void> {
     const keys = secureStorageService.getKeys();
     await Promise.all([
-      secureStorageService.setItem(keys.authToken, session.access_token),
+      secureStorageService.setItem(keys.authToken, session.accessToken),
       secureStorageService.setItem(keys.authUser, JSON.stringify(session.user)),
     ]);
   }

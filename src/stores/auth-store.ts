@@ -26,7 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setSession: async (session) => {
     await authService.persistSession(session);
-    set({ user: session.user, token: session.access_token, isHydrated: true });
+    set({ user: session.user, token: session.accessToken, isHydrated: true });
   },
 
   clearSession: async () => {
@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     try {
       const session = await authService.login(email, password);
-      set({ user: session.user, token: session.access_token });
+      set({ user: session.user, token: session.accessToken });
     } finally {
       set({ isLoading: false });
     }
@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true });
     try {
       const session = await authService.register(payload);
-      set({ user: session.user, token: session.access_token });
+      set({ user: session.user, token: session.accessToken });
     } finally {
       set({ isLoading: false });
     }

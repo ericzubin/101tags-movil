@@ -16,7 +16,7 @@ jest.mock('@/core/services/auth-service', () => ({
 
 const mockedAuthService = authService as jest.Mocked<typeof authService>;
 
-const baseUser: CustomerUser = { id: 1, name: 'Eric', email: 'eric@x.com', phone: null };
+const baseUser: CustomerUser = { id: 1, name: 'Eric', email: 'eric@x.com', phone: null, role: 'customer' };
 const baseToken = 'restored-token-abc';
 
 describe('auth-store — hydration lifecycle (M1.2)', () => {
