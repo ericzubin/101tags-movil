@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -71,6 +72,7 @@ function FormField({
 }
 
 export default function AddressScreen() {
+  const router = useRouter();
   const items = useCartStore((s) => s.items);
   const totalCount = useCartStore(selectTotalCount);
   const subtotal = useCartStore(selectTotalPrice);
@@ -151,6 +153,7 @@ export default function AddressScreen() {
 
   const onContinue = () => {
     if (!validate()) return;
+    router.push('/checkout/review');
   };
 
   return (

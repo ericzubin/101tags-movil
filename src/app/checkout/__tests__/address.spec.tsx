@@ -153,7 +153,7 @@ describe('AddressScreen — checkout M3.2', () => {
     expect(mockValidate).not.toHaveBeenCalled();
   });
 
-  it('AC2: continuar habilitado con dirección completa llama validate', () => {
+  it('AC2: continuar habilitado con dirección completa valida y navega a review', () => {
     mockCheckoutState.address = {
       street: 'Av. Juárez 123',
       city: 'CDMX',
@@ -166,6 +166,23 @@ describe('AddressScreen — checkout M3.2', () => {
     fireEvent.press(screen.getByTestId('checkout-continue'));
 
     expect(mockValidate).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('/checkout/review');
+  });
+
+  it('AC2: no navega a review si la validación falla', () => {
+    mockCheckoutState.address = {
+      street: 'Av. Juárez 123',
+      city: 'CDMX',
+      state: 'CDMX',
+      zip: '06600',
+    };
+    mockValidate.mockReturnValueOnce(false);
+
+    render(<AddressScreen />);
+    fireEvent.press(screen.getByTestId('checkout-continue'));
+
+    expect(mockValidate).toHaveBeenCalledTimes(1);
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('AC3: escribir un CP de 5 dígitos dispara setAddressField("zip")', () => {

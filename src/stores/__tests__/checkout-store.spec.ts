@@ -1,5 +1,12 @@
+import { HttpError } from '@/core/api/client';
 import type { CartItem } from '@/core/models/cart.model';
-import type { CheckoutConfig, CouponValidation, PostalCodeLookup } from '@/core/models/checkout.model';
+import type {
+  CheckoutConfig,
+  CouponValidation,
+  PostalCodeLookup,
+  RequestedOrder,
+  RequestOrdersResult,
+} from '@/core/models/checkout.model';
 import { checkoutService } from '@/core/services/checkout-service';
 import { useCartStore } from '@/stores/cart-store';
 import { useCheckoutStore } from '@/stores/checkout-store';
@@ -10,6 +17,7 @@ jest.mock('@/core/services/checkout-service', () => ({
     getPolicies: jest.fn(),
     lookupPostalCode: jest.fn(),
     validateCoupon: jest.fn(),
+    requestOrders: jest.fn(),
   },
 }));
 
@@ -38,6 +46,21 @@ const validCoupon: CouponValidation = {
   discountAmount: 50,
   shippingDiscount: 0,
   eligibleSubtotal: 160,
+};
+
+const order: RequestedOrder = {
+  orderNumber: 'ORD-1',
+  supplierId: 1,
+  status: 'pending',
+  paymentStatus: 'pending',
+  total: 160,
+};
+
+const successResult: RequestOrdersResult = {
+  message: 'Pedidos solicitados.',
+  purchaseNumber: 'PUR-1',
+  accessToken: null,
+  orders: [order],
 };
 
 function makeItem(overrides: Partial<CartItem> = {}): CartItem {
@@ -267,5 +290,219 @@ describe('checkout-store', () => {
     expect(s.coupon).toBeNull();
     expect(s.status).toBe('idle');
     expect(s.error).toBeNull();
+  });
+
+  describe('M3.3 — idempotencia y submit', () => {
+    it('AC1: submit() genera Idempotency-Key, llama requestOrders y guarda purchaseNumber/orders', async () => {
+      useCartStore.setState({ items: [makeItem({ variantId: 5, quantity: 2 })] });
+      useCheckoutStore.setState({
+        address: { street: 'Av. Juárez 123', city: 'CDMX', state: 'CDMX', zip: '06600' },
+      });
+      mockedCheckoutService.requestOrders.mockResolvedValueOnce(successResult);
+
+      const returned = await useCheckoutStore.getState().submit({
+        name: 'Ada Lovelace',
+        email: 'ada@example.com',
+      });
+
+      expect(mockedCheckoutService.requestOrders).toHaveBeenCalledTimes(1);
+      const [payload, key] = mockedCheckoutService.requestOrders.mock.calls[0];
+      expect(key).toMatch(/^[A-Za-z0-9._:-]{8,100}$/);
+      expect(payload.segment).toBe('basicos');
+      expect(payload.items).toEqual([{ variant_id: 5, quantity: 2 }]);
+      expect(payload.customer_name).toBe('Ada Lovelace');
+      expect(payload.customer_email).toBe('ada@example.com');
+      expect(payload.shipping_address).toEqual({
+        street: 'Av. Juárez 123',
+        city: 'CDMX',
+        state: 'CDMX',
+        zip: '06600',
+      });
+      expect(payload.coupon_code).toBeUndefined();
+      expect(returned).toEqual(successResult);
+
+      const s = useCheckoutStore.getState();
+      expect(s.submission.status).toBe('success');
+      expect(s.submission.result?.purchaseNumber).toBe('PUR-1');
+      expect(s.submission.result?.orders).toEqual([order]);
+    });
+
+    it('AC1: submit() envía el cupón aplicado como coupon_code', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.validateCoupon.mockResolvedValueOnce(validCoupon);
+      await useCheckoutStore.getState().applyCoupon('TAGS50');
+      mockedCheckoutService.requestOrders.mockResolvedValueOnce(successResult);
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+
+      const [payload] = mockedCheckoutService.requestOrders.mock.calls[0];
+      expect(payload.coupon_code).toBe('TAGS50');
+    });
+
+    it('AC2: ensureIdempotencyKey reutiliza la misma key con igual fingerprint', () => {
+      const k1 = useCheckoutStore.getState().ensureIdempotencyKey('fp-1');
+      const k2 = useCheckoutStore.getState().ensureIdempotencyKey('fp-1');
+
+      expect(k2).toBe(k1);
+      expect(k1).toMatch(/^[A-Za-z0-9._:-]{8,100}$/);
+      expect(k1.length).toBeLessThanOrEqual(100);
+    });
+
+    it('AC4: ensureIdempotencyKey genera nueva key cuando cambia el fingerprint', () => {
+      const k1 = useCheckoutStore.getState().ensureIdempotencyKey('fp-1');
+      const k2 = useCheckoutStore.getState().ensureIdempotencyKey('fp-2');
+
+      expect(k2).not.toBe(k1);
+    });
+
+    it('AC3: timeout y reintento usan la MISMA Idempotency-Key', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockRejectedValueOnce(
+        new HttpError(0, 'Timeout', null, 'Request timeout', 'timeout'),
+      );
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+      expect(useCheckoutStore.getState().submission.status).toBe('error');
+      const firstKey = mockedCheckoutService.requestOrders.mock.calls[0][1];
+
+      mockedCheckoutService.requestOrders.mockResolvedValueOnce(successResult);
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+
+      const secondKey = mockedCheckoutService.requestOrders.mock.calls[1][1];
+      expect(secondKey).toBe(firstKey);
+      expect(useCheckoutStore.getState().submission.status).toBe('success');
+    });
+
+    it('AC4: submit cambia de key al cambiar el email del carrito', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockRejectedValue(
+        new HttpError(500, 'Server Error', null, 'HTTP 500'),
+      );
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'a@example.com' });
+      const firstKey = mockedCheckoutService.requestOrders.mock.calls[0][1];
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'b@example.com' });
+      const secondKey = mockedCheckoutService.requestOrders.mock.calls[1][1];
+
+      expect(secondKey).not.toBe(firstKey);
+    });
+
+    it('AC5: submit guest guarda access_token de la respuesta', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockResolvedValueOnce({
+        ...successResult,
+        accessToken: 'guest-token-123',
+      });
+
+      await useCheckoutStore.getState().submit({
+        name: 'Invitado',
+        email: 'guest@example.com',
+      });
+
+      expect(useCheckoutStore.getState().submission.result?.accessToken).toBe('guest-token-123');
+    });
+
+    it('AC6: 422 guarda el mensaje de validación, conserva la key y no crea pedido local', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockRejectedValueOnce(
+        new HttpError(422, 'Unprocessable', { message: 'El correo no es válido.' }, 'HTTP 422'),
+      );
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'bad' });
+
+      const usedKey = mockedCheckoutService.requestOrders.mock.calls[0][1];
+      const s = useCheckoutStore.getState();
+      expect(s.submission.status).toBe('error');
+      expect(s.submission.error).toBe('El correo no es válido.');
+      expect(s.submission.result).toBeNull();
+      expect(s.idempotencyKey).toBe(usedKey);
+    });
+
+    it('AC6: 409 regenera la key, informa y no crea pedido local', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockRejectedValueOnce(
+        new HttpError(
+          409,
+          'Conflict',
+          { message: 'La clave ya se usó con otro carrito.' },
+          'HTTP 409',
+        ),
+      );
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+
+      const usedKey = mockedCheckoutService.requestOrders.mock.calls[0][1];
+      const s = useCheckoutStore.getState();
+      expect(s.submission.status).toBe('error');
+      expect(s.submission.error).toBe('La clave ya se usó con otro carrito.');
+      expect(s.submission.result).toBeNull();
+      expect(s.idempotencyKey).not.toBe(usedKey);
+      expect(s.idempotencyKey).toMatch(/^[A-Za-z0-9._:-]{8,100}$/);
+    });
+
+    it('AC6: 429 guarda mensaje de espera y no crea pedido local', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockRejectedValueOnce(
+        new HttpError(429, 'Too Many Requests', { message: 'Demasiadas solicitudes.' }, 'HTTP 429'),
+      );
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+
+      const s = useCheckoutStore.getState();
+      expect(s.submission.status).toBe('error');
+      expect(s.submission.error).toBe('Demasiadas solicitudes.');
+      expect(s.submission.result).toBeNull();
+    });
+
+    it('AC6: 5xx conserva la key y expone un error de reintento', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockRejectedValue(
+        new HttpError(500, 'Server Error', null, 'HTTP 500'),
+      );
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+      const firstKey = mockedCheckoutService.requestOrders.mock.calls[0][1];
+      expect(useCheckoutStore.getState().submission.error).toBeTruthy();
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+      expect(mockedCheckoutService.requestOrders.mock.calls[1][1]).toBe(firstKey);
+    });
+
+    it('tras éxito, el siguiente submit genera una key nueva', async () => {
+      useCartStore.setState({ items: [makeItem()] });
+      mockedCheckoutService.requestOrders.mockResolvedValue(successResult);
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+      const firstKey = mockedCheckoutService.requestOrders.mock.calls[0][1];
+
+      await useCheckoutStore.getState().submit({ name: 'Ada', email: 'ada@example.com' });
+      const secondKey = mockedCheckoutService.requestOrders.mock.calls[1][1];
+
+      expect(secondKey).not.toBe(firstKey);
+    });
+
+    it('submit() con carrito vacío no llama al service y expone error', async () => {
+      useCartStore.setState({ items: [] });
+
+      const result = await useCheckoutStore.getState().submit({ name: 'Ada', email: 'a@b.com' });
+
+      expect(mockedCheckoutService.requestOrders).not.toHaveBeenCalled();
+      expect(result).toBeNull();
+      expect(useCheckoutStore.getState().submission.status).toBe('error');
+    });
+
+    it('reset() limpia submission e idempotencyKey', () => {
+      useCheckoutStore.setState({
+        idempotencyKey: 'ck_1234567890_abc',
+        submission: { status: 'error', error: 'x', result: null },
+      });
+
+      useCheckoutStore.getState().reset();
+
+      const s = useCheckoutStore.getState();
+      expect(s.idempotencyKey).toBeNull();
+      expect(s.submission).toEqual({ status: 'idle', error: null, result: null });
+    });
   });
 });

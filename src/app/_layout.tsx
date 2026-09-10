@@ -104,6 +104,8 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="product/[slug]" />
             <Stack.Screen name="checkout/address" options={{ title: 'Dirección de envío' }} />
+            <Stack.Screen name="checkout/review" options={{ title: 'Revisar pedido' }} />
+            <Stack.Screen name="checkout/confirmation" options={{ title: 'Pedido confirmado' }} />
           </Stack>
         </View>
       </QueryClientProvider>

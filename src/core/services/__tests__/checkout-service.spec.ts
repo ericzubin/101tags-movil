@@ -141,4 +141,59 @@ describe('checkoutService', () => {
     expect(result.shippingDiscount).toBe(99);
     expect(result.eligibleSubtotal).toBe(300);
   });
+
+  it('AC1: requestOrders(key) llama POST /checkout/request-orders con body y header Idempotency-Key', async () => {
+    const payload = {
+      segment: 'basicos' as const,
+      items: [{ variant_id: 5, quantity: 2 }],
+      customer_name: 'Ada Lovelace',
+      customer_email: 'ada@example.com',
+      shipping_address: { street: 'Av. Juárez 123', city: 'CDMX', state: 'CDMX', zip: '06600' },
+    };
+    const response = {
+      message: 'Pedidos solicitados.',
+      purchaseNumber: 'PUR-1',
+      accessToken: null,
+      orders: [
+        {
+          orderNumber: 'ORD-1',
+          supplierId: 1,
+          status: 'pending',
+          paymentStatus: 'pending',
+          total: 259,
+        },
+      ],
+    };
+    mockedHttpClient.request.mockResolvedValueOnce(response);
+
+    const result = await checkoutService.requestOrders(payload, 'ck_1234567890_abc');
+
+    const [path, options] = mockedHttpClient.request.mock.calls[0];
+    expect(path).toBe('/checkout/request-orders');
+    expect(options?.method).toBe('POST');
+    expect(options?.body).toEqual(payload);
+    expect(options?.headers).toEqual({ 'Idempotency-Key': 'ck_1234567890_abc' });
+    expect(result).toEqual(response);
+  });
+
+  it('AC1: requestOrders sin key NO envía header Idempotency-Key', async () => {
+    const payload = {
+      segment: 'basicos' as const,
+      items: [{ variant_id: 5, quantity: 1 }],
+      customer_name: 'Ada Lovelace',
+      customer_email: 'ada@example.com',
+      shipping_address: { street: 'x', city: 'y', state: 'z', zip: '06600' },
+    };
+    mockedHttpClient.request.mockResolvedValueOnce({
+      message: 'ok',
+      purchaseNumber: 'PUR-1',
+      accessToken: 'guest-token',
+      orders: [],
+    });
+
+    await checkoutService.requestOrders(payload);
+
+    const [, options] = mockedHttpClient.request.mock.calls[0];
+    expect(options?.headers).toBeUndefined();
+  });
 });
