@@ -74,4 +74,14 @@ describe('AccountTab — placeholder + logout (M1.10 AC6, AC7)', () => {
       expect(mockReplaceRouter).toHaveBeenCalledWith('/(auth)/login');
     });
   });
+
+  it('M4.1: muestra "Mis pedidos" y navega a /orders', () => {
+    render(<AccountTab />);
+
+    expect(screen.getByText('Mis pedidos')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('account-orders'));
+
+    expect(mockPushRouter).toHaveBeenCalledWith('/orders');
+  });
 });

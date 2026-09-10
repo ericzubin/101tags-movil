@@ -19,3 +19,9 @@ export const catalogKeys = {
     ['catalog', 'filters', segment, category ?? null] as const,
   sponsoredAds: () => ['catalog', 'sponsored-ads'] as const,
 };
+
+export const orderKeys = {
+  all: ['orders'] as const,
+  list: () => ['orders', 'list'] as const,
+  detail: (orderNumber: string) => ['orders', 'detail', orderNumber] as const,
+};

@@ -114,6 +114,8 @@ export default function RootLayout() {
               name="checkout/payment-proof"
               options={{ title: 'Enviar comprobante' }}
             />
+            <Stack.Screen name="orders/index" options={{ title: 'Mis pedidos' }} />
+            <Stack.Screen name="orders/[orderNumber]" options={{ title: 'Pedido' }} />
           </Stack>
         </View>
       </QueryClientProvider>

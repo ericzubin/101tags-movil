@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
@@ -5,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { authService } from '@/core/services/auth-service';
 import { useAuthStore } from '@/stores/auth-store';
+import { brandColors } from '@/theme/tokens';
 
 export default function AccountTab() {
   const user = useAuthStore((s) => s.user);
@@ -36,6 +38,19 @@ export default function AccountTab() {
             <Text className="font-brand text-sm text-brand-dark/70">{user.email}</Text>
           </View>
         ) : null}
+        <Pressable
+          onPress={() => router.push('/orders')}
+          className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
+          testID="account-orders"
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="receipt-outline" size={20} color={brandColors.dark} />
+            <Text className="font-brand-bold text-base text-brand-dark ml-brand-3">
+              Mis pedidos
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
+        </Pressable>
         <Pressable
           onPress={handleLogout}
           disabled={loggingOut}

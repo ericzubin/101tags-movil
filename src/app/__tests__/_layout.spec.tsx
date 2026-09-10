@@ -168,4 +168,12 @@ describe('RootLayout — rutas registradas (M3.4 / M3.5)', () => {
   it('registra checkout/payment-proof en el root stack', () => {
     expect(layoutSource).toContain('name="checkout/payment-proof"');
   });
+
+  it('M4.1: registra orders/index en el root stack', () => {
+    expect(layoutSource).toContain('name="orders/index"');
+  });
+
+  it('M4.1: registra orders/[orderNumber] en el root stack', () => {
+    expect(layoutSource).toContain('name="orders/[orderNumber]"');
+  });
 });

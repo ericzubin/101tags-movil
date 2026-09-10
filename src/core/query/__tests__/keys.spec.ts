@@ -1,4 +1,4 @@
-import { catalogKeys, homeKeys } from '@/core/query/keys';
+import { catalogKeys, homeKeys, orderKeys } from '@/core/query/keys';
 
 describe('query keys factory', () => {
   describe('homeKeys', () => {
@@ -41,6 +41,23 @@ describe('query keys factory', () => {
 
     it('catalogKeys.sponsoredAds() tiene key estable', () => {
       expect(catalogKeys.sponsoredAds()).toEqual(['catalog', 'sponsored-ads']);
+    });
+  });
+
+  describe('orderKeys', () => {
+    it('orderKeys.list() es una key estable bajo el namespace orders', () => {
+      expect(orderKeys.list()).toEqual(['orders', 'list']);
+      expect(orderKeys.all).toEqual(['orders']);
+    });
+
+    it('orderKeys.detail(orderNumber) incluye el número y difiere entre pedidos', () => {
+      expect(orderKeys.detail('ORD-1')).toEqual(['orders', 'detail', 'ORD-1']);
+      expect(orderKeys.detail('ORD-1')).not.toEqual(orderKeys.detail('ORD-2'));
+    });
+
+    it('orderKeys.all es prefijo de list y detail (árbol invalidable)', () => {
+      expect(orderKeys.list()[0]).toBe(orderKeys.all[0]);
+      expect(orderKeys.detail('ORD-1')[0]).toBe(orderKeys.all[0]);
     });
   });
 
