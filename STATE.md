@@ -1,7 +1,7 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 cerrado + F1 entero cerrado + P0 parchado ✅. **F2 COMPLETO (M2.1–M2.5) en rama `f2/catalogo`** (6b39986). M2.0-setup (PR #70) + M2.1-home (PR #71) + M2.4-detail (PR #72) + M2.2-categories (PR #74) + M2.3-list (PR #75) + M2.5-ux (PR #76). Issues #12, #13, #14, #15, #16 cerradas. Próximo: cierre F2 `f2/catalogo` → `developer` (PR #73). Housekeeping: issues stale F1 #7/#8/#9 cerradas.
+IN PROGRESS — F0 cerrado + F1 entero cerrado + P0 parchado ✅ + **F2 COMPLETO E INTEGRADO en `developer`** (95c8f24, PR #73). M2.0-setup (PR #70) + M2.1-home (PR #71) + M2.4-detail (PR #72) + M2.2-categories (PR #74) + M2.3-list (PR #75) + M2.5-ux (PR #76). Issues #12, #13, #14, #15, #16 cerradas. Próximo: arrancar **F3 (#17)**; el merge **`developer` → `main` (PR #67) lo hará el usuario**. Housekeeping: issues stale F1 #7/#8/#9 cerradas.
 
 ## Adoption status
 **App funcional con auth wired**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerables con `expo prebuild`. Compilación nativa cloud via EAS Build.
@@ -202,10 +202,10 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 - `.spec/2026-09-11-m2-5-ux.md` — **DONE (PR #76)**
 
 ## Current phase
-**F2 COMPLETO (M2.1–M2.5) en `f2/catalogo`** (6b39986). Próximo: cierre F2 `f2/catalogo` → `developer` (PR #73).
+**F2 COMPLETO E INTEGRADO en `developer`** (95c8f24, PR #73). Próximo: **`developer` → `main` (PR #67, requiere autorización del usuario)** y arrancar F3 (#17).
 
 ## Next actions (roadmap)
-1. **F2.x** — `f2/catalogo` → `developer` (PR #73) → `main` (PR #67, con autorización) → iniciar F3.
+1. **Cierre F2** — `developer` → `main` (PR #67, con autorización) → iniciar F3.
 2. **F3.x** — Cart + checkout + pagos (issues #17-#22).
 3. **F4.x** — Pedidos + cancelaciones + rating (issues #23-#25).
 4. **F5.x** — Chat + notificaciones in-app (issues #26-#28).
@@ -216,8 +216,8 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: **F2 COMPLETO (M2.1–M2.5)** en `f2/catalogo` (6b39986). PRs #70-#72, #74, #75, #76. Issues #12, #13, #14, #15, #16 cerradas. Housekeeping: #7/#8/#9 cerradas.
-- Próximo paso exacto: merge PR #73 (`f2/catalogo` → `developer`); pedir autorización al usuario para `developer` → `main` (PR #67); luego F3 (#17).
+- Fase actual: **F2 COMPLETO E INTEGRADO en `developer`** (95c8f24, PR #73). PRs #70-#72, #74, #75, #76. Issues #12, #13, #14, #15, #16 cerradas. Housekeeping: #7/#8/#9 cerradas. Rama `f2/catalogo` eliminada tras el squash.
+- Próximo paso exacto: el usuario hará **`developer` → `main`** (PR #67) cuando lo decida; el agente arranca F3 (#17, cart service) en ramas feature → `developer`.
 - **Contrato corregido en M2.3:** `Paginated<T>` flat camelCase (`data`, `currentPage`, `lastPage`, `perPage`, `total`, `from`, `to`, `nextPageUrl`, `prevPageUrl`), acorde al `LengthAwarePaginator` de `/api/catalog/products`. Documentado en `DISCOVERY.md §10.1`.
 - Stack: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6 + Zustand 5 + TanStack Query 5.
 - Decisiones pendientes: guest checkout (M3.3/DISCOVERY §8), OpenPay móvil (M3.6/§9), signing F7 (Apple/Google, insumos del usuario).
