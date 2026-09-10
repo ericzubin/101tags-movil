@@ -238,38 +238,42 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M3.2 — Checkout config, dirección y envío
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-2-checkout-address.md`
 
 **Aceptación**
-- [ ] Se consulta `/checkout/config` antes de ofrecer métodos.
-- [ ] Dirección valida campos requeridos y datos esperados por API.
-- [ ] Resumen conserva precios/cantidades del servidor.
-- [ ] No se confía en totales calculados solo por cliente.
+- [x] Se consulta `/checkout/config` antes de ofrecer métodos.
+- [x] Dirección valida campos requeridos y datos esperados por API.
+- [x] Resumen conserva precios/cantidades del servidor.
+- [x] No se confía en totales calculados solo por cliente.
 
 ## M3.3 — Request orders, idempotencia y guest checkout
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.2
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-3-request-orders.md`
 
 **Aceptación**
-- [ ] Cada intento lógico usa UUID estable en `Idempotency-Key`.
-- [ ] Reintento por timeout no crea pedidos duplicados.
-- [ ] Auth y guest siguen contratos distintos cuando aplique.
-- [ ] 422/429/5xx presentan acción de recuperación segura.
+- [x] Cada intento lógico usa clave estable en `Idempotency-Key`.
+- [x] Reintento por timeout no crea pedidos duplicados.
+- [x] Auth y guest siguen contratos distintos cuando aplique.
+- [x] 422/409/429/5xx presentan acción de recuperación segura.
 
 ## M3.4 — Pago pendiente OXXO/SPEI
 **Prioridad:** 🔥 Alta · **Estimación:** 3 h · **Dependencias:** M3.3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-4-payment-instructions.md`
 
 **Aceptación**
-- [ ] Se muestran instrucciones exactamente desde API.
-- [ ] Barcode/CLABE/referencia se renderizan con copy action cuando aplique.
-- [ ] Expiración/ausencia de instrucciones tiene estado explícito.
+- [x] Se muestran instrucciones exactamente desde API.
+- [x] Barcode/CLABE/referencia se renderizan con copy action cuando aplique.
+- [x] Expiración/ausencia de instrucciones tiene estado explícito.
 
 ## M3.5 — Subir comprobante de pago
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M3.4
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-5-payment-proof.md`
 
 **Aceptación**
-- [ ] Cámara/selector respetan tipos y tamaños aceptados por backend.
-- [ ] Multipart usa endpoint correcto.
-- [ ] Progress/loading y reintento no provocan dobles uploads involuntarios.
-- [ ] Errores del archivo se muestran antes o después del request según corresponda.
+- [x] Selector respeta tipos y tamaños aceptados por backend.
+- [x] Multipart usa endpoint correcto.
+- [x] Progress/loading y reintento no provocan dobles uploads involuntarios.
+- [x] Errores del archivo se muestran antes o después del request según corresponda.
 
 ## M3.6 — OpenPay tarjeta condicionado por config
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.2, M3.3
