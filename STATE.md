@@ -1,7 +1,7 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 cerrado (M0.5 + M0.6) + F1/M1.1 cerrado + **F1/M1.2 cerrado (PR #50)** + **F1/M1.3 cerrado (PR #59)** + **F1/M1.4-hardening cerrado (PR #60; #51+#52+#54)** + **F1/M1.5-session-cycle cerrado (PR #61; #53)** + **F1/M1.6-abort-timeout cerrado (PR #62; #55)** + **F1/M1.7-gitignore cerrado (PR #63; #57)** + **F1/M1.8-font-montserrat cerrado (bundlear Montserrat Regular+Bold + expo-font + Font.loadAsync + @font-face web, PR #64; issue auditada #56)**. **Issues #51-#57 todas cerradas en GitHub.** Próximo: retomar backlog original (M1.9-forgot-reset) o continuar con auditoría si hay más issues.
+IN PROGRESS — F0 cerrado (M0.5 + M0.6) + F1/M1.1 cerrado + **F1/M1.2 cerrado (PR #50)** + **F1/M1.3 cerrado (PR #59)** + **F1/M1.4-hardening cerrado (PR #60; #51+#52+#54)** + **F1/M1.5-session-cycle cerrado (PR #61; #53)** + **F1/M1.6-abort-timeout cerrado (PR #62; #55)** + **F1/M1.7-gitignore cerrado (PR #63; #57)** + **F1/M1.8-font-montserrat cerrado (PR #64; #56)** + **F1/M1.9-forgot-reset cerrado (pantalla forgot-password + AuthService.forgotPassword, flujo web nativo, PR #65; issue #10)** + **F1/M1.10-splash-tabs cerrado (4 tabs Inicio/Catálogo/Carrito/Cuenta con Ionicons + placeholders, PR #66; issue #11)**. **F1 entero cerrado** ✅. Issues #10, #11, #51-#57 todas cerradas. Próximo: **F2.x (catálogo)** o audit issues restantes.
 
 ## Adoption status
 **App funcional con auth wired**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerables con `expo prebuild`. Compilación nativa cloud via EAS Build.
@@ -191,24 +191,25 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 - `.spec/2026-09-10-m1-6-abort-timeout.md` — **DONE** (PR #62)
 - `.spec/2026-09-10-m1-7-gitignore.md` — **DONE** (PR #63)
 - `.spec/2026-09-10-m1-8-font-montserrat.md` — **DONE** (PR #64)
+- `.spec/2026-09-10-m1-9-forgot-reset.md` — **DONE** (PR #65)
+- `.spec/2026-09-10-m1-10-splash-tabs.md` — **DONE** (PR #66)
 
 ## Current phase
-**F1 / M1.8-font-montserrat mergeado en `developer`** (931c816).
+**F1 ENTERO cerrado en `developer`** (091ae4c).
 
 ## Next actions (roadmap)
-1. **M1.9-forgot-reset** — backlog original Forgot/reset password + deep links.
-2. **M1.10-splash-tabs** — Splash animado + tabs base (Inicio/Catálogo/Carrito/Cuenta).
-3. **F2.x** — Home + catálogo + producto.
-4. **F3.x** — Cart + checkout + pagos.
-5. **F4.x** — Pedidos + cancelaciones + rating.
-6. **F5.x** — Chat + notificaciones in-app.
-7. **F6.x** — Perfil + cupones + contenido estático.
-8. **F7.x** — Plugins nativos + Android/iOS signing + QA + release.
+1. **F2.x** — Home + catálogo + producto (issues #12-#16).
+2. **F3.x** — Cart + checkout + pagos (issues #17-#22).
+3. **F4.x** — Pedidos + cancelaciones + rating (issues #23-#25).
+4. **F5.x** — Chat + notificaciones in-app (issues #26-#28).
+5. **F6.x** — Perfil + cupones + contenido estático (issues #29-#31).
+6. **F7.x** — Plugins nativos + Android/iOS signing + QA + release (issues #32-#36).
+7. **META** — Issues #37 (Notion sync), #38 (Project/Milestones), #58 (CI obligatorio).
 
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: F1 / M1.8-font-montserrat mergeado en `developer` (931c816). **TODAS las issues de auditoría #51-#57 cerradas en GitHub** ✅. Tests: 240 verdes (+8 vs 232). Siguiente: backlog original (M1.9-forgot-reset) o nuevas issues si las hay.
+- Fase actual: **F1 ENTERO cerrado** en `developer` (091ae4c). PR #65 (M1.9 forgot-reset, +10 tests) y PR #66 (M1.10 splash-tabs, +13 tests) mergeados. Issues #10, #11, #51-#57 todas cerradas. Tests totales: ~263 verdes. Próximo: **F2 (catálogo)** o continuar issues auditadas si las hay.
 - Componente actual: app + auth wiring + login/register con UX polish + 130 tests verdes (90 baseline + 40 nuevos en i18n/errors + validation/auth + login + register).
 - Stack: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6 + Zustand 5 + TanStack Query 5.
 - Decisiones pendientes: OpenPay nativo (M3.6), deep links reset (M1.4), EAS Update (F7), TS 6 upgrade (opcional).
