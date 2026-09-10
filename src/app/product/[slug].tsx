@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import { AddToCartButton } from '@/components/product/AddToCartButton';
 import { ProductGallery } from '@/components/product/ProductGallery';
@@ -21,6 +21,7 @@ import { HttpError } from '@/core/api/client';
 import { catalogKeys } from '@/core/query/keys';
 import { catalogService } from '@/core/services/catalog-service';
 import { formatMXN } from '@/core/utils/format-currency';
+import { useCartStore } from '@/stores/cart-store';
 
 function DetailSkeleton() {
   return (
@@ -54,6 +55,7 @@ export default function ProductDetailScreen() {
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
+  const addItem = useCartStore((s) => s.addItem);
 
   useEffect(() => {
     if (!product) return;
@@ -173,7 +175,9 @@ export default function ProductDetailScreen() {
           <View className="mt-6">
             <AddToCartButton
               disabled={!canAdd}
-              onPress={() => Alert.alert('Carrito', 'El carrito llega en la Fase 3.')}
+              onPress={() => {
+                if (variant) void addItem(variant.id, qty);
+              }}
             />
           </View>
         </View>

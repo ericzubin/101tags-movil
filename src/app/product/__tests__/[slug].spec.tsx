@@ -45,6 +45,13 @@ jest.mock('@/core/services/catalog-service', () => ({
   catalogService: { getProductBySlug: jest.fn() },
 }));
 
+const mockAddItem = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('@/stores/cart-store', () => ({
+  useCartStore: (selector: (s: { addItem: typeof mockAddItem }) => unknown) =>
+    selector({ addItem: mockAddItem }),
+}));
+
 const baseProduct: ProductDetail = {
   id: 1,
   name: 'Playera Negra',
@@ -236,7 +243,7 @@ describe('ProductDetailScreen — estados (M2.4)', () => {
     });
   });
 
-  it('AC9: con variante válida el tap muestra el placeholder de F3', async () => {
+  it('AC7 (M3.1): agregar llama cartStore.addItem(variant.id, qty) y ya no usa Alert', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     mockQueryState = { isLoading: false, isError: false, error: null, data: singleOptionProduct };
     render(<ProductDetailScreen />);
@@ -247,7 +254,8 @@ describe('ProductDetailScreen — estados (M2.4)', () => {
       });
     });
     fireEvent.press(screen.getByTestId('add-to-cart'));
-    expect(alertSpy).toHaveBeenCalledWith('Carrito', 'El carrito llega en la Fase 3.');
+    expect(mockAddItem).toHaveBeenCalledWith(10, 1);
+    expect(alertSpy).not.toHaveBeenCalled();
     alertSpy.mockRestore();
   });
 
