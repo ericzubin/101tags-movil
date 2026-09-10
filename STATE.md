@@ -1,89 +1,170 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 fase 0 en curso
+IN PROGRESS — F0 / M0.4 cerrado (scaffold real generado)
 
 ## Adoption status
-Greenfield aún, scaffold no generado. Issue #1 (M0.1) cerrada.
+**Scaffold generado**. Ionic 9 + Angular 22 + Capacitor 8 + Tailwind 4 + ESLint 9 + Vitest 4 + pnpm 10 + Node 24 LTS. Web build verde. `ios/` y `android/` carpetas presentes (compilación nativa pendiente en máquina destino con Xcode / Android SDK).
 
 ## Current architecture
-Vacío en cuanto a código. Documento `DISCOVERY.md` + `docs/audit/*` producidos como artefacto de discovery.
+Workspace completo en repo root:
+- `src/app/{core/{guards,interceptors,models,services},shared/{components,directives,pipes},pages,home}/` con `.gitkeep` en los vacíos.
+- `src/environments/{environment,environment.prod}.ts` con `apiBaseUrl`.
+- `src/theme/variables.scss` con brand 101tags.
+- `angular.json`, `ionic.config.json`, `capacitor.config.ts` (appId `mx.com.tags.movil`, appName `101tags`, plugins Splash+StatusBar).
+- `ios/` (Capacitor 8, deployment target 15.0, SPM default) y `android/` (compileSdk 36, targetSdk 36).
 
-## Stack
-- Planeado: Ionic 7 + Angular 17 + Capacitor 6 + Tailwind + pnpm
-- API backend: Laravel 12 existente en `/home/user/code/codeweb/101tags.com-/` (NO modificar)
-- Auth: Sanctum bearer tokens (`POST /api/auth/customer/login`)
+## Stack (instalado y verificado)
 
-## Important directories
+| Capa | Versión real instalada |
+|---|---|
+| Node.js | 24.21.0 LTS (Krypton) |
+| pnpm | 10.32.1 |
+| Angular | 22.0.1 |
+| TypeScript | 6.0.3 |
+| RxJS | 7.8.2 |
+| zone.js | 0.15.1 |
+| Ionic Framework | 9.0.3 |
+| Capacitor (core/cli/android/ios) | 8.5.1 |
+| @capacitor plugins | app 8.1.1, haptics 8.0.2, keyboard 8.0.5, preferences 8.0.0, splash-screen 8.0.0, status-bar 8.0.3 |
+| ESLint | 9.39.5 (flat config) |
+| angular-eslint | 22.0.0 |
+| typescript-eslint | 8.70.0 |
+| Vitest | 4.1.11 |
+| jsdom | 26.1.0 |
+| Prettier | 3.9.6 |
+| ionicons | 8.1.0 |
 
-```
+**Backend**: Laravel 12 existente en `101tags.com-/` (NO modificar).
+**Auth**: Sanctum bearer tokens (F1).
+**Secure storage**: pendiente M1.1 (NO `@capacitor/preferences` para el token bearer).
+
+## Important files
+
+```text
 /101tags-movil/
-├── AGENTS.md
-├── STATE.md
-├── PLAN.md
-├── DISCOVERY.md                         ← NUEVO (artefacto de M0.1)
-├── docs/audit/                          ← NUEVO (referencias M0.1)
-│   ├── audit-1-api-contracts.md
-│   ├── audit-2-typescript-types.md
-│   └── audit-3-peculiarities.md
-├── .agent/WORKFLOW.md
-├── .spec/
-│   ├── README.md
-│   └── 2026-09-09-m0-1-auditar-contratos.md  ← NUEVO (spec M0.1)
-├── package.json (placeholder)
-└── .gitignore
+├── AGENTS.md                       (preserved)
+├── PLAN.md                         (preserved)
+├── DISCOVERY.md                    (preserved — user's 21-section version)
+├── TASKS.md                        (preserved)
+├── ISSUES.md                       (preserved)
+├── README.md                       (preserved)
+├── STATE.md                        (este archivo)
+├── .gitignore                      (preserved + cubre Capacitor artifacts)
+├── .nvmrc                          (NEW: 24)
+├── .editorconfig                   (NEW: Ionic defaults)
+├── .browserslistrc                 (NEW: defaults)
+├── .prettierrc                     (NEW: 100/singleQuote/trailingComma)
+├── .vscode/                        (NEW: Ionic config)
+├── angular.json                    (NEW: Angular 22 CLI)
+├── ionic.config.json               (NEW: type=angular-standalone)
+├── capacitor.config.ts             (NEW: appId mx.com.tags.movil)
+├── eslint.config.js                (NEW: flat config)
+├── tsconfig.json + tsconfig.app.json + tsconfig.spec.json  (NEW)
+├── package.json                    (NEW: stack M0.3 + scripts reales)
+├── pnpm-lock.yaml                  (NEW: sólo lockfile presente)
+├── ios/                            (NEW: Capacitor 8, SPM default)
+├── android/                        (NEW: Capacitor 8, compileSdk/targetSdk 36)
+├── src/
+│   ├── main.ts, index.html, global.scss, test-setup.ts
+│   ├── app/{app.component,app.routes,home}/
+│   ├── core/{guards,interceptors,models,services}/  (.gitkeep en cada)
+│   ├── shared/{components,directives,pipes}/         (.gitkeep en cada)
+│   ├── pages/                                         (.gitkeep)
+│   ├── environments/{environment,environment.prod}.ts
+│   ├── theme/variables.scss
+│   └── assets/
+├── .agent/WORKFLOW.md              (preserved)
+└── .spec/
+    ├── README.md
+    ├── 00-ionic-scaffold.md        (APPROVED, enmendada por M0.3)
+    ├── 2026-09-09-m0-1-auditar-contratos.md   (DONE)
+    ├── 2026-09-09-m0-3-validar-versiones.md   (APPROVED)
+    └── 2026-09-09-m0-4-workspace-ionic.md     (DONE — NUEVO)
 ```
 
 ## Testing
-- Framework: A definir en M0.6 (Karma+Jasmine default Angular o Jest).
-- Comandos: A definir en M0.6.
+- **Runner**: Vitest 4.1.11 + jsdom 26.1.0 (Angular 22 CLI default). M0.2 había propuesto Karma+Jasmine; Angular 22 ya no soporta Karma por defecto. Aceptado en M0.4.
+- **Smoke tests**: 2/2 pasan (template Ionic default).
+- **Configuración fina**: M0.6.
 
-## Verification commands
-- Tests: A definir
-- Lint: A definir
-- Formatter: A definir
-- Type check: `tsc --noEmit` (cuando exista `tsconfig.json`)
-- Build: `ionic build` (cuando exista)
+## Verification commands (reales, ejecutadas)
+- `nvm use 24` → Node v24.21.0 (LTS)
+- `pnpm install` → exit 0, 208 packages, 7.1s
+- `pnpm typecheck` → exit 0
+- `pnpm build` → exit 0, 4.5s, `www/index.html` generado
+- `pnpm exec ng test --watch=false` → exit 0, 2/2 tests
+- `pnpm lint` → exit 0, "All files pass linting"
+- `pnpm exec cap add android` → exit 0 (compileSdk 36, targetSdk 36)
+- `pnpm exec cap add ios` → exit 0 (iOS 15.0, SPM default)
+- `pnpm exec cap sync` → exit 0
 
 ## Existing test baseline
-Ninguno. Proyecto sin código.
+- 2/2 smoke tests verdes.
 
 ## Known pre-existing failures
-Ninguno.
+- Browserslist warning: Chrome 110, Firefox 107, Safari 16.1 marcados "unsupported" por Angular 22. No bloquea build. Cleanup opcional en M0.5.
+- `ionic cap add` invoca `npm` directamente y falla en este entorno con pnpm. Work-around aplicado: usar `pnpm exec cap add` directamente.
 
-## Active specification
-`.spec/2026-09-09-m0-1-auditar-contratos.md` — status DONE
+## Active specifications
+- `.spec/00-ionic-scaffold.md` — **APPROVED** (enmendada por M0.3)
+- `.spec/2026-09-09-m0-3-validar-versiones.md` — **APPROVED**
+- `.spec/2026-09-09-m0-4-workspace-ionic.md` — **DONE** (NUEVO)
 
 ## Current phase
-DONE — Issue #1 cerrada, esperando visto bueno del usuario antes de pasar a #2
+F0 / M0.4 DONE — pendiente abrir PRs (M0.1, M0.2, M0.3, M0.4) y mergear en orden. Después, M0.5 (theme/Tailwind/environments) o ir directo a F1.
 
 ## Last completed work
-**2026-09-09 — Issue #1 (M0.1): Auditar contratos backend / storefront**
-- 3 subagentes `explore` lanzados en paralelo (API contracts / TS types / peculiarities).
-- Hallazgos consolidados en `DISCOVERY.md` (resumen ejecutivo, 10 secciones, 7 discrepancias con PLAN.md, 5 huecos tipográficos, 12 peculiaridades documentadas con cita file:line, 6 decisiones pujadas a futuras specs).
-- 3 archivos de referencia detallada: `docs/audit/audit-1-api-contracts.md`, `audit-2-typescript-types.md`, `audit-3-peculiarities.md`.
-- Spec `.spec/2026-09-09-m0-1-auditar-contratos.md` redactada con status `DONE` y 9 escenarios BDD de verificación.
-- Branch `chore/m0-1-auditar-contratos` con commit local listo para push (rama aún no pusheada; usuario debe aprobar).
 
-## Comandos ejecutados
-- `git switch -c chore/m0-1-auditar-contratos`
-- Reads: AGENTS.md, STATE.md, PLAN.md, .agent/WORKFLOW.md, .spec/README.md
-- Reads: routes/api.php, app/Http/Controllers/Api/* (vía subagentes), storefront/src/types/* (vía subagentes), app/Services/* (vía subagentes), config/* (vía subagentes)
-- Tools ejecutados (no-modify): grep, read, bash read-only (ls, git status, git branch, route:list)
+### M0.4 (Issue #4) — Generar workspace Ionic/Angular/Capacitor — DONE
+- **Rama**: `chore/m0-4-workspace-ionic` (push en este turno).
+- **Comando ejecutado**: `ionic start 101tags blank --type=angular-standalone --capacitor --package-id=mx.com.tags.movil --no-deps --no-git` en `/tmp/ionic-gen/`, luego `rsync -a` al repo root.
+- **Personalizaciones aplicadas**:
+  - `capacitor.config.ts`: appId `mx.com.tags.movil`, plugins Splash + StatusBar con `#E31E24`.
+  - `src/theme/variables.scss`: colores brand 101tags (rojo, dark, medium) + Montserrat.
+  - `src/environments/{environment,environment.prod}.ts`: apiBaseUrl dev/prod.
+  - `src/app/core/{guards,interceptors,models,services}/`, `src/app/shared/{components,directives,pipes}/`, `src/app/pages/` con `.gitkeep`.
+  - `package.json`: stack M0.3, `packageManager: "pnpm@10.32.1"`, scripts completos (typecheck/build/test/lint/format/cap:*/validate).
+  - `.nvmrc`: `24`. `.prettierrc`: 100/singleQuote/trailingComma.
+- **Capacitor platforms**:
+  - Android: compileSdk 36, targetSdk 36 (default Cap 8 — sin bump manual necesario).
+  - iOS: deployment target 15.0, Swift Package Manager como default (Cap 8). `CapApp-SPM/Package.swift` generado.
+- **Tests/lint/build**: todos verdes (exit 0). Verificación ejecutada, no asumida.
+- **Discrepancias detectadas**:
+  - **D9**: `appId` cambió a `mx.com.tags.movil` (vs `mx.com.101tags.movil` que decía PLAN.md y `.spec/00-ionic-scaffold.md`). Capacitor rechazó el original por segmentos que empiezan con dígito (`101tags`).
+  - **D10**: M0.2 proponía `app.config.ts` separado; Angular 22 usa `main.ts` para providers. Aceptado.
+- **Comando final**: `pnpm exec cap sync` exit 0.
 
-## Resultados
-- 58 endpoints buyer-side documentados (a través de `audit-1-api-contracts.md` §2).
-- 26 interfaces + 12 unions + 4 generics del storefront inventariados (`audit-2-typescript-types.md` §2).
-- 12 peculiaridades backend con cita `file:line` (`audit-3-peculiarities.md` §1-§12).
-- 7 discrepancias con `PLAN.md` resueltas (`DISCOVERY.md §5`).
-- 5 huecos tipográficos listados con plan de creación en M0.4 (`DISCOVERY.md §6`).
+### Estado de las 4 ramas en `origin` (todas push OK)
 
-## Riesgos pendientes (no resueltos por M0.1, pujados a specs futuras)
-- **D-OPENPAY-NATIVE** (M3.6 spec): SDK nativo vs in-app browser al storefront vs diferir tarjeta house. Documentar trade-offs ANTES de codear.
-- **D-DEEPLINK-RESET** (M1.4 spec): scheme nativo o copy/paste manual de token.
-- **D-PAGINATION-CACHE** (F2 specs): endpoints a cachear offline.
-- **D-MULTI-HOUSE-CART** (M3.2 spec): carrito mixto house+externo.
-- **D-NOTIFICATIONS-PUSH**: confirmado NO en MVP (sólo in-app).
+```
+chore/m0-1-auditar-contratos (9043306) — pendiente merge
+chore/m0-2-spec-scaffold     (eca35e1) — pendiente merge
+chore/m0-3-validar-versiones (d8cd4a7) — pendiente merge
+chore/m0-4-workspace-ionic   (próximo push) — pendiente merge
+```
 
 ## Next action
-Esperar visto bueno del usuario para mergear `chore/m0-1-auditar-contratos` (o continuar desde esa rama) y abrir issue #2 (M0.2 — Cerrar y aprobar spec del scaffold).
+
+1. **Abrir PRs para las 4 ramas** (M0.1, M0.2, M0.3, M0.4) en orden cronológico.
+2. **Aprobar/mergear los 4 PRs** en `main` (M0.1 → M0.2 → M0.3 → M0.4).
+3. **M0.5 (Issue #5)**: Tailwind 4 CSS-first, theme fino, environments ajustes, proxy dev. Opcional cleanup de `.browserslistrc`.
+4. **M0.6 (Issue #6)**: scripts reales de quality, ESLint rules custom, smoke tests, CI-ready.
+5. **F1 (M1.1)**: secure storage + modelos Auth.
+
+## Handover
+
+[RELEVO DE AGENTE]
+- Fase actual: F0 / M0.4 DONE — scaffold funcional
+- Specs activas:
+  - `.spec/00-ionic-scaffold.md` (APPROVED)
+  - `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED)
+  - `.spec/2026-09-09-m0-4-workspace-ionic.md` (DONE)
+- Componente actual: scaffold web + ios/ + android/ + 2/2 tests verdes
+- Stack real instalado y verificado: Node 24.21 + pnpm 10.32 + Angular 22.0.1 + Ionic 9.0.3 + Capacitor 8.5.1 + TS 6.0.3 + ESLint 9.39 + Vitest 4.1
+- Discrepancias activas: D9 (appId), D10 (main.ts vs app.config.ts)
+- Tests: 2/2 smoke verdes
+- Última acción: scaffold generado + verificado
+- Próximo paso exacto: abrir PRs para las 4 ramas en GitHub (M0.1, M0.2, M0.3, M0.4) y mergear en orden
+- Decisiones pendientes: Tailwind 4 sí/no (M0.5); secure storage (M1.1); OpenPay nativo (M3.6); deep links reset (M1.4)
+- Pre-F7: compilación nativa requiere macOS con Xcode (iOS) o máquina con Android SDK + JDK 17+ (Android)

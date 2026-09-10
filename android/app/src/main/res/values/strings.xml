@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">101tags</string>
+    <string name="title_activity_main">101tags</string>
+    <string name="package_name">mx.com.tags.movil</string>
+    <string name="custom_url_scheme">mx.com.tags.movil</string>
+</resources>
