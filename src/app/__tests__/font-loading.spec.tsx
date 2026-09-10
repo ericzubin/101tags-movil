@@ -29,8 +29,9 @@ jest.mock('expo-router', () => {
   const MockStack = (props: { children?: React.ReactNode }) =>
     ReactLib.createElement(ReactLib.Fragment, null, props.children);
   MockStack.displayName = 'Stack';
-  MockStack.Screen = () => null;
-  MockStack.Screen.displayName = 'StackScreen';
+  const MockStackScreen: () => null = () => null;
+  (MockStackScreen as unknown as { displayName: string }).displayName = 'StackScreen';
+  (MockStack as unknown as { Screen: typeof MockStackScreen }).Screen = MockStackScreen;
   mockRouterReplace = jest.fn();
   return {
     Stack: MockStack,
