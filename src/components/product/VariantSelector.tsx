@@ -52,7 +52,7 @@ export function VariantSelector({
                   testID={`variant-size-${size}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Talla ${size}`}
-                  accessibilityState={{ selected, disabled: dimmed }}
+                  accessibilityState={{ selected, disabled: unavailable }}
                   accessibilityHint={
                     crossDisabled ? 'Cambia la selección de color si es necesario' : undefined
                   }
@@ -91,7 +91,7 @@ export function VariantSelector({
                   testID={`variant-color-${color}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Color ${color}`}
-                  accessibilityState={{ selected, disabled: dimmed }}
+                  accessibilityState={{ selected, disabled: unavailable }}
                   accessibilityHint={
                     crossDisabled ? 'Cambia la selección de talla si es necesario' : undefined
                   }

@@ -53,15 +53,30 @@ describe('VariantSelector', () => {
     });
   });
 
-  it('AC5: talla M deshabilitada con Negro (stock 0) y habilitada con Blanco', () => {
+  it('AC5 (M2-review): chip cruzado se atenúa pero NO se anuncia disabled', () => {
     const { rerender } = render(<VariantSelector {...baseProps} selectedColor="Negro" />);
+    // Talla M existe en stock con Blanco, así que con Negro es solo un cruce
+    // transitorio: visualmente atenuada, pero accesiblemente habilitada.
     expect(screen.getByTestId('variant-size-M').props.accessibilityState).toMatchObject({
-      disabled: true,
+      disabled: false,
     });
 
     rerender(<VariantSelector {...baseProps} selectedColor="Blanco" />);
     expect(screen.getByTestId('variant-size-M').props.accessibilityState).toMatchObject({
       disabled: false,
+    });
+  });
+
+  it('a11y: chip globalmente sin stock reporta disabled: true', () => {
+    const withOutOfStock: ProductVariantSummary[] = [
+      variant({ id: 1, size: 'S', color: 'Azul', stock: 3 }),
+      variant({ id: 2, size: 'X', color: 'Azul', stock: 0, inStock: false }),
+    ];
+
+    render(<VariantSelector {...baseProps} variants={withOutOfStock} />);
+
+    expect(screen.getByTestId('variant-size-X').props.accessibilityState).toMatchObject({
+      disabled: true,
     });
   });
 
@@ -105,7 +120,7 @@ describe('VariantSelector', () => {
     );
 
     expect(screen.getByTestId('variant-size-M').props.accessibilityState).toMatchObject({
-      disabled: true,
+      disabled: false,
     });
     fireEvent.press(screen.getByTestId('variant-size-M'));
     expect(onSelectSize).toHaveBeenCalledWith('M');
