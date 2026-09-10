@@ -290,29 +290,32 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M4.1 — Mis pedidos + detalle + tracking
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** F3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-1-orders.md`
 
 **Aceptación**
-- [ ] Lista paginada/ordenada según API.
-- [ ] Detalle muestra items, total, estado y timeline.
-- [ ] Carrier/tracking se muestra solo cuando existe.
-- [ ] Pedido ajeno/no encontrado se maneja correctamente.
+- [x] Lista paginada/ordenada según API.
+- [x] Detalle muestra items, total, estado y timeline.
+- [x] Carrier/tracking se muestra solo cuando existe.
+- [x] Pedido ajeno/no encontrado se maneja correctamente.
 
 ## M4.2 — Cancelaciones y devoluciones
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-2-returns.md`
 
 **Aceptación**
-- [ ] Acciones solo aparecen en estados permitidos.
-- [ ] Solicitud valida motivo/datos requeridos.
-- [ ] Listado de devoluciones refleja status backend.
-- [ ] 403/409/422 no se presentan como éxito.
+- [x] Acciones solo aparecen en estados permitidos.
+- [x] Solicitud valida motivo/datos requeridos.
+- [x] Listado de devoluciones refleja status backend.
+- [x] 403/409/422 no se presentan como éxito.
 
 ## M4.3 — Calificación de proveedor
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-3-rating.md`
 
 **Aceptación**
-- [ ] Rating respeta rango y reglas backend.
-- [ ] No permite doble submit accidental.
-- [ ] Estado ya-calificado se representa correctamente.
+- [x] Rating respeta rango y reglas backend.
+- [x] No permite doble submit accidental.
+- [x] Estado ya-calificado se representa correctamente.
 
 ---
 
