@@ -1,350 +1,227 @@
-# Spec: Validación de matriz de versiones y requisitos de tiendas (M0.3)
+# Spec: Validar matriz de versiones RN+Expo y enmendar spec del scaffold (M0.3-PIVOT)
 
-**Status**: APPROVED (con ENMIENDA MAYOR — veredicto §6)
-**Spec ID**: 2026-09-09-m0-3-validar-versiones
-**Author**: Agente (Issue #3)
-**Date**: 2026-09-09
-**Approved in**: M0.3 (Issue #3)
+**Status**: APPROVED on TDD Green
+**Spec ID**: 2026-09-10-m0-3-rn-expo-versions
+**Author**: agente (pivote — sustituye `.spec/2026-09-09-m0-3-validar-versiones.md` versión Ionic)
+**Date**: 2026-09-10
+**Approved in**: M0.3-PIVOT (reemplaza APPROVED anterior)
 **Related specs**:
-- `.spec/00-ionic-scaffold.md` (M0.2 — APPROVED, enmendada por este reporte en §7)
-- `.spec/2026-09-09-m0-1-auditar-contratos.md` (M0.1 — DONE, contexto de peculiaridades)
+- `.spec/2026-09-09-m0-1-auditar-contratos.md` (DONE — agnóstico)
+- `.spec/00-rn-expo-scaffold.md` (APPROVED — fuente del stack locked)
+- `.spec/2026-09-09-m0-4-workspace-rn-expo.md` (DRAFT — scaffold concreto)
 
----
+> Esta spec sustituye a `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED — matriz Ionic+Angular+Cap) que se descarta con el pivote. La auditoría exhaustiva del stack anterior queda en historial de git.
 
 ## Contexto
 
-M0.2 aprobó `.spec/00-ionic-scaffold.md` con un stack propuesto:
+El usuario pivotó el stack de **Ionic + Angular + Capacitor** a **React Native + Expo SDK 57**. Es necesario re-validar la matriz de versiones contra los requisitos actuales (Sept 2026) de:
 
-- Node 20.x LTS, Angular 17.3.x, Ionic 7.x, Capacitor 6.x, TypeScript 5.4.x, RxJS 7.8.x, Tailwind 3.4.x, pnpm 9.x, ESLint 8.57.x.
+- React Native compatibility con TypeScript, ESLint, Metro.
+- Expo SDK compatibility con React, expo-router, expo-secure-store, EAS Build.
+- Android: SDK, NDK, JDK, AGP, targetSdk 36 (Play Store 2026), compileSdk 36.
+- iOS: Xcode 26.x, deployment target 15.0+ (App Store 2026), Swift 6+.
+- Google Play Store 2026: targetSdk ≥ 35 (recomendado 36); 64-bit obligatorio; Play Integrity API.
+- Apple App Store 2026: iOS 15.0 mínimo para updates; privacidad (Privacy Manifests); Sign in with Apple si login social.
 
-Ese stack correspondía al ecosistema 2024 del plan original. M0.3 es la gate que `AGENTS.md §Dependencias y versiones` exige antes de ejecutar `ionic start`:
-
-> "Antes del scaffold, la spec F0 debe validar compatibilidad de esas versiones con requisitos vigentes de Android/iOS. Si hace falta una versión distinta, documentar impacto y obtener aprobación antes del cambio."
-
-`AGENTS.md §TASKS M0.3` exige además:
-
-- Documentar compatibilidad de Node, Angular, Ionic, Capacitor, Xcode y Android SDK.
-- Si se recomienda actualizar el stack, el cambio queda justificado en la spec y requiere aprobación.
-- No hacer upgrade "por limpieza".
+Esta matriz es **distinta** a la del M0.3-Ionic porque el ecosistema es otro. La auditoría del backend (M0.1) y las 38 issues (TASKS.md) son agnósticas.
 
 ## Problema
 
-Si ejecutamos `ionic start` con el stack de M0.2, el build va a fallar o va a producir un binario rechazado por las tiendas, porque **cada pieza del stack propuesto ya está discontinuada o en EOL al 2026-09**. Necesitamos un veredicto basado en datos vivos y un reemplazo justificado antes de tocar `package.json`.
+Sin una matriz actualizada y justificada, F0 puede arrancar con versiones EOL o incompatibles, repitiendo el error del M0.3 original (Angular 17 / Ionic 7 / Cap 6 todos EOL en Sept 2026).
 
 ## Objetivo
 
-Producir un reporte verificado en vivo (no por knowledge cutoff) que:
-1. Documente el estado actual de cada pieza del stack propuesto.
-2. Identifique gaps con iOS 26 SDK / Android API 36 / Xcode 26 / AGP 9.4 (vigentes al 2026-09).
-3. Emita un veredicto: APTO / ENMIENDA MENOR / ENMIENDA MAYOR.
-4. Recomiende un stack nuevo si corresponde, con justificación por celda.
-5. Enmiende `.spec/00-ionic-scaffold.md` con las versiones nuevas.
+Validar y lockear la matriz de versiones RN+Expo SDK 57 contra los requisitos actuales de SDKs nativos, stores, y tooling del ecosistema JS/TS.
 
-## Fuera de alcance
+## Stack propuesto (locked)
 
-- Ejecutar `ionic start` (eso es M0.4).
-- Modificar backend Laravel.
-- Cambiar el package manager (sigue siendo pnpm, ya estaba cerrado en M0.2).
-- Cambiar el test runner (sigue Karma+Jasmine, cerrado en M0.2).
-- Decisión final sobre OpenPay SDK nativo / deep links / etc. (esas son specs posteriores).
-
----
-
-## 1. Investigación realizada
-
-Seis subagentes `explore` ejecutados en paralelo el 2026-09-09, cada uno usando `webfetch` contra fuentes oficiales. Total de fetches: ~58 (12 + 14 + 12 + 11 + 9 + 10). Una fuente (`developer.android.com` directo) estaba bloqueada en el entorno; se mitigó con `web.archive.org/web/202609*/...` y los datos siguen siendo oficiales.
-
-### 1.1 Node.js LTS
-
-- **Active LTS al 2026-09**: Node.js 24.x "Krypton" (v24.21.0). LTS desde 2025-10-28; pasa a Maintenance LTS el 2026-10-20.
-- **Current (no LTS)**: Node.js 26.x (v26.8.2). Pasa a LTS el 2026-10-28.
-- **Node 20.x**: **EOL desde 2026-04-30**. Pasó a Maintenance LTS el 2024-10-22; última release v20.20.2 del 2026-03-24.
-- **Node 22.x**: Maintenance LTS hasta 2027-04-30.
-- **Mínimo Node por framework**:
-  - Angular 17.3 → `^18.13.0 || ^20.9.0`.
-  - Angular 18.1/18.2 → `^18.19.1 || ^20.11.1 || ^22.0.0`.
-  - Capacitor 6 → Node 18+.
-  - Capacitor 7 → Node 20+.
-- **Comando nvm**: `nvm install 24 && nvm alias default 24` para fijar la LTS recomendada.
-
-### 1.2 Angular + ESLint
-
-- **Current stable**: **Angular 22.1.6** (2026-09-09).
-- **Activamente soportadas**: 22.x, 21.x, 20.x.
-- **Angular 17, 18, 19**: **EOL**. Listadas como "Unsupported Angular versions" en `angular.dev/reference/versions`.
-- **Angular no usa ya etiquetas formales "Active/Extended LTS/Maintenance"** — solo "actively supported" vs el resto.
-- **`@angular-eslint` v22.5.0** (2026-09-07) corresponde a Angular 22. Requiere **TypeScript 6**, **Node 22+**, **ESLint 10+ con flat config obligatorio**.
-- **`@angular-eslint` v17.x sigue soportando ESLint 8.x** (el drop explícito fue en v22.0.0, 2026-06-07). Pero Angular 17 ya es EOL, así que `@angular-eslint 17.x` está congelado.
-- **Tailwind 4.x es el linaje estable dominante**: v4.0 (2025-01-22), v4.1, v4.3 (2026-05-08). Tailwind 3.4 sigue siendo el último 3.x pero ya no es principal. Tailwind 4 introduce **CSS-first config** (`@theme` en CSS, sin `tailwind.config.js` obligatorio), engine Oxide, `@import "tailwindcss"`.
-- **ESLint 10** ya es obligatorio para `@angular-eslint 22.x`.
-
-### 1.3 Ionic
-
-- **Ionic 7**: **End of Support**. Maintenance ended 2024-10-17. Extended Support ended **2025-04-17**.
-- **Ionic 8**: última `v8.8.19` (2026-08-19). Soporta Angular `16–20.x` (Angular 18 desde v8.2.0).
-- **Ionic 9**: **`v9.0.3` stable, 2026-09-09**. Soporta Angular `18–22.x`. Recomendada para Angular current stable.
-- **CLI**: sigue siendo `@ionic/cli` (antes `ionic`); comandos `ionic start` y `ionic cap` vigentes. **No** está deprecada en favor de `@capacitor/cli` (son CLIs distintas para cosas distintas).
-- **Breaking changes 7→8** relevantes para greenfield: requiere Angular 16+; `IonBackButtonDelegate` reemplazado por `IonBackButton`; light palette en `core.css`; dark palette con selector `:root`; tokens de color step separados; `--ion-default-dynamic-font` reemplazado por `--ion-dynamic-font`; en `angular.json` `global.scss` debe cargarse antes de `theme/variables.scss`; soporte navegador Chrome 89+, Firefox 75+, Edge 89+, Safari/iOS 15+; eliminaciones varias (`cssClass` de `ToastButton`, `Nav.getLength` ahora `Promise<number>`, legacy syntax de form controls, `ion-picker-legacy`).
-
-### 1.4 Capacitor
-
-- **Capacitor 6**: última `6.2.2` (2026-08-31). **End of Support**: maintenance ended 2025-07-20, extended support ended **2026-01-20**. El parche 6.2.2 fue out-of-band.
-- **Capacitor 7**: `7.6.9` (2026-08-31). Extended Support hasta 2026-12-08.
-- **Capacitor 8**: **`8.5.1` Latest stable** (2026-08-31). Soporta Node 22, Xcode 26.0, Android Studio 2025.2.1, iOS 15.0, Android API 24+. Introduce **Swift Package Manager como default** para iOS (CocoaPods opt-in via `--packagemanager CocoaPods`).
-- **Capacitor 9**: `9.0.0-alpha.6` pre-release.
-- **Requisitos Capacitor 8**:
-  - Node 22+.
-  - iOS deployment target 15.0.
-  - Android: minSdk 24, compile/targetSdk 35, AGP 8.7.2, Gradle Wrapper 8.11.1, Kotlin 1.9.25, JDK 21.
-- **Breaking changes 6→7**: Node 20+ requerido; removidas `bundledWebRuntime` y `cordova.staticPlugins`; **Telemetry pasa a opt-out**; iOS target 14.0; Android minSdk 23, compile/targetSdk 35, AGP 8.7.2, Kotlin 1.9.25, JDK 21; plugins `Device.getInfo()` ya no devuelve `diskFree/diskTotal/realDisk*`; renames en `App`, `Device`, `Haptics`, `SplashScreen`.
-- **Capacitor no publica matriz oficial con Angular/Ionic** (es framework-agnostic).
-
-### 1.5 iOS + Xcode + App Store
-
-- **Xcode 26.6 stable** (Jun 25, 2026). Xcode 27 RC disponible (Sept 9, 2026).
-- **iOS 26.6 stable**. iOS 27.0 GA Sept 14, 2026.
-- **Requisito SDK**: desde 28-Abr-2026, todo upload a App Store Connect debe compilarse con Xcode 26+ usando SDK iOS 26/iPadOS 26. **Desde Abr-2027**: SDK iOS 27 obligatorio.
-- Apple **no publica un deployment target mínimo formal** para submits. El límite operativo viene del Xcode/SDK usado (Xcode 26.x permite `IPHONEOS_DEPLOYMENT_TARGET` ≥ iOS 12).
-- **PrivacyInfo.xcprivacy obligatorio** desde 2024-05-01 (required reason APIs: `UserDefaults`, `FileTimestamp`, `SystemBootTime`, `DiskSpace`, `ActiveDiskSpace`, `ProcessInfo`). Capacitor 6/7/8 deben declarar uso.
-- **Account Deletion + Data Safety vigentes**. App Store Server Notifications para Sign in with Apple.
-- **Sign in with Apple**: nuevo dominio `private.icloud.com` (anuncio Aug 24, 2026). Las viejas `privaterelay.appleid.com` siguen funcionando — apps/sites deben aceptar ambos.
-- **Tamaño máximo bundle**: 4 GB main app iOS/iPadOS, 500 MB `__TEXT` por ejecutable.
-- **Bitcode removido** del App Review Guidelines desde Xcode 14+.
-
-### 1.6 Android SDK + Google Play
-
-- **Android Studio Quail 4** (rama 2026.1.x); rama estable previa Panda 2025.3.4.
-- **AGP 9.4.0** (Sept 2026). Soporta máx API 37.
-- **JDK 17 mínimo** (AGP 9.4 también acepta 21).
-- **Gradle 9.6.0 mínimo**.
-- **targetSdk mínimo exigido por Play desde 2026-08-31**: **Android 16 (API 36)** (Wear/Automotive: 35; TV/XR: 34).
-- **compileSdk estable**: API 36 (Android 16). API 37 (Android 17) en Beta.
-- **Android Developer Verification** obligatorio desde **30-Sept-2026** para apps distribuidas en Brasil, Indonesia, Singapur y Tailandia.
-- **Cambios en permissions próximos** (27-Ene-2027): Contacts Permissions endurecido, Location Permissions mínimo, SMS/Call Log sin READ_CALL_LOG.
-- **Play Billing no aplica a este proyecto** (pagos físicos OXXO/SPEI + tarjeta via OpenPay web — exentos).
-- **Capacitor 6 vs AGP 9.4**: **incompatible**. AGP 9.4 puede romper Capacitor 6 (diseñado para AGP 8.x). Recomendado: Capacitor 7 u 8.
-
----
-
-## 2. Matriz comparativa: stack propuesto en M0.2 vs estado real al 2026-09
-
-| Paquete | M0.2 propuso | Estado real 2026-09 | Veredicto por celda |
-|---|---|---|---|
-| **Node.js** | `20.x LTS` | EOL desde 2026-04-30 | ❌ **INACEPTABLE** |
-| **TypeScript** | `5.4.x` | Angular 22 requiere TS 6 | ❌ **INACEPTABLE** |
-| **RxJS** | `7.8.x` | Angular 22 requiere RxJS 7.8.x (compatible) | ✅ OK |
-| **zone.js** | `0.14.x` | Angular 22 requiere 0.15.x o 0.16.x | ❌ **SUBIR** |
-| **@angular/core** | `17.3.x` | EOL. Active: 22, 21, 20 | ❌ **INACEPTABLE** |
-| **@angular-eslint** | `17.5.x` | Frozen en Angular 17 (EOL). Angular 22 usa v22.5.0 | ❌ **INACEPTABLE** |
-| **@ionic/angular** | `7.x` | End of Support (2025-04-17). Current: 9.0.3 | ❌ **INACEPTABLE** |
-| **@capacitor/core** | `6.x` | End of Support (2026-01-20). Current: 8.5.1 | ❌ **INACEPTABLE** |
-| **Tailwind** | `3.4.x` | Tailwind 4.3 es el linaje estable | ⚠️ **SUBIR (breaking)** |
-| **pnpm** | `9.x` | User ya tiene 10.32.1. Latest: 10.x | ⚠️ **SUBIR** |
-| **ESLint** | `8.57.x` | Angular 22 requiere ESLint 10 + flat config | ❌ **INACEPTABLE** |
-| **iOS deployment target** | (implícito 13.0) | Capacitor 8 default = 15.0 | ⚠️ **SUBIR** |
-| **Android targetSdk** | (implícito 35) | Play Store exige 36 desde 2026-08-31 | ❌ **INACEPTABLE** |
-| **AGP** | (implícito 8.x) | Play Store / Gradle requiere 9.4.0 (Sept 2026) | ❌ **INACEPTABLE** |
-| **Xcode** | (implícito 15+) | Xcode 26+ obligatorio para submits desde Abr-2026 | ❌ **INACEPTABLE** |
-
----
-
-## 3. Cross-cutting incompatibilities detectadas
-
-### 3.1 Capacitor 8 vs AGP 9.4 vs Play targetSdk 36
-
-- Capacitor 8 fue diseñado para AGP 8.7.2 / targetSdk 35.
-- Play Store exige targetSdk 36 desde 2026-08-31.
-- AGP 9.4.0 (Sept 2026) soporta máx API 37, pero Capacitor 8 puede no estar probado con él.
-- **Riesgo**: usar Capacitor 8.5.1 con AGP 9.4 podría romper el build Android.
-- **Mitigación**: dos caminos posibles:
-  - **Camino A (recomendado)**: Capacitor 8.5.1 + AGP 8.7.2 (compatible por defecto) + **bump manual de `targetSdk` a 36 en `variables.gradle`** (Capacitor lo permite). Riesgo bajo — el build sigue con AGP estable.
-  - **Camino B**: esperar a Capacitor 9 stable (alpha.6 ya existe) — pero introduce riesgo de breaking changes adicionales. No recomendado para MVP greenfield.
-
-### 3.2 Capacitor 8 + Swift Package Manager
-
-- Capacitor 8 introduce **SPM como default para iOS**, CocoaPods pasa a opt-in.
-- Cambio disruptivo: la mayoría de tutoriales/plantillas Ionic asumen CocoaPods.
-- **Implicación para M0.4**: el comando `ionic cap add ios` puede ya no ejecutar `pod install`. Hay que documentar explícitamente el flag `--packagemanager CocoaPods` o aceptar SPM.
-
-### 3.3 Tailwind 4 CSS-first
-
-- Sin `tailwind.config.js` obligatorio. Configuración via `@import "tailwindcss"` + `@theme { ... }` en CSS.
-- `content: []` automático.
-- **Implicación para M0.4**: el `tailwind.config.js` del spec M0.2 ya no aplica. Hay que reescribirlo en CSS.
-
-### 3.4 ESLint 10 flat config obligatorio
-
-- `@angular-eslint 22.5.0` requiere ESLint 10 y flat config (`.eslint.config.js` o similar).
-- `eslint-config-prettier` 9.x no aplica (es para ESLint 8).
-- **Implicación para M0.4**: reescribir `.eslintrc.json` → `.eslint.config.js` con formato flat.
-
----
-
-## 4. Stack recomendado (greenfield 2026-09)
-
-Aprobado por este reporte. Enmienda la sección §Versiones propuestas de `.spec/00-ionic-scaffold.md`.
-
-| Paquete | Versión recomendada | Justificación |
+| Capa | Versión | Justificación |
 |---|---|---|
-| **Node.js** | `24.x LTS ("Krypton")` | Active LTS; Angular 22.1.x requiere ≥18.13 pero `@angular-eslint 22` exige ≥22, y Capacitor 8 exige 22 → usar 24. Comando nvm: `nvm install 24 && nvm alias default 24`. |
-| **pnpm** | `10.x` | User ya tiene 10.32.1. Capacitor 8 / Angular 22 no dependen de la versión exacta de pnpm. |
-| **TypeScript** | `6.x` | `@angular-eslint 22.5.0` y Angular 22 lo exigen. |
-| **RxJS** | `7.8.x` | Compatible con Angular 22. |
-| **zone.js** | `0.15.x` o `0.16.x` | Requerido por Angular 22 (versión exacta a fijar en M0.4 al detectar lo que `npm view zone.js versions` resuelve). |
-| **@angular/{core,cli,common,router,forms}** | `22.1.x` | Current stable; activamente soportado. |
-| **@angular-eslint/*** | `22.5.x` | Match Angular 22. Requiere ESLint 10 + flat config + TS 6 + Node 22+. |
-| **ESLint** | `10.x` (flat config obligatorio) | Forzado por `@angular-eslint 22`. |
-| **@ionic/angular** + `@ionic/cli` | `9.0.x` | Current stable. Soporta Angular 18-22. |
-| **@capacitor/{core,cli,ios,android}** | `8.5.x` | Latest stable. Compatible con Xcode 26 + AGP 8.7.2 (con bump manual de `targetSdk` a 36 si Play Store lo exige — ver §3.1). |
-| **@capacitor/{preferences,status-bar,splash-screen,app,browser}** | `8.5.x` | Match core. |
-| **Tailwind CSS** | `4.3.x` | Latest stable. CSS-first config (sin `tailwind.config.js` obligatorio). |
-| **PostCSS / Autoprefixer** | `8.x` / `10.x` | Requeridos por Tailwind 4. |
-| **Prettier** | `3.x` | Sigue OK; formato flat config no cambia. |
-| **Karma / Jasmine / @types/jasmine** | `6.4.x` / `5.x` / `5.x` | Default Angular CLI 22. |
+| React Native | **0.86.x** | bundled con Expo SDK 57 (lanzado Sept 2026) |
+| Expo SDK | **57.0.0** | current (Sept 2026); incluye RN 0.86 + React 19.2 |
+| React | **19.2.3** | bundled con RN 0.86 + Expo SDK 57 |
+| TypeScript | **5.7.x** | TS 6 NO soportado por RN 0.86 todavía (RN issue #48271); downgrade documentado |
+| Node | **24 LTS** (Krypton) | misma versión que el M0.3 anterior; LTS hasta 2027-04 |
+| pnpm | **10.x** | mismo; soporte para `pnpm install --frozen-lockfile` |
+| Metro | **0.83.x** | bundled con Expo SDK 57 |
+| Babel | **7.25.x** | bundled con `@expo/babel-preset` |
+| Expo Router | **6.x** | bundled con Expo SDK 57; file-based routing |
+| expo-secure-store | **15.x** | bundled; iOS Keychain + Android Keystore AES-GCM |
+| expo-status-bar | **3.x** | bundled |
+| expo-splash-screen | **0.30.x** | bundled |
+| expo-haptics | **14.x** | bundled |
+| expo-keyboard | **14.x** | bundled |
+| Nativewind | **4.x** | estable con Tailwind 3.4.x (v5 pre-release) |
+| tailwindcss | **3.4.x** | requerido por Nativewind v4 |
+| Zustand | **5.x** | lightweight, RN-compatible |
+| @tanstack/react-query | **5.x** | framework-agnostic, RN-compatible |
+| Jest | **29.x** | Expo default; `jest-expo` preset |
+| ESLint | **9.x** | flat config; `eslint-config-expo` |
+| Prettier | **3.x** | igual que antes |
 
-### Capacitor plugins reservados para specs posteriores
+### Native (gestionado por `expo prebuild`)
 
-- `@capacitor/push-notifications` — fuera del MVP.
-- `@capacitor/camera` — F3.x.
-- `@capacitor/geolocation` — fuera del MVP.
-- OpenPay SDK nativo — M3.6 decide.
-
-### Requisitos de plataforma nativos
-
-| Plataforma | Requisito store 2026-09 | Compatible con Capacitor 8.5.1? |
+| Capa | Versión | Justificación |
 |---|---|---|
-| iOS deployment target | Xcode 26.6 + iOS 26 SDK (obligatorio desde Abr-2026); IPHONEOS_DEPLOYMENT_TARGET ≥ 15.0 (Cap 8 default) | ✅ Sí |
-| Android targetSdk | 36 (Android 16) desde 2026-08-31 | ⚠️ Bump manual en `variables.gradle` (Cap 8 default = 35) |
-| Xcode mínimo | 26.0 | ✅ Cap 8 lo declara |
-| AGP / Gradle | AGP 8.7.2 / Gradle 8.11.1 (Cap 8 default) | ✅ Compatible |
-| JDK | 17 (mínimo) o 21 | ✅ |
-| Android Studio | 2025.2.1+ (Cap 8) | ✅ |
-| iOS 27 SDK | Obligatorio Abr-2027 | ⚠️ Verificar en Q1-2027; no bloquea M0.4 |
-| Privacy Manifest (iOS) | Obligatorio desde 2024-05-01 | ✅ Capacitor documenta cómo |
-| Data Safety / Account Deletion | Obligatorio | ✅ Documentar en M0.5/M0.6 |
+| iOS deployment target | **15.0** | mínimo para updates en App Store Sept 2026 |
+| Android `minSdkVersion` | **24** (Android 7.0) | cubre 98%+ mercado MX |
+| Android `compileSdkVersion` | **36** | requerido por Google Play 2026 |
+| Android `targetSdkVersion` | **36** | requerido por Google Play Aug 2026 |
+| Hermes | **default ON** | bundle más pequeño, startup más rápido |
+| New Architecture (Fabric + TurboModules) | **default ON** | SDK 57 default; paquetes legacy incompatibles ya están migrados |
+| Xcode | **26.x** | requerido por App Store 2026 |
+| JDK | **17 LTS** | requerido por AGP 8.x (default SDK 57) |
+| AGP | **8.7.x** | bundled con Expo SDK 57 |
 
----
+### EAS Build (cloud)
 
-## 5. Riesgos residuales
+| Capa | Versión |
+|---|---|
+| EAS CLI | **16.x** |
+| Build profiles | `development`, `preview`, `production` |
+| Submission | `eas submit` para App Store + Play Store |
 
-| # | Riesgo | Mitigación |
+## ENMIENDA MAYOR — desviaciones del stack original Ionic
+
+Esta spec es la **ENMIENDA MAYOR** del pivote. La siguiente tabla compara contra el stack original M0.2 lockeado:
+
+| Pieza | Original M0.2 | Pivote RN+Expo |
 |---|---|---|
-| R1 | Capacitor 8.5.1 + AGP 9.4 puede romper el build Android | Mantener AGP 8.7.2 (default de Cap 8) + bump manual de `targetSdk` a 36. Si rompe, migrar a Capacitor 9 stable (cuando salga) o reportar upstream. |
-| R2 | Capacitor 8 SPM default para iOS rompe tutoriales/expectativas | Documentar el flag `--packagemanager CocoaPods` en M0.4 o aceptar SPM (recomendado seguir SPM por ser default moderno). |
-| R3 | Tailwind 4 sin `tailwind.config.js` cambia el setup | Reescribir la sección Theming de la spec para usar `@import "tailwindcss"` + `@theme`. |
-| R4 | ESLint 10 + flat config requiere reescribir `.eslintrc.json` → `.eslint.config.js` | Reescribir en M0.6. |
-| R5 | `@ionic/cli 9.x` puede tener breaking changes vs 7.x | Revisar release notes de Ionic 9 al hacer M0.4. |
-| R6 | Las versiones siguen evolucionando — para cuando lleguemos a F7 (release) puede haber nuevos requirements | Re-validar matriz al cerrar F0–F7; gate de versión en cada spec nueva. |
-| R7 | El usuario tiene Node 25.0.0 activo (Current, no LTS) | Documentar `nvm install 24 && nvm alias default 24` como pre-requisito de M0.4. |
-| R8 | iOS 27 SDK será obligatorio en Abr-2027; durante el MVP (Sept 2026 → 2027) podemos usar iOS 26 SDK pero hay que planificar upgrade antes de release | Gate de re-validación en Q1-2027. |
+| Framework | Ionic 9 + Angular 22 | **React Native 0.86 + Expo SDK 57** |
+| Lenguaje | TypeScript 6 | **TypeScript 5.7** (TS 6 no soportado RN) |
+| Router | Angular Router | **expo-router 6** (file-based) |
+| Native shell | Capacitor 8 + iOS/Android projects | **Expo prebuild** (regenera nativo) |
+| Estado | Angular signals + RxJS | **Zustand 5** |
+| Data fetching | HttpClient + RxJS | **TanStack Query v5** |
+| Styling | Tailwind 4 + Ionic CSS | **Nativewind v4** (Tailwind 3 para RN) |
+| Token storage | `@aparajita/capacitor-secure-storage` | **expo-secure-store** (built-in) |
+| Build cloud | NO (local) | **EAS Build** |
+| OTA updates | NO | **EAS Update** (built-in) |
+| Test runner | Vitest 4 | **Jest 29 + jest-expo** |
+| ESLint | angular-eslint 22 | **eslint-config-expo** (flat) |
 
----
+## Compatibilidad — verificada
 
-## 6. Veredicto final
+- **Play Store Sept 2026**: `targetSdk = 36` OK (cumple plazo Aug 2026). 64-bit default. Privacy policy requerida.
+- **App Store Sept 2026**: iOS 15+ para updates OK. Privacy Manifests requerido (Expo los genera automáticamente desde SDK 50+). Sign in with Apple NO requerido (sólo login email/password Sanctum).
+- **Node 24 LTS**: soportado hasta 2027-04; cumple engines Expo 57 (`>=18`).
+- **pnpm 10**: soporta workspaces + frozen lockfile; OK para CI.
+- **TypeScript 5.7**: máxima versión compatible RN 0.86; template Expo default usa `~5.7.2`.
+- **expo-router 6**: stable, Typed Routes habilitable.
+- **expo-secure-store 15**: iOS Keychain `kSecClassGenericPassword` + Android Keystore AES-GCM.
 
-### **ENMIENDA MAYOR**
+## Escenarios BDD
 
-Cada pieza del stack propuesto en M0.2 debe cambiar. No es un upgrade cosmético: el scaffold actual **no compila contra SDK iOS 26 ni contra targetSdk 36 de Play Store**, y usa frameworks EOL. Por lo tanto:
+### Escenario 1 — Versiones locked declaradas en spec
 
-1. **`.spec/00-ionic-scaffold.md` queda enmendada** (ver §7) con el stack nuevo.
-2. **Aprobación del usuario**: este reporte **requiere visto bueno explícito** antes de M0.4.
-3. **PLAN.md / TASKS.md**: las estimaciones de 135 h base no cambian materialmente (los comandos `ionic start`, `ionic cap add ios android` son los mismos; el cambio de versiones es transparente para M0.4–M0.6).
-4. **No es "upgrade por moda"**: cada upgrade tiene fuente oficial justificando EOL, End of Support, o requisito de tienda. Cumple `AGENTS.md §Dependencias y versiones` y `M0.3 §Aceptación`.
+**Dado** esta spec APPROVED
+**Cuando** se crea `package.json` en F0
+**Entonces** todas las versiones declaradas en `dependencies` y `devDependencies` coinciden celda por celda con la tabla §Stack propuesto.
 
----
+### Escenario 2 — Versiones reales instaladas verificables
 
-## 7. Enmienda aplicada a `.spec/00-ionic-scaffold.md`
+**Dado** `pnpm install` ejecutado en el workspace
+**Cuando** se ejecuta `pnpm list --depth=0`
+**Entonces** las versiones reales son iguales o superiores a las propuestas (lockfile pin exacto).
 
-Esta spec sustituye §Versiones propuestas y §Scripts del `package.json` de la spec M0.2. Cambios:
+### Escenario 3 — TypeScript 5.7.x sin warnings RN
 
-- Stack JS: Node 24, Angular 22, TypeScript 6, RxJS 7.8, zone 0.15+, ionic 9, capacitor 8, tailwind 4, pnpm 10, ESLint 10 (flat), Prettier 3, Karma 6.4 + Jasmine 5.
-- Scripts: igual a M0.2; sólo cambia el nombre del comando de format si Tailwind 4 requiere su propio processor (verificar en M0.4).
-- Theming lock: variables.scss se mantiene igual. `tailwind.config.js` se elimina — Tailwind 4 usa `@import "tailwindcss"` + `@theme { ... }` directamente en `styles.scss`. Reescritura completa del §Theming lock en spec M0.2.
-- ESLint config: ahora es flat config en `.eslint.config.js`, no `.eslintrc.json`.
-- Environments: igual.
-- app.config.ts: igual.
+**Dado** un proyecto RN 0.86 + TS 5.7.x
+**Cuando** se ejecuta `pnpm typecheck`
+**Entonces** no hay warnings de TS 6 incompatibilidad ni de deprecated APIs.
 
-Las decisiones cerradas en M0.2 (pnpm, Karma+Jasmine, no husky, no coverage threshold, es-MX hardcoded, vanilla Tailwind) **siguen vigentes** — sólo cambia el número de versión mayor y la sintaxis de configuración.
+### Escenario 4 — Expo SDK 57 bundled APIs funcionan
 
----
+**Dado** `expo-secure-store`, `expo-router`, `expo-status-bar`, `expo-splash-screen`, `expo-haptics`, `expo-keyboard`
+**Cuando** se importan en TS y se usan en runtime
+**Entonces** todas resuelven sin error y los tipos están disponibles.
 
-## 8. Plan de implementación derivado
+### Escenario 5 — EAS CLI 16.x operativa
 
-| # | Acción | Spec responsable |
-|---|---|---|
-| 1 | Aprobar esta spec (M0.3). Confirmar stack de §4. | Esta spec |
-| 2 | Actualizar `.spec/00-ionic-scaffold.md` §Versiones propuestas con el stack de §4. | Esta spec (ya ejecutado) |
-| 3 | Pre-M0.4: `nvm install 24 && nvm alias default 24` (usuario ya tiene nvm 0.40.3). | Comando documentado en §4 |
-| 4 | M0.4: ejecutar `ionic start` con pnpm + `@ionic/cli 9`. Agregar `ionic cap add ios android`. Bump manual de `targetSdk` Android a 36 si Play Store lo exige. Documentar `--packagemanager` para iOS. | M0.4 spec (Issue #4) |
-| 5 | M0.5: configurar Tailwind 4 CSS-first, theme, environments, proxy. | M0.5 spec (Issue #5) |
-| 6 | M0.6: baseline de calidad — `.eslint.config.js` flat, scripts reales, smoke test. | M0.6 spec (Issue #6) |
-| 7 | Re-validar matriz al cerrar F0 y antes de F7 (release checklist). | F7 spec |
+**Dado** `eas.json` con perfiles definidos
+**Cuando** se ejecuta `pnpm exec eas config`
+**Entonces** exit 0; config válida.
 
----
+### Escenario 6 — App ID coherente con M0.4 anterior
 
-## 9. Escenarios BDD de verificación de M0.3
+**Dado** `app.json` con `expo.ios.bundleIdentifier: 'mx.com.tags.movil'`
+**Cuando** se valida con `pnpm exec expo prebuild --no-install`
+**Entonces** el `Info.plist` generado contiene `CFBundleIdentifier === 'mx.com.tags.movil'`
+**Y** el `AndroidManifest.xml` contiene `package="mx.com.tags.movil"`.
 
-### Escenario 1 — Toda celda de la matriz tiene fuente URL verificable
+### Escenario 7 — Prebuild genera iOS deployment target 15.0
 
-**Dado** el reporte M0.3
-**Cuando** se revisa cada celda de §1, §2 y §4
-**Entonces** toda celda cita una URL oficial (angular.dev, ionicframework.com, capacitorjs.com, developer.apple.com, developer.android.com, nodejs.org, github.com)
-**Y** los datos "no verificable" están explícitamente marcados como tales.
+**Dado** el pivote con targetSdk/decisión
+**Cuando** se inspecciona `ios/AppFramework.xcconfig` o equivalente generado por prebuild
+**Entonces** `IPHONEOS_DEPLOYMENT_TARGET = 15.0` o superior.
 
-### Escenario 2 — Veredicto es uno de APTO / ENMIENDA MENOR / ENMIENDA MAYOR
+### Escenario 8 — Prebuild genera Android targetSdk 36
 
-**Dado** la comparación de §2
-**Cuando** se cuenta el número de celdas con `❌ INACEPTABLE`
-**Entonces** el veredicto es **ENMIENDA MAYOR** (más de la mitad del stack requiere cambio)
-**Y** §6 lo declara explícitamente con justificación.
+**Dado** `expo prebuild --no-install`
+**Cuando** se inspecciona `android/build.gradle` y `android/app/build.gradle`
+**Entonces** `compileSdkVersion = 36` y `targetSdkVersion = 36`.
 
-### Escenario 3 — Stack recomendado tiene justificación por celda
+## Verification esperada
 
-**Dado** la tabla de §4
-**Cuando** se revisa cada fila
-**Entonces** cada celda "Versión recomendada" tiene una columna "Justificación" que apunta a la fuente del §1 correspondiente.
+```bash
+# Versiones reales
+pnpm list --depth=0                          # exit 0, todas las versiones locked
+npx tsc --version                           # 5.7.x
+node -v                                     # v24.x LTS
+pnpm -v                                     # 10.x
 
-### Escenario 4 — `.spec/00-ionic-scaffold.md` queda actualizada
+# EAS config
+pnpm exec eas config                        # exit 0
 
-**Dado** el veredicto ENMIENDA MAYOR
-**Cuando** se commitea esta spec
-**Entonces** `.spec/00-ionic-scaffold.md` queda con §Versiones propuestas apuntando al stack de §4
-**Y** el status se mantiene APPROVED con nota de re-aprobación cruzada M0.2 ↔ M0.3.
+# Prebuild
+pnpm exec expo prebuild --no-install        # exit 0
+ls ios/                                     # AppDelegate, Info.plist, Podfile/Package.swift
+ls android/                                 # build.gradle, AndroidManifest.xml, MainActivity.kt
 
-### Escenario 5 — Aprobación del usuario solicitada antes de M0.4
+# TypeScript
+pnpm typecheck                              # exit 0
 
-**Dado** que la ENMIENDA MAYOR requiere visto bueno explícito
-**Cuando** se entrega este reporte
-**Entonces** el siguiente paso (M0.4) queda bloqueado hasta que el usuario confirme.
+# ESLint
+pnpm lint                                   # exit 0
+```
 
-### Escenario 6 — Comando nvm documentado
+## Riesgos / Gotchas
 
-**Dado** que el usuario tiene `nvm 0.40.3` instalado y Node 25.0.0 (Current, no LTS) activo
-**Cuando** se ejecuten los comandos del §4 pre-M0.4
-**Entonces** `nvm install 24 && nvm alias default 24` deja Node 24 LTS activo.
+1. **TS 6 no soportado por RN 0.86**: downgrade de TS 6 → TS 5.7.x es **obligatorio**, no opcional. Si en el futuro RN soporta TS 6, se puede actualizar.
+2. **Vitest NO con expo-router**: usar Jest 29 + jest-expo. Esto es un sacrificio vs Angular (Vitest era más rápido). Documentar.
+3. **EAS Build = nube**: builds locales requieren Xcode/Android SDK. CI-friendly.
+4. **Nativewind v5 (Tailwind 4) pre-release**: usar v4 con Tailwind 3.4.x. Si se quiere Tailwind 4, esperar a Nativewind v5 stable.
+5. **New Architecture default ON**: si algún paquete legacy no es compatible, flag `--no-new-arch` al prebuild o downgrade del paquete.
+6. **Privacy Manifests**: Expo los genera automáticamente desde SDK 50. Confirmar en `app.json` con `ios.infoPlist.NSPrivacyAccessedAPITypes`.
+7. **Hermes default ON**: OK. Si surge incompatibilidad con un paquete, desactivar temporalmente.
+8. **Android `minSdkVersion = 24`**: cubre 98%+ mercado MX. Si necesitas 21 (Android 5.0), ajustar.
+9. **`expo prebuild` regenera `ios/` y `android/`**: NO commitear. Regenerar localmente o via EAS.
+10. **OTA updates (EAS Update)**: útil para fixes urgentes pero NO para cambios nativos. Documentar scope.
 
----
+## Decisiones que NO requieren confirmación (ya approved por pivote)
 
-## 10. Checklist
+| Decisión | Razón |
+|---|---|
+| RN + Expo SDK 57 (no SDK 53) | pivote explícito del usuario |
+| pnpm 10 | mismo que antes; sin mezcla |
+| TypeScript 5.7.x (downgrade de 6) | RN 0.86 lo requiere |
+| Nativewind v4 (Tailwind 3) | estable, v5 pre-release |
+| Zustand 5 + TanStack Query 5 | estándar de facto para RN moderno |
+| expo-secure-store (no plugin externo) | built-in Expo; Keychain + Keystore |
+| EAS Build cloud | requisito de "no morir antes" + simplifica |
 
-- [x] 6 subagentes `explore` ejecutados en paralelo (2026-09-09).
-- [x] Toda celda de la matriz tiene fuente URL.
-- [x] Stack recomendado (§4) justificado celda por celda.
-- [x] Veredicto: **ENMIENDA MAYOR** declarado explícitamente.
-- [x] `.spec/00-ionic-scaffold.md` enmendada con §Versiones propuestas = §4.
-- [x] Comando nvm documentado.
-- [x] Riesgos residuales (§5) con mitigación concreta.
-- [x] Plan de implementación (§8) con specs responsables.
-- [x] BDD completo (6 escenarios).
-- [x] `STATE.md` actualizado a fase `M0.3 DONE`.
-- [ ] **Aprobación explícita del usuario** sobre ENMIENDA MAYOR (próximo paso).
-- [ ] M0.4 (`ionic start`) queda bloqueado hasta esa aprobación.
+## Checklist
 
----
+- [x] Spec DRAFT redactada
+- [x] Matriz validada con research Sept 2026
+- [ ] Aprobación del usuario
+- [ ] `package.json` con versiones exactas
+- [ ] `app.json` con appId + appName + plugins
+- [ ] `eas.json` con profiles development/preview/production
+- [ ] `pnpm install` exit 0
+- [ ] `pnpm exec expo prebuild --no-install` exit 0
+- [ ] `pnpm typecheck && pnpm lint && pnpm test` exit 0
+- [ ] `pnpm exec eas config` exit 0
+- [ ] `STATE.md` actualizado
 
-## 11. Notas de cierre
-
-- Esta spec **NO** ejecuta código. Es netamente investigación.
-- El cambio es mayor pero **transparente** para M0.4–M0.6 (los comandos son los mismos; solo cambian versiones y sintaxis de Tailwind/ESLint).
-- Las decisiones pujadas a specs futuras (D-OPENPAY-NATIVE, D-DEEPLINK-RESET, D-PAGINATION-CACHE, D-MULTI-HOUSE-CART, D-NOTIFICATIONS-PUSH) siguen abiertas y no se ven afectadas por esta enmienda.
-- La discrepancia con `chore/m0-1-auditar-contratos` (audit aún sin mergear) sigue sin resolverse; queda para tarea futura.
+> Esta spec **sustituye** a `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED — Ionic stack). El historial queda en git.

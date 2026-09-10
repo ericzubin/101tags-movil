@@ -77,16 +77,18 @@ Componentes, capas y módulos involucrados:
 
 ### Storage local
 
-Claves en Capacitor Preferences:
-- `101tags-token` (secure)
-- `101tags-cart`
-- …
+Claves en `expo-secure-store` (iOS Keychain / Android Keystore):
+- `101tags-token` (secure) — bearer Sanctum
+- `101tags-user` (secure) — usuario actual
+
+Datos NO sensibles en `@react-native-async-storage/async-storage` o `expo-sqlite`:
+- `101tags-cart`, `101tags-filters-cache`, etc.
 
 ### Señales / estado
 
 Si aplica:
-- `authSignal: Signal<User | null>`
-- `cartSignal: Signal<CartLine[]>`
+- `useAuthStore(): { user, token, login, logout }` (Zustand)
+- `useCartStore(): { items, addItem, removeItem }` (Zustand)
 - …
 
 ### Rutas / navegación

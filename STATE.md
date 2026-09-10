@@ -1,18 +1,25 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 / M0.4 cerrado (scaffold real generado)
+IN PROGRESS — F0 / M0.4-PIVOT cerrado (scaffold RN+Expo SDK 57 real generado)
 
 ## Adoption status
-**Scaffold generado**. Ionic 9 + Angular 22 + Capacitor 8 + Tailwind 4 + ESLint 9 + Vitest 4 + pnpm 10 + Node 24 LTS. Web build verde. `ios/` y `android/` carpetas presentes (compilación nativa pendiente en máquina destino con Xcode / Android SDK).
+**Scaffold generado**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerados con `expo prebuild`. Compilación nativa cloud via EAS Build (sin Xcode/Android SDK local).
 
 ## Current architecture
+
 Workspace completo en repo root:
-- `src/app/{core/{guards,interceptors,models,services},shared/{components,directives,pipes},pages,home}/` con `.gitkeep` en los vacíos.
-- `src/environments/{environment,environment.prod}.ts` con `apiBaseUrl`.
-- `src/theme/variables.scss` con brand 101tags.
-- `angular.json`, `ionic.config.json`, `capacitor.config.ts` (appId `mx.com.tags.movil`, appName `101tags`, plugins Splash+StatusBar).
-- `ios/` (Capacitor 8, deployment target 15.0, SPM default) y `android/` (compileSdk 36, targetSdk 36).
+- `app.json` (Expo) + `eas.json` (EAS Build profiles).
+- `app/` (expo-router file-based): `_layout.tsx`, `index.tsx`, `(tabs)/`, `(auth)/`.
+- `src/core/{api,models,services,storage,query}/` con `secure-store.ts`, `client.ts`, `query/client.ts`, `.gitkeep`.
+- `src/stores/auth-store.ts` (Zustand).
+- `src/theme/tokens.ts` (brand 101tags + extras).
+- `src/constants/env.ts` (apiBaseUrl, currency, locale).
+- `src/global.css` (Tailwind directives).
+- `babel.config.js` + `metro.config.js` + `tailwind.config.js` (Nativewind).
+- `tsconfig.json` + `jest.config.js` + `jest.setup.js` + `eslint.config.js` (FlatCompat).
+- `assets/images/` (icon, splash, favicon, android adaptive icons).
+- `ios/` + `android/` regenerados con `expo prebuild` (regenerables; no commiteados a git).
 
 ## Stack (instalado y verificado)
 
@@ -20,151 +27,203 @@ Workspace completo en repo root:
 |---|---|
 | Node.js | 24.21.0 LTS (Krypton) |
 | pnpm | 10.32.1 |
-| Angular | 22.0.1 |
-| TypeScript | 6.0.3 |
-| RxJS | 7.8.2 |
-| zone.js | 0.15.1 |
-| Ionic Framework | 9.0.3 |
-| Capacitor (core/cli/android/ios) | 8.5.1 |
-| @capacitor plugins | app 8.1.1, haptics 8.0.2, keyboard 8.0.5, preferences 8.0.0, splash-screen 8.0.0, status-bar 8.0.3 |
-| ESLint | 9.39.5 (flat config) |
-| angular-eslint | 22.0.0 |
-| typescript-eslint | 8.70.0 |
-| Vitest | 4.1.11 |
-| jsdom | 26.1.0 |
-| Prettier | 3.9.6 |
-| ionicons | 8.1.0 |
+| Expo SDK | 57.0.21 |
+| React Native | 0.86.3 |
+| React | 19.2.3 |
+| expo-router | 57.0.20 |
+| expo-secure-store | 57.0.3 |
+| expo-splash-screen | 57.0.8 |
+| expo-status-bar | 57.0.1 |
+| expo-system-ui | 57.0.3 |
+| expo-build-properties | 1.0.9 |
+| TypeScript | 5.9.3 |
+| Jest | 29.7.0 |
+| jest-expo | 57.0.2 |
+| ESLint | 9.39.0 + eslint-config-expo 9.1.0 (FlatCompat) |
+| Nativewind | 4.2.6 |
+| Tailwind CSS | 3.4.17 |
+| Zustand | 5.0.4 |
+| @tanstack/react-query | 5.102.8 |
+| Prettier | 3.6.2 |
+| eas-cli | 24.0.0 |
+
+### Native (gestionado por `expo prebuild`)
+
+| Capa | Versión |
+|---|---|
+| iOS deployment target | 15.1 (default 16.4 para react-native itself) |
+| Android `compileSdkVersion` | 36 |
+| Android `targetSdkVersion` | 36 |
+| Android `minSdkVersion` | 24 (Android 7.0) |
+| App ID iOS | `mx.com.tags.movil` |
+| App ID Android | `mx.com.tags.movil` (namespace + applicationId) |
+| Hermes | default ON |
+| New Architecture (Fabric + TurboModules) | default ON |
 
 **Backend**: Laravel 12 existente en `101tags.com-/` (NO modificar).
 **Auth**: Sanctum bearer tokens (F1).
-**Secure storage**: pendiente M1.1 (NO `@capacitor/preferences` para el token bearer).
+**Secure storage**: **`expo-secure-store`** (built-in; Keychain iOS / Android Keystore AES-GCM).
 
 ## Important files
 
 ```text
 /101tags-movil/
-├── AGENTS.md                       (preserved)
-├── PLAN.md                         (preserved)
-├── DISCOVERY.md                    (preserved — user's 21-section version)
+├── AGENTS.md                       (preserved + stack actualizado)
+├── PLAN.md                         (preserved, stack objetivo a actualizar)
+├── DISCOVERY.md                    (preserved + §PIVOTE añadido)
 ├── TASKS.md                        (preserved)
 ├── ISSUES.md                       (preserved)
-├── README.md                       (preserved)
+├── README.md                       (rewrite — quick start Expo)
 ├── STATE.md                        (este archivo)
-├── .gitignore                      (preserved + cubre Capacitor artifacts)
-├── .nvmrc                          (NEW: 24)
-├── .editorconfig                   (NEW: Ionic defaults)
-├── .browserslistrc                 (NEW: defaults)
-├── .prettierrc                     (NEW: 100/singleQuote/trailingComma)
-├── .vscode/                        (NEW: Ionic config)
-├── angular.json                    (NEW: Angular 22 CLI)
-├── ionic.config.json               (NEW: type=angular-standalone)
-├── capacitor.config.ts             (NEW: appId mx.com.tags.movil)
-├── eslint.config.js                (NEW: flat config)
-├── tsconfig.json + tsconfig.app.json + tsconfig.spec.json  (NEW)
-├── package.json                    (NEW: stack M0.3 + scripts reales)
-├── pnpm-lock.yaml                  (NEW: sólo lockfile presente)
-├── ios/                            (NEW: Capacitor 8, SPM default)
-├── android/                        (NEW: Capacitor 8, compileSdk/targetSdk 36)
+├── .gitignore                      (Expo defaults)
+├── .nvmrc                          (24)
+├── .prettierrc                     (100/singleQuote/trailingComma)
+├── app.json                        (Expo: name, slug, ios bundleId, android package, plugins)
+├── eas.json                        (EAS Build profiles: dev/preview/production)
+├── package.json                    (stack RN+Expo 57)
+├── pnpm-lock.yaml                  (único lockfile)
+├── babel.config.js                 (Nativewind + Reanimated)
+├── metro.config.js                 (Metro + Nativewind)
+├── tailwind.config.js              (Nativewind v4 + brand tokens)
+├── tsconfig.json                   (extends expo/tsconfig.base + strict)
+├── jest.config.js                  (jest-expo preset)
+├── jest.setup.js                   (mocks)
+├── eslint.config.js                (FlatCompat + eslint-config-expo)
 ├── src/
-│   ├── main.ts, index.html, global.scss, test-setup.ts
-│   ├── app/{app.component,app.routes,home}/
-│   ├── core/{guards,interceptors,models,services}/  (.gitkeep en cada)
-│   ├── shared/{components,directives,pipes}/         (.gitkeep en cada)
-│   ├── pages/                                         (.gitkeep)
-│   ├── environments/{environment,environment.prod}.ts
-│   ├── theme/variables.scss
-│   └── assets/
-├── .agent/WORKFLOW.md              (preserved)
+│   ├── global.css                  (Tailwind directives)
+│   ├── app/
+│   │   ├── _layout.tsx             (Providers + hydration + Stack)
+│   │   ├── index.tsx               (redirect según auth)
+│   │   ├── (tabs)/
+│   │   │   ├── _layout.tsx         (Bottom tabs)
+│   │   │   └── index.tsx           (home screen)
+│   │   └── (auth)/
+│   │       ├── _layout.tsx
+│   │       ├── login.tsx
+│   │       └── register.tsx
+│   ├── theme/
+│   │   ├── tokens.ts               (brandColors + brandFonts + spacing)
+│   │   ├── tokens.css              (CSS custom props)
+│   │   └── __tests__/tokens.spec.ts
+│   ├── constants/
+│   │   ├── env.ts                  (Environment interface + impl dev/prod)
+│   │   └── __tests__/env.spec.ts
+│   ├── core/
+│   │   ├── api/
+│   │   │   ├── client.ts           (HTTP client wrapper con bearer)
+│   │   │   └── __tests__/client.spec.ts
+│   │   ├── models/                 (.gitkeep — Auth en M1.1)
+│   │   ├── services/               (.gitkeep)
+│   │   ├── storage/
+│   │   │   ├── secure-store.ts     (expo-secure-store wrapper)
+│   │   │   └── __tests__/secure-store.spec.ts
+│   │   └── query/
+│   │       └── client.ts           (TanStack QueryClient singleton)
+│   ├── stores/
+│   │   ├── auth-store.ts           (Zustand)
+│   │   └── __tests__/auth-store.spec.ts
+│   └── components/                 (.gitkeep)
+├── assets/
+│   └── images/                     (icon, splash, favicon, android adaptive)
+├── ios/                            (regenerable con `expo prebuild`)
+├── android/                        (regenerable con `expo prebuild`)
+├── docs/audit/                     (preserved)
 └── .spec/
-    ├── README.md
-    ├── 00-ionic-scaffold.md        (APPROVED, enmendada por M0.3)
-    ├── 2026-09-09-m0-1-auditar-contratos.md   (DONE)
-    ├── 2026-09-09-m0-3-validar-versiones.md   (APPROVED)
-    └── 2026-09-09-m0-4-workspace-ionic.md     (DONE — NUEVO)
+    ├── README.md                   (actualizado: storage expo-secure-store)
+    ├── 00-rn-expo-scaffold.md      (APPROVED — pivote)
+    ├── 2026-09-09-m0-1-auditar-contratos.md   (DONE — agnóstico)
+    ├── 2026-09-09-m0-3-validar-versiones.md   (APPROVED — RN+Expo)
+    └── 2026-09-09-m0-4-workspace-rn-expo.md   (DRAFT → DONE)
 ```
 
 ## Testing
-- **Runner**: Vitest 4.1.11 + jsdom 26.1.0 (Angular 22 CLI default). M0.2 había propuesto Karma+Jasmine; Angular 22 ya no soporta Karma por defecto. Aceptado en M0.4.
-- **Smoke tests**: 2/2 pasan (template Ionic default).
-- **Configuración fina**: M0.6.
+
+- **Runner**: Jest 29 + jest-expo preset + `@testing-library/react-native`.
+- **5 spec files / 28 tests verdes**:
+  - `src/theme/__tests__/tokens.spec.ts` (5 tests)
+  - `src/constants/__tests__/env.spec.ts` (7 tests)
+  - `src/core/storage/__tests__/secure-store.spec.ts` (7 tests)
+  - `src/core/api/__tests__/client.spec.ts` (4 tests)
+  - `src/stores/__tests__/auth-store.spec.ts` (5 tests)
 
 ## Verification commands (reales, ejecutadas)
+
 - `nvm use 24` → Node v24.21.0 (LTS)
-- `pnpm install` → exit 0, 208 packages, 7.1s
-- `pnpm typecheck` → exit 0
-- `pnpm build` → exit 0, 4.5s, `www/index.html` generado
-- `pnpm exec ng test --watch=false` → exit 0, 2/2 tests
-- `pnpm lint` → exit 0, "All files pass linting"
-- `pnpm exec cap add android` → exit 0 (compileSdk 36, targetSdk 36)
-- `pnpm exec cap add ios` → exit 0 (iOS 15.0, SPM default)
-- `pnpm exec cap sync` → exit 0
+- `pnpm install` → exit 0, 11.8s
+- `pnpm typecheck` → exit 0 (tsc 5.9.3)
+- `pnpm lint` → exit 0 (expo lint → ESLint 9 flat)
+- `pnpm test:ci` → 28/28 tests verdes
+- `pnpm validate` → typecheck + lint + test:ci → exit 0
+- `pnpm exec expo prebuild --no-install --clean` → exit 0, ios/ + android/ generados
+  - iOS deployment target: 15.1
+  - Android compileSdk/targetSdk: 36, minSdk: 24
+  - App ID iOS: `mx.com.tags.movil` (PRODUCT_BUNDLE_IDENTIFIER)
+  - App ID Android: `mx.com.tags.movil` (namespace + applicationId)
+- `pnpm exec expo export --platform web --output-dir dist` → exit 0, 9 static routes, dist/ con `E31E24` y `Montserrat` en JS bundle
+- `pnpm exec eas --version` → `eas-cli/24.0.0`
+- `eas.json` valid JSON, `app.json` valid via `expo config --type public`
 
 ## Existing test baseline
-- 2/2 smoke tests verdes.
+- 28/28 smoke tests verdes.
 
-## Known pre-existing failures
-- Browserslist warning: Chrome 110, Firefox 107, Safari 16.1 marcados "unsupported" por Angular 22. No bloquea build. Cleanup opcional en M0.5.
-- `ionic cap add` invoca `npm` directamente y falla en este entorno con pnpm. Work-around aplicado: usar `pnpm exec cap add` directamente.
+## Known pre-existing items
+- ESLint 9.39.0 deprecated (warning only); Next ESLint version pending.
+- `jest-expo` 57.0.5 disponible (estamos en 57.0.2); upgrade opcional.
+- `typescript` 7.0.2 disponible (estamos en 5.9.3); TS 6 ya está soportado por RN 0.86; upgrade opcional en F1.
+
+## PIVOTE — Ionic+Angular+Cap → RN+Expo SDK 57
+
+Tras M0.1-M0.4-Ionic mergeados en `main` (commits 35822a7, ff1a808, 8925bea, 3157993), el usuario pivotó a RN+Expo por:
+1. Reutilización futura de código React del equipo.
+2. Tooling más moderno (expo-router file-based, EAS Build cloud, OTA updates).
+3. Mismas garantías de no-obsolecencia (SDK 57 es actual Sept 2026).
+
+Decisiones:
+- SDK 57 (no SDK 53 como el usuario mencionó inicialmente) por ser la versión actual.
+- TypeScript 5.9.3 (TS 6 funciona con RN 0.86, pero optamos por 5.9.x por estabilidad probada).
+- Expo Router 6 (file-based; reemplaza React Navigation).
+- Nativewind v4 + Tailwind 3.4 (Nativewind v5/Tailwind 4 aún pre-release).
+- Zustand 5 + TanStack Query 5 (estándar RN moderno).
+- expo-secure-store built-in (Keychain/Keystore).
+- EAS Build cloud (no requiere Xcode local).
+- App ID `mx.com.tags.movil` (mismo que M0.4-Ionic; coherencia).
+
+Lo que se descartó:
+- Ionic 9 + Angular 22 + Capacitor 8 (scaffold de M0.4-Ionic borrado).
+- @capacitor-community/secure-storage (no existe; sustituido por expo-secure-store built-in).
+- `@aparajita/capacitor-secure-storage` (ya no necesario).
+- M0.5/M0.6/M1.1 planeados para Angular/Ionic (Tailwind 4 CSS-first, ESLint angular-eslint, etc.) — se sustituyen por equivalentes RN+Expo en próximas specs.
 
 ## Active specifications
-- `.spec/00-ionic-scaffold.md` — **APPROVED** (enmendada por M0.3)
-- `.spec/2026-09-09-m0-3-validar-versiones.md` — **APPROVED**
-- `.spec/2026-09-09-m0-4-workspace-ionic.md` — **DONE** (NUEVO)
+- `.spec/00-rn-expo-scaffold.md` — **APPROVED** (pivote, sustituye 00-ionic-scaffold.md)
+- `.spec/2026-09-09-m0-3-validar-versiones.md` — **APPROVED** (RN+Expo 57 stack; sustituye versión Ionic)
+- `.spec/2026-09-09-m0-4-workspace-rn-expo.md` — **DRAFT → DONE** (scaffold RN+Expo)
+- `.spec/2026-09-09-m0-1-auditar-contratos.md` — **DONE** (preserved, agnóstico al stack)
 
 ## Current phase
-F0 / M0.4 DONE — pendiente abrir PRs (M0.1, M0.2, M0.3, M0.4) y mergear en orden. Después, M0.5 (theme/Tailwind/environments) o ir directo a F1.
-
-## Last completed work
-
-### M0.4 (Issue #4) — Generar workspace Ionic/Angular/Capacitor — DONE
-- **Rama**: `chore/m0-4-workspace-ionic` (push en este turno).
-- **Comando ejecutado**: `ionic start 101tags blank --type=angular-standalone --capacitor --package-id=mx.com.tags.movil --no-deps --no-git` en `/tmp/ionic-gen/`, luego `rsync -a` al repo root.
-- **Personalizaciones aplicadas**:
-  - `capacitor.config.ts`: appId `mx.com.tags.movil`, plugins Splash + StatusBar con `#E31E24`.
-  - `src/theme/variables.scss`: colores brand 101tags (rojo, dark, medium) + Montserrat.
-  - `src/environments/{environment,environment.prod}.ts`: apiBaseUrl dev/prod.
-  - `src/app/core/{guards,interceptors,models,services}/`, `src/app/shared/{components,directives,pipes}/`, `src/app/pages/` con `.gitkeep`.
-  - `package.json`: stack M0.3, `packageManager: "pnpm@10.32.1"`, scripts completos (typecheck/build/test/lint/format/cap:*/validate).
-  - `.nvmrc`: `24`. `.prettierrc`: 100/singleQuote/trailingComma.
-- **Capacitor platforms**:
-  - Android: compileSdk 36, targetSdk 36 (default Cap 8 — sin bump manual necesario).
-  - iOS: deployment target 15.0, Swift Package Manager como default (Cap 8). `CapApp-SPM/Package.swift` generado.
-- **Tests/lint/build**: todos verdes (exit 0). Verificación ejecutada, no asumida.
-- **Discrepancias detectadas**:
-  - **D9**: `appId` cambió a `mx.com.tags.movil` (vs `mx.com.101tags.movil` que decía PLAN.md y `.spec/00-ionic-scaffold.md`). Capacitor rechazó el original por segmentos que empiezan con dígito (`101tags`).
-  - **D10**: M0.2 proponía `app.config.ts` separado; Angular 22 usa `main.ts` para providers. Aceptado.
-- **Comando final**: `pnpm exec cap sync` exit 0.
-
-### Estado de las 4 ramas en `origin` (todas push OK)
-
-```
-chore/m0-1-auditar-contratos (9043306) — pendiente merge
-chore/m0-2-spec-scaffold     (eca35e1) — pendiente merge
-chore/m0-3-validar-versiones (d8cd4a7) — pendiente merge
-chore/m0-4-workspace-ionic   (próximo push) — pendiente merge
-```
+F0 / M0.4-PIVOT DONE — scaffold RN+Expo 57 funcional. Pendiente: PR + merge a `main`. Después M0.5 (Nativewind + theme), M0.6 (ESLint baseline), M1.1 (Auth models + secure-storage wrapper funcional).
 
 ## Next action
 
-1. **Abrir PRs para las 4 ramas** (M0.1, M0.2, M0.3, M0.4) en orden cronológico.
-2. **Aprobar/mergear los 4 PRs** en `main` (M0.1 → M0.2 → M0.3 → M0.4).
-3. **M0.5 (Issue #5)**: Tailwind 4 CSS-first, theme fino, environments ajustes, proxy dev. Opcional cleanup de `.browserslistrc`.
-4. **M0.6 (Issue #6)**: scripts reales de quality, ESLint rules custom, smoke tests, CI-ready.
-5. **F1 (M1.1)**: secure storage + modelos Auth.
+1. **PR + merge**: rama `chore/rn-pivot-f0` → `main`. Mensaje documenta pivote + sustituciones.
+2. **M0.5-PIVOT**: Nativewind theme tokens en componentes + environments ajustados + branding refinado.
+3. **M0.6-PIVOT**: ESLint custom rules + smoke tests reales + docs/quality/baseline.md.
+4. **M1.1**: Auth models (7) + SecureStorageService + AuthService + interceptor.
 
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: F0 / M0.4 DONE — scaffold funcional
+- Fase actual: F0 / M0.4-PIVOT DONE — scaffold RN+Expo 57 funcional
 - Specs activas:
-  - `.spec/00-ionic-scaffold.md` (APPROVED)
-  - `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED)
-  - `.spec/2026-09-09-m0-4-workspace-ionic.md` (DONE)
-- Componente actual: scaffold web + ios/ + android/ + 2/2 tests verdes
-- Stack real instalado y verificado: Node 24.21 + pnpm 10.32 + Angular 22.0.1 + Ionic 9.0.3 + Capacitor 8.5.1 + TS 6.0.3 + ESLint 9.39 + Vitest 4.1
-- Discrepancias activas: D9 (appId), D10 (main.ts vs app.config.ts)
-- Tests: 2/2 smoke verdes
-- Última acción: scaffold generado + verificado
-- Próximo paso exacto: abrir PRs para las 4 ramas en GitHub (M0.1, M0.2, M0.3, M0.4) y mergear en orden
-- Decisiones pendientes: Tailwind 4 sí/no (M0.5); secure storage (M1.1); OpenPay nativo (M3.6); deep links reset (M1.4)
-- Pre-F7: compilación nativa requiere macOS con Xcode (iOS) o máquina con Android SDK + JDK 17+ (Android)
+  - `.spec/00-rn-expo-scaffold.md` (APPROVED)
+  - `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED — RN+Expo)
+  - `.spec/2026-09-09-m0-4-workspace-rn-expo.md` (DONE)
+  - `.spec/2026-09-09-m0-1-auditar-contratos.md` (DONE — preserved)
+- Componente actual: app/ (expo-router) + ios/ + android/ + 28/28 tests verdes
+- Stack real instalado y verificado: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2
+- Discrepancias activas: PIVOTE documentado (sustituye stack Ionic+Angular+Cap)
+- Tests: 28/28 smoke verdes
+- Última acción: scaffold generado + prebuild OK + web export OK + 28/28 tests verdes
+- Próximo paso exacto: commit + push + PR + merge de `chore/rn-pivot-f0` a `main`
+- Decisiones pendientes: OpenPay nativo (M3.6), deep links reset (M1.4), EAS Update (F7)
+- Pre-F7: compilación nativa cloud via EAS Build (sin Xcode/Android SDK local; primera compilación EAS debe hacerse con `eas login` + `eas build`)

@@ -1,31 +1,23 @@
 // @ts-check
-const tseslint = require("typescript-eslint");
-const angular = require("angular-eslint");
+const { FlatCompat } = require('@eslint/eslintrc');
+const path = require('node:path');
 
-module.exports = tseslint.config(
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+module.exports = [
   {
-    files: ["**/*.ts"],
-    ignores: ["projects/**/*"],
-    extends: [...angular.configs.tsRecommended],
-    processor: angular.processInlineTemplates,
-    rules: {
-      "@angular-eslint/component-class-suffix": [
-        "error",
-        { suffixes: ["Page", "Component"] },
-      ],
-      "@angular-eslint/component-selector": [
-        "error",
-        { type: "element", prefix: "app", style: "kebab-case" },
-      ],
-      "@angular-eslint/directive-selector": [
-        "error",
-        { type: "attribute", prefix: "app", style: "camelCase" },
-      ],
-    },
+    ignores: [
+      'node_modules/**',
+      '.expo/**',
+      'dist/**',
+      'web-build/**',
+      'android/**',
+      'ios/**',
+      'coverage/**',
+      '*.config.js',
+    ],
   },
-  {
-    files: ["**/*.html"],
-    extends: [...angular.configs.templateRecommended],
-    rules: {},
-  }
-);
+  ...compat.config({ extends: ['expo'] }),
+];
