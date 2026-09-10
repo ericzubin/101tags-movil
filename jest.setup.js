@@ -15,6 +15,28 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
 }));
 
+jest.mock('@expo/vector-icons', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const ReactLib = require('react');
+  const RN = require('react-native');
+  const MockIcon = ({ name, ...props }) =>
+    ReactLib.createElement(RN.Text, props, name);
+  return {
+    Ionicons: MockIcon,
+    MaterialIcons: MockIcon,
+    MaterialCommunityIcons: MockIcon,
+    FontAwesome: MockIcon,
+    Feather: MockIcon,
+    AntDesign: MockIcon,
+    Entypo: MockIcon,
+    EvilIcons: MockIcon,
+    Foundation: MockIcon,
+    Octicons: MockIcon,
+    SimpleLineIcons: MockIcon,
+    Zocial: MockIcon,
+  };
+});
+
 jest.mock('expo-constants', () => ({
   __esModule: true,
   default: { expoConfig: { name: '101tags', slug: '101tags' } },

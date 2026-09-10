@@ -1,23 +1,23 @@
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function HomeScreen() {
+import { useAuthStore } from '@/stores/auth-store';
+
+export default function HomeTab() {
+  const user = useAuthStore((s) => s.user);
+
   return (
     <SafeAreaView className="flex-1 bg-brand-medium" edges={['top', 'left', 'right']}>
-      <View className="flex-1 items-center justify-center px-brand-6">
-        <Text className="text-5xl font-extrabold text-brand-primary mb-2">
-          101tags
-        </Text>
-        <Text className="text-base text-brand-dark mb-brand-7">
-          Compra local, compra fácil
-        </Text>
-        <View className="bg-brand-white p-brand-6 rounded-brand-lg w-full max-w-[480px] shadow-sm">
-          <Text className="text-xl font-bold text-brand-dark mb-2">Bienvenido</Text>
-          <Text className="text-sm text-brand-dark leading-5">
-            Esta es la pantalla de inicio del cliente móvil 101tags. Aquí se mostrarán
-            categorías, productos destacados y banners cuando se implemente F2.
+      <View className="flex-1 items-center justify-center p-brand-6">
+        <Text className="font-brand-bold text-3xl text-brand-dark mb-2">101tags</Text>
+        {user ? (
+          <Text className="font-brand text-base text-brand-dark mb-brand-4">
+            Bienvenido, {user.name}
           </Text>
-        </View>
+        ) : null}
+        <Text className="font-brand text-sm text-brand-dark/60 text-center">
+          Tu tienda de etiquetas en México
+        </Text>
       </View>
     </SafeAreaView>
   );
