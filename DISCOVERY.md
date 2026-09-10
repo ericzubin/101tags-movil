@@ -265,6 +265,14 @@ Aspectos a conservar en specs:
 - variantes válidas color/talla/stock deben derivarse del contrato real.
 - la cantidad nunca debe superar stock disponible.
 
+### §10.1 Corrección de contrato: `/catalog/products` es paginador FLAT (M2.3)
+
+`CatalogController::products` responde `response()->json($products)` sobre un `LengthAwarePaginator` → JSON **flat** con `data`, `current_page`, `last_page`, `per_page`, `total`, `from`, `to`, `next_page_url`, `prev_page_url`, etc. El storefront lo confirma (`storefront/src/types/catalog.ts:95`, `ProductListView.vue:295` usa `res.last_page`).
+
+El móvil modelaba `Paginated<T>` como `{ data, meta: { current_page… }, links: {…} }` (anidado + snake_case), lo cual no coincide: `toCamel` solo renombra claves, no reestructura. M2.2 solo leía `.data` (funcionaba por accidente); M2.3 (infinite scroll) requiere `currentPage`/`lastPage` y por eso se corrigió a flat camelCase en `.spec/2026-09-11-m2-3-list.md`.
+
+Regla: al modelar respuestas paginadas de Laravel consumir el shape flat real; no asumir el envoltorio `{data, links, meta}` que solo produce `JsonResource`/paginación API Resource.
+
 ---
 
 ## §11. Carrito

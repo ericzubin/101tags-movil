@@ -1,7 +1,7 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 cerrado (M0.5 + M0.6) + F1/M1.1 cerrado + **F1/M1.2 cerrado (PR #50)** + **F1/M1.3 cerrado (PR #59)** + **F1/M1.4-hardening cerrado (PR #60; #51+#52+#54)** + **F1/M1.5-session-cycle cerrado (PR #61; #53)** + **F1/M1.6-abort-timeout cerrado (PR #62; #55)** + **F1/M1.7-gitignore cerrado (PR #63; #57)** + **F1/M1.8-font-montserrat cerrado (PR #64; #56)** + **F1/M1.9-forgot-reset cerrado (PR #65; #10)** + **F1/M1.10-splash-tabs cerrado (PR #66; #11)** + **🔴 P0 HOTFIX cerrado: hydrate-boot-bearer (seedear token Zustand antes de /me para evitar 401 que borraba sesión válida, PR #68; issue #69)**. **F1 entero cerrado + P0 parchado** ✅. Issues #10, #11, #51-#57, #69 cerradas. Próximo: **F2.x (catálogo, M2.0-setup primero)** o más P0 si aparecen.
+IN PROGRESS — F0 cerrado + F1 entero cerrado + P0 parchado ✅. **F2 COMPLETO (M2.1–M2.5) en rama `f2/catalogo`** (6b39986). M2.0-setup (PR #70) + M2.1-home (PR #71) + M2.4-detail (PR #72) + M2.2-categories (PR #74) + M2.3-list (PR #75) + M2.5-ux (PR #76). Issues #12, #13, #14, #15, #16 cerradas. Próximo: cierre F2 `f2/catalogo` → `developer` (PR #73). Housekeeping: issues stale F1 #7/#8/#9 cerradas.
 
 ## Adoption status
 **App funcional con auth wired**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerables con `expo prebuild`. Compilación nativa cloud via EAS Build.
@@ -194,12 +194,18 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 - `.spec/2026-09-10-m1-9-forgot-reset.md` — **DONE** (PR #65)
 - `.spec/2026-09-10-m1-10-splash-tabs.md` — **DONE** (PR #66)
 - `.spec/2026-09-11-p0-hydrate-boot-bearer.md` — **DONE** (PR #68)
+- `.spec/2026-09-11-m2-0-setup.md` — **DONE** (PR #70)
+- `.spec/2026-09-11-m2-1-home.md` — **DONE** (PR #71)
+- `.spec/2026-09-11-m2-4-detail.md` — **DONE** (PR #72)
+- `.spec/2026-09-11-m2-2-categories.md` — **DONE (PR #74)**
+- `.spec/2026-09-11-m2-3-list.md` — **DONE (PR #75)**
+- `.spec/2026-09-11-m2-5-ux.md` — **DONE (PR #76)**
 
 ## Current phase
-**F1 ENTERO + P0 HOTFIX cerrado en `developer`** (a39efd5).
+**F2 COMPLETO (M2.1–M2.5) en `f2/catalogo`** (6b39986). Próximo: cierre F2 `f2/catalogo` → `developer` (PR #73).
 
 ## Next actions (roadmap)
-1. **F2.x** — Home + catálogo + producto (issues #12-#16).
+1. **F2.x** — `f2/catalogo` → `developer` (PR #73) → `main` (PR #67, con autorización) → iniciar F3.
 2. **F3.x** — Cart + checkout + pagos (issues #17-#22).
 3. **F4.x** — Pedidos + cancelaciones + rating (issues #23-#25).
 4. **F5.x** — Chat + notificaciones in-app (issues #26-#28).
@@ -210,9 +216,9 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: **F1 ENTERO + P0 HOTFIX cerrado** en `developer` (a39efd5). PR #68 (P0 hydrate-boot-bearer fix, +6 integration tests) mergeado. Issue #69 (P0) cerrada. Tests totales: ~270 verdes. Próximo: **F2 M2.0-setup** (PR pre-F2 con tipos + queryKeys + services + UI base + expo-image + utils) o más P0 audit si aparecen.
-- Componente actual: app + auth wiring + login/register con UX polish + 130 tests verdes (90 baseline + 40 nuevos en i18n/errors + validation/auth + login + register).
+- Fase actual: **F2 COMPLETO (M2.1–M2.5)** en `f2/catalogo` (6b39986). PRs #70-#72, #74, #75, #76. Issues #12, #13, #14, #15, #16 cerradas. Housekeeping: #7/#8/#9 cerradas.
+- Próximo paso exacto: merge PR #73 (`f2/catalogo` → `developer`); pedir autorización al usuario para `developer` → `main` (PR #67); luego F3 (#17).
+- **Contrato corregido en M2.3:** `Paginated<T>` flat camelCase (`data`, `currentPage`, `lastPage`, `perPage`, `total`, `from`, `to`, `nextPageUrl`, `prevPageUrl`), acorde al `LengthAwarePaginator` de `/api/catalog/products`. Documentado en `DISCOVERY.md §10.1`.
 - Stack: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6 + Zustand 5 + TanStack Query 5.
-- Decisiones pendientes: OpenPay nativo (M3.6), deep links reset (M1.4), EAS Update (F7), TS 6 upgrade (opcional).
-- Pre-F7: compilación nativa cloud via EAS Build (sin Xcode/Android SDK local; primera compilación EAS debe hacerse con `eas login` + `eas build`).
-- Próximo paso exacto: arrancar M1.4 (forgot/reset password + deep links) tras merge del PR #TBD de M1.3.
+- Decisiones pendientes: guest checkout (M3.3/DISCOVERY §8), OpenPay móvil (M3.6/§9), signing F7 (Apple/Google, insumos del usuario).
+- Nota: `pnpm format:check` puede marcar `SortChips.tsx`/`FiltersSheet.tsx`/`CategoryGrid.tsx` (prettier pre-existente); no forma parte del gate actual (`validate` = typecheck+lint+test).

@@ -31,6 +31,7 @@
     "expo-build-properties": "1.0.9",
     "expo-constants": "57.0.17",
     "expo-font": "57.0.3",
+    "expo-image": "~2.0.7",
     "expo-linking": "57.0.9",
     "expo-router": "57.0.20",
     "expo-secure-store": "57.0.3",
