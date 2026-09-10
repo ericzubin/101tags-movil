@@ -151,6 +151,83 @@ Si el sistema permite subagentes reales, usarlos cuando mejoren el trabajo.
 Si NO los permite, ejecutar los roles **secuencialmente** dentro del mismo agente.
 La metodología importa más que la existencia física de subagentes.
 
+**Toda la actividad multi-agente debe respetar la [§ Disciplina de I/O](#-disciplina-de-io--bajo-consumo-obligatorio).** El paralelismo sin control puede saturar el disco y dejar el host (incluido WSL) inutilizable.
+
+## ⚡ Disciplina de I/O — bajo consumo obligatorio
+
+Esta sección es **permanente y no negociable** para OpenCode, Hermes, Codex y cualquier otro agente (humano o IA) que trabaje sobre este repositorio. Es consecuencia directa de un incidente en el que el paralelismo de subagentes saturó el disco de WSL al 100% durante M0.6/M1.1.
+
+### Principios
+
+1. **Bajo consumo por defecto.** Todo comando que pueda generar mucha E/S (tests, builds, installs, lint completo, exports, prebuilds) debe ejecutarse con prioridad reducida.
+2. **Una tarea pesada a la vez.** No se ejecutan en paralelo `pnpm test:ci`, `pnpm build`, `pnpm exec expo prebuild`, `pnpm exec expo export` ni limpiezas de `node_modules` o cachés.
+3. **Un solo subagente pesado a la vez.** Nunca lanzar dos subagentes que ejecuten tests/builds simultáneamente. Si se delega, secuencializar; si el runner del agente lo permite, máximo 2 workers dentro del mismo subagente.
+4. **Lo pequeño primero.** Si una validación admite análisis estático o lectura de archivos (grep, read, diff), hacerlo antes de ejecutar tests. Si hay que ejecutar tests, empezar por el archivo `.spec.ts` directamente relacionado con el archivo modificado, no por la suite completa.
+5. **Preguntar antes de lo costoso.** Antes de ejecutar test suite completa, build completo, `pnpm install`, limpieza de `node_modules` o cualquier comando que pueda tardar minutos, **preguntar al usuario**.
+6. **Detener lo que se desboca.** Si un comando lleva varios minutos sin progresar o empieza a consumir recursos excesivos, **detenerlo** en vez de dejarlo correr. Reportar al usuario y proponer alternativa.
+
+### Reducción de prioridad obligatoria
+
+Para procesos pesados (especialmente tests, builds, installs, exports), envolver con:
+
+```bash
+nice -n 10 ionice -c2 -n7 <comando>
+```
+
+- `nice -n 10`: prioridad de CPU baja (valor 0–19; 10 es conservador).
+- `ionice -c2 -n7`: clase "best-effort" con nivel 7 (más bajo). NO usar clase 1 (real-time) ni 0.
+- En Windows nativo usar el equivalente del shell disponible (p. ej. `Start-Process -Priority BelowNormal`).
+- En WSL los `ionice` funcionan si el kernel lo soporta; si no, al menos `nice`.
+
+### Comandos prohibidos sin autorización explícita
+
+- `pnpm install` desde cero (cuando ya existe `node_modules` y `pnpm-lock.yaml`).
+- `pnpm test:ci` sobre la suite completa cuando se puede ejecutar un archivo específico.
+- `pnpm exec expo prebuild --clean` (regenera `ios/` y `android/`; alto I/O).
+- `pnpm exec expo export --platform web` (bundle completo).
+- `rm -rf node_modules` o `pnpm store prune` o limpiezas similares.
+- `pnpm validate` cuando no es indispensable (preferir `pnpm typecheck` o `pnpm lint` por separado).
+- Cualquier `find` o `du` recursivo sobre `node_modules`, `.git`, `dist`, `web-build`, `ios/Pods`.
+
+### Formas de verificar que sí se permiten sin preguntar
+
+- `pnpm typecheck` (rápido).
+- `pnpm lint` (rápido, incremental).
+- `pnpm test <ruta/al/archivo.spec.ts>` (un solo archivo).
+- `pnpm test -t "<nombre del test>"` (filtrar por nombre).
+- `git status`, `git diff`, `git log` (instantáneo).
+- `grep`, `read`, glob sobre archivos del proyecto (excluyendo `node_modules`, `.git`, `dist`).
+- `gh pr`, `gh issue` (red, no disco).
+- `git push` (red, no disco — pero sigue requiriendo autorización explícita según §Git).
+
+### Multi-agente: reglas específicas
+
+- **Un subagente pesado a la vez.** Si dos tareas pueden delegarse, ejecutar primero una, esperar a que commitee, y luego lanzar la siguiente.
+- **Los subagentes NO deben correr `pnpm test:ci` completo** salvo que sea estrictamente necesario para cerrar la Definition of Done. Preferir ejecutar el subconjunto de tests directamente relacionado con sus cambios.
+- **Los subagentes NO deben hacer `pnpm install`** salvo `node_modules` esté ausente o el `pnpm-lock.yaml` haya cambiado. Verificar antes con `ls node_modules/.modules.yaml 2>/dev/null`.
+- **Cada subagente debe devolver evidencia mínima** del trabajo (lista de archivos modificados, exit codes, salida de los comandos que ejecutó) para que el agente principal pueda continuar sin re-ejecutar nada pesado.
+
+### Señales de alerta — detener y reportar
+
+- Disco al 100% o cerca (`df -h /` muestra `Use%` ≥ 95%).
+- Load average sostenido > número de cores (`uptime`).
+- `pnpm test:ci` que excede 5 minutos sin progreso.
+- `pnpm install` que no avanza el log en 1 minuto.
+- Cualquier `find` sobre `node_modules` o `.git` que tarde más de 30 segundos.
+
+Si se observa cualquiera de estas señales, **detener el comando**, reportar al usuario y proponer un plan con menos I/O.
+
+### Relación con otras secciones
+
+- Esta sección complementa §Tests (no ejecuta TDD Green a costa de saturar el host).
+- Esta sección complementa §Git (autorización previa para escrituras; bajo I/O para operaciones de archivo).
+- Esta sección complementa §Multi-agente (controla el paralelismo).
+- Esta sección **no reemplaza** §Seguridad: credenciales, tokens y `.env` siguen prohibidos.
+
+---
+
+**Incidente documentado:** septiembre 2026 — saturación de disco WSL al 100% durante la ejecución paralela de subagentes para M0.6 y M1.1. El usuario autorizó esta sección permanente para evitar recurrencia.
+
 ## Sincronización con Notion
 
 Notion es un espejo de seguimiento, no reemplaza las fuentes del repositorio.
