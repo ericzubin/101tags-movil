@@ -47,7 +47,7 @@ class AuthService {
     } catch (err) {
       if (__DEV__) console.warn('[AuthService] logout network error (continuing to clear local)', err);
     } finally {
-      await this.clearPersistedSession();
+      await this.clearPersistedSessionSafe();
     }
   }
 
@@ -59,27 +59,33 @@ class AuthService {
   /**
    * Restores a session from secure storage on app boot.
    *
-   * Flow (per spec M1.2 §Auth session lifecycle):
+   * Flow (per spec M1.5 §hydrate error discrimination):
    *   1. Read stored token. If absent → return `false` (guest boot).
-   *   2. Call `GET /auth/customer/me`. On 200 we have a valid user; persist the
-   *      session back into storage and return `true`.
-   *   3. On any error (401 expired token, network failure, etc.) we clear
-   *      stored credentials and return `false` so the store can hydrate
-   *      as a guest.
-   *
-   * Note: when step 2 fails with 401 the global `setOnUnauthorized`
-   * handler (installed in `_layout.tsx`) also runs — it clears storage and
-   * navigates to login. Our `catch` is idempotent and safe.
+   *   2. Call `GET /auth/customer/me`. On 200 we have a valid user; persist
+   *      the session back into storage and return `true`.
+   *   3. On `HttpError(401)` or `HttpError(422)` (token definitively
+   *      invalid) → clear stored credentials and return `false`.
+   *   4. On any other error (network status 0, 5xx, timeout, non-HttpError)
+   *      → keep stored token intact (transient failure) and return `false`.
    */
   async hydrate(): Promise<boolean> {
     const token = await this.getStoredToken();
     if (!token) return false;
     try {
-      const user = await this.me();
+      const wrapped = await httpClient.get<{ user: CustomerUser }>(ENDPOINTS.me);
+      const user = wrapped.user;
       await this.persistSession({ accessToken: token, user });
       return true;
-    } catch {
-      await this.clearPersistedSession();
+    } catch (err) {
+      if (err instanceof HttpError && (err.status === 401 || err.status === 422)) {
+        try {
+          await this.clearPersistedSession();
+        } catch (clearErr) {
+          if (__DEV__) console.warn('[AuthService] clearPersistedSession failed during hydrate 401/422', clearErr);
+        }
+        return false;
+      }
+      if (__DEV__) console.warn('[AuthService] hydrate transient error (keeping token)', err);
       return false;
     }
   }
@@ -110,9 +116,33 @@ class AuthService {
     await secureStorageService.clear();
   }
 
+  async clearPersistedSessionSafe(): Promise<void> {
+    await secureStorageService.clearSafe();
+  }
+
+  /**
+   * Atomic 401 sequence (spec M1.5 §handleUnauthorized):
+   *   1. Clear SecureStore (throwing variant — surfaces Keystore errors).
+   *   2. Invoke the registered Zustand handler so the in-memory store is
+   *      wiped in the same logical transaction.
+   *
+   * Both steps are best-effort: a failure in either is logged in dev but
+   * NEVER propagated, so the httpClient can complete its `await onUnauthorized`
+   * and the UI can navigate to login regardless of underlying storage state.
+   */
   async handleUnauthorized(): Promise<void> {
-    await this.clearPersistedSession();
-    if (this.unauthorizedHandler) await this.unauthorizedHandler();
+    try {
+      await this.clearPersistedSession();
+    } catch (err) {
+      if (__DEV__) console.warn('[AuthService] clearPersistedSession failed during 401', err);
+    }
+    if (this.unauthorizedHandler) {
+      try {
+        await this.unauthorizedHandler();
+      } catch (err) {
+        if (__DEV__) console.warn('[AuthService] unauthorizedHandler failed', err);
+      }
+    }
   }
 
   private async post<T>(path: string, body?: unknown): Promise<T> {

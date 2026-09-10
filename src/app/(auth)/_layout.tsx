@@ -2,7 +2,7 @@ import { Redirect, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { guestGuard } from '@/core/navigation/guards';
-import { useAuthStore } from '@/stores/auth-store';
+import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
 import { brandColors } from '@/theme/tokens';
 
 export default function AuthLayout() {
@@ -10,8 +10,8 @@ export default function AuthLayout() {
   const user = useAuthStore((s) => s.user);
   const isHydrated = useAuthStore((s) => s.isHydrated);
 
-  const isAuthenticated = !!token && !!user;
-  const guard = guestGuard({ isAuthenticated, isHydrated });
+  const authed = isAuthenticated({ token, user });
+  const guard = guestGuard({ isAuthenticated: authed, isHydrated });
 
   return (
     <>

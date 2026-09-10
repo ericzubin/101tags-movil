@@ -207,6 +207,34 @@ describe('AuthService', () => {
       await expect(authService.handleUnauthorized()).resolves.toBeUndefined();
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.token');
     });
+
+    it('does not propagate SecureStore clear failures (AC1 — 401 sync atomicity)', async () => {
+      const handler = jest.fn().mockResolvedValueOnce(undefined);
+      (SecureStore.deleteItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keystore locked'));
+      authService.setUnauthorizedHandler(handler);
+
+      await expect(authService.handleUnauthorized()).resolves.toBeUndefined();
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not propagate handler failures (AC1 — 401 sync atomicity)', async () => {
+      const handler = jest.fn().mockRejectedValueOnce(new Error('handler boom'));
+      authService.setUnauthorizedHandler(handler);
+
+      await expect(authService.handleUnauthorized()).resolves.toBeUndefined();
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    it('still invokes the handler after SecureStore clear failure (AC1 — order matters)', async () => {
+      const handler = jest.fn().mockResolvedValueOnce(undefined);
+      (SecureStore.deleteItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keystore locked'));
+      authService.setUnauthorizedHandler(handler);
+
+      await authService.handleUnauthorized();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
+    });
   });
 
   describe('storage helpers', () => {
@@ -253,7 +281,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('returns false and clears stored credentials when me() fails with 401 (AC2)', async () => {
+    it('returns false and clears stored credentials when me() fails with 401 (M1.2 AC2 / M1.5 AC3)', async () => {
       (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('expired-tok');
       mockedHttpClient.get.mockRejectedValueOnce(new HttpError(401, 'Unauthorized', null, 'HTTP 401'));
 
@@ -264,14 +292,52 @@ describe('AuthService', () => {
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.user');
     });
 
-    it('returns false and clears stored credentials when me() throws a network error', async () => {
-      (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('any-tok');
-      mockedHttpClient.get.mockRejectedValueOnce(new Error('boom'));
+    it('returns false and clears stored credentials when me() fails with 422 (M1.5 AC3 — malformed token)', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('malformed-tok');
+      mockedHttpClient.get.mockRejectedValueOnce(
+        new HttpError(422, 'Unprocessable', null, 'HTTP 422'),
+      );
 
       const restored = await authService.hydrate();
 
       expect(restored).toBe(false);
       expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('101tags.auth.token');
+    });
+
+    it('returns false WITHOUT clearing stored credentials when me() fails with network error (M1.5 AC4)', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('valid-tok');
+      mockedHttpClient.get.mockRejectedValueOnce(
+        new HttpError(0, 'Timeout', null, 'Request timeout'),
+      );
+
+      const restored = await authService.hydrate();
+
+      expect(restored).toBe(false);
+      expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
+      expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    });
+
+    it('returns false WITHOUT clearing stored credentials when me() fails with 5xx (M1.5 AC5)', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('valid-tok');
+      mockedHttpClient.get.mockRejectedValueOnce(
+        new HttpError(503, 'Service Unavailable', null, 'HTTP 503'),
+      );
+
+      const restored = await authService.hydrate();
+
+      expect(restored).toBe(false);
+      expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
+      expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    });
+
+    it('returns false WITHOUT clearing stored credentials when me() throws a non-HttpError (M1.5 AC4)', async () => {
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValueOnce('valid-tok');
+      mockedHttpClient.get.mockRejectedValueOnce(new Error('DNS resolution failed'));
+
+      const restored = await authService.hydrate();
+
+      expect(restored).toBe(false);
+      expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
     });
   });
 });

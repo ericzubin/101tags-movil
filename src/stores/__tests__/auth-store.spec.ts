@@ -56,6 +56,25 @@ describe('auth-store', () => {
     expect(s.user).toBeNull();
   });
 
+  it('clearSession still wipes in-memory state when clearPersistedSession rejects (AC12)', async () => {
+    useAuthStore.setState({ user: baseUser, token: 'tok-abc', isHydrated: true });
+    mockedAuthService.clearPersistedSession.mockRejectedValueOnce(new Error('keystore locked'));
+
+    await expect(useAuthStore.getState().clearSession()).resolves.toBeUndefined();
+    const s = useAuthStore.getState();
+    expect(s.token).toBeNull();
+    expect(s.user).toBeNull();
+    expect(s.isHydrated).toBe(true);
+  });
+
+  it('clearSession does not reject even when authService.clearPersistedSession throws (AC12)', async () => {
+    useAuthStore.setState({ user: baseUser, token: 'tok-abc', isHydrated: true });
+    mockedAuthService.clearPersistedSession.mockRejectedValueOnce(new Error('boom'));
+
+    const promise = useAuthStore.getState().clearSession();
+    await expect(promise).resolves.not.toThrow();
+  });
+
   it('hydrate delegates to authService.hydrate and toggles isLoading while in flight', async () => {
     mockedAuthService.hydrate.mockResolvedValueOnce(true);
     mockedAuthService.getStoredToken.mockResolvedValue('restored-tok');
