@@ -1,7 +1,7 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 cerrado (M0.5 + M0.6) + F1/M1.1 cerrado (Auth models + SecureStorageService + AuthService + interceptor 401) + **F1/M1.2 cerrado (hidratación al boot + guards auth/guest + bearer selectivo en endpoints públicos, PR #50)** + **F1/M1.3 cerrado (UX polish login/register — validación cliente + loading + errores por campo + auto-focus + a11y, PR #TBD)**. Próximo: **M1.4 — Forgot/reset password + deep links**.
+IN PROGRESS — F0 cerrado (M0.5 + M0.6) + F1/M1.1 cerrado (Auth models + SecureStorageService + AuthService + interceptor 401) + **F1/M1.2 cerrado (hidratación al boot + guards auth/guest + bearer selectivo en endpoints públicos, PR #50)** + **F1/M1.3 cerrado (UX polish login/register — validación cliente + loading + errores por campo + auto-focus + a11y, PR #59)**. Próximo: **M1.4 — Forgot/reset password + deep links** (cuando el usuario lo asigne).
 
 ## Adoption status
 **App funcional con auth wired**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerables con `expo prebuild`. Compilación nativa cloud via EAS Build.
@@ -185,13 +185,13 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 - `.spec/2026-09-09-m0-6-pivot-quality-baseline.md` — **DONE** (PR #49)
 - `.spec/2026-09-09-m1-1-auth-models-service.md` — **DONE** (PR #47)
 - `.spec/2026-09-09-m1-2-session-restore-guards.md` — **DONE** (PR #50)
-- `.spec/2026-09-09-m1-3-login-register-ux.md` — **DONE** (PR #TBD, awaiting merge)
+- `.spec/2026-09-09-m1-3-login-register-ux.md` — **DONE** (PR #59)
 
 ## Current phase
-**F1 / M1.3 — UX polish login/register (post-merge en developer pendiente de PR review)**.
+**F1 / M1.3 — UX polish login/register mergeado en `developer`** (af7c50d).
 
 ## Next actions (roadmap)
-1. **M1.4** — Forgot/reset password + deep links (inmediato).
+1. **M1.4** — Forgot/reset password + deep links (cuando el usuario lo asigne).
 2. **M1.5** — Splash animado + tabs base (Inicio/Catálogo/Carrito/Cuenta).
 3. **F2.x** — Home + catálogo + producto.
 4. **F3.x** — Cart + checkout + pagos (OXXO/SPEI/OpenPay condicional).
@@ -203,7 +203,7 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: F1 / M1.3 cerrado — PR abierto contra `developer` esperando merge.
+- Fase actual: F1 / M1.3 mergeado en `developer` (af7c50d). Próximo issue asignado por el usuario.
 - Componente actual: app + auth wiring + login/register con UX polish + 130 tests verdes (90 baseline + 40 nuevos en i18n/errors + validation/auth + login + register).
 - Stack: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6 + Zustand 5 + TanStack Query 5.
 - Decisiones pendientes: OpenPay nativo (M3.6), deep links reset (M1.4), EAS Update (F7), TS 6 upgrade (opcional).
