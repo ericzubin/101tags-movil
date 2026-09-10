@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { brandColors } from '@/theme/tokens';
-
+/**
+ * Register screen — scaffold M0.4-PIVOT refactorizado a Nativewind v4
+ * en M0.5-PIVOT. Functional registration lands in M1.3.
+ */
 export default function RegisterScreen() {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -12,14 +14,16 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Crear cuenta</Text>
+    <SafeAreaView className="flex-1 bg-brand-medium" edges={['top', 'left', 'right']}>
+      <View className="flex-1 px-brand-6 justify-center">
+        <Text className="text-[22px] font-bold text-brand-dark mb-brand-6">
+          Crear cuenta
+        </Text>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Nombre</Text>
+        <View className="mb-brand-4">
+          <Text className="text-sm text-brand-dark mb-1.5">Nombre</Text>
           <TextInput
-            style={styles.input}
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
             value={name}
             onChangeText={setName}
             placeholder="Tu nombre"
@@ -28,10 +32,10 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Correo electrónico</Text>
+        <View className="mb-brand-4">
+          <Text className="text-sm text-brand-dark mb-1.5">Correo electrónico</Text>
           <TextInput
-            style={styles.input}
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
             value={email}
             onChangeText={setEmail}
             placeholder="tu@correo.com"
@@ -42,10 +46,12 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Contraseña (≥6 caracteres)</Text>
+        <View className="mb-brand-4">
+          <Text className="text-sm text-brand-dark mb-1.5">
+            Contraseña (≥6 caracteres)
+          </Text>
           <TextInput
-            style={styles.input}
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
             value={password}
             onChangeText={setPassword}
             placeholder="••••••••"
@@ -56,51 +62,22 @@ export default function RegisterScreen() {
         </View>
 
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          className="bg-brand-primary py-3.5 rounded-brand-md items-center mt-2 active:opacity-85"
           onPress={() => router.replace('/(tabs)')}
           testID="register-submit"
         >
-          <Text style={styles.buttonText}>Registrarme</Text>
+          <Text className="text-brand-white text-base font-bold">Registrarme</Text>
         </Pressable>
 
-        <Pressable onPress={() => router.back()} style={styles.linkButton}>
-          <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesión</Text>
+        <Pressable
+          onPress={() => router.back()}
+          className="items-center mt-brand-4"
+        >
+          <Text className="text-brand-primary text-sm">
+            ¿Ya tienes cuenta? Inicia sesión
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: brandColors.medium },
-  container: { flex: 1, padding: 24, justifyContent: 'center' },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: brandColors.dark,
-    marginBottom: 24,
-  },
-  field: { marginBottom: 16 },
-  label: { fontSize: 14, color: brandColors.dark, marginBottom: 6 },
-  input: {
-    backgroundColor: brandColors.white,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: brandColors.dark,
-  },
-  button: {
-    backgroundColor: brandColors.primary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonPressed: { opacity: 0.85 },
-  buttonText: { color: brandColors.white, fontSize: 16, fontWeight: '700' },
-  linkButton: { alignItems: 'center', marginTop: 16 },
-  linkText: { color: brandColors.primary, fontSize: 14 },
-});

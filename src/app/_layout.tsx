@@ -9,6 +9,7 @@ import '@/global.css';
 
 import { queryClient } from '@/core/query/client';
 import { useAuthStore } from '@/stores/auth-store';
+import { brandColors } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,10 +33,10 @@ export default function RootLayout() {
         <StatusBar style="light" />
         <Stack
           screenOptions={{
-            headerStyle: { backgroundColor: '#E31E24' },
-            headerTintColor: '#ffffff',
+            headerStyle: { backgroundColor: brandColors.primary },
+            headerTintColor: brandColors.white,
             headerTitleStyle: { fontWeight: '700' },
-            contentStyle: { backgroundColor: '#F5F5F5' },
+            contentStyle: { backgroundColor: brandColors.medium },
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

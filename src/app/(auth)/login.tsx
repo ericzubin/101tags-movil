@@ -1,13 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { brandColors } from '@/theme/tokens';
-
 /**
- * Login screen — scaffold M0.4-PIVOT.
- * Functional login lands in M1.3.
+ * Login screen — scaffold M0.4-PIVOT refactorizado a Nativewind v4
+ * en M0.5-PIVOT. Functional login lands in M1.3.
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -15,15 +13,19 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.container}>
-        <Text style={styles.brand}>101tags</Text>
-        <Text style={styles.title}>Inicia sesión</Text>
+    <SafeAreaView className="flex-1 bg-brand-medium" edges={['top', 'left', 'right']}>
+      <View className="flex-1 px-brand-6 justify-center">
+        <Text className="text-4xl font-extrabold text-brand-primary text-center mb-brand-6">
+          101tags
+        </Text>
+        <Text className="text-[22px] font-bold text-brand-dark mb-brand-6">
+          Inicia sesión
+        </Text>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Correo electrónico</Text>
+        <View className="mb-brand-4">
+          <Text className="text-sm text-brand-dark mb-1.5">Correo electrónico</Text>
           <TextInput
-            style={styles.input}
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
             placeholder="tu@correo.com"
             placeholderTextColor="#999"
             value={email}
@@ -34,10 +36,10 @@ export default function LoginScreen() {
           />
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Contraseña</Text>
+        <View className="mb-brand-4">
+          <Text className="text-sm text-brand-dark mb-1.5">Contraseña</Text>
           <TextInput
-            style={styles.input}
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
             placeholder="••••••••"
             placeholderTextColor="#999"
             value={password}
@@ -48,61 +50,22 @@ export default function LoginScreen() {
         </View>
 
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          className="bg-brand-primary py-3.5 rounded-brand-md items-center mt-2 active:opacity-85"
           onPress={() => router.replace('/(tabs)')}
           testID="login-submit"
         >
-          <Text style={styles.buttonText}>Entrar</Text>
+          <Text className="text-brand-white text-base font-bold">Entrar</Text>
         </Pressable>
 
         <Pressable
           onPress={() => router.push('/(auth)/register')}
-          style={styles.linkButton}
+          className="items-center mt-brand-4"
         >
-          <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
+          <Text className="text-brand-primary text-sm">
+            ¿No tienes cuenta? Regístrate
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: brandColors.medium },
-  container: { flex: 1, padding: 24, justifyContent: 'center' },
-  brand: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: brandColors.primary,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: brandColors.dark,
-    marginBottom: 24,
-  },
-  field: { marginBottom: 16 },
-  label: { fontSize: 14, color: brandColors.dark, marginBottom: 6 },
-  input: {
-    backgroundColor: brandColors.white,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: brandColors.dark,
-  },
-  button: {
-    backgroundColor: brandColors.primary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonPressed: { opacity: 0.85 },
-  buttonText: { color: brandColors.white, fontSize: 16, fontWeight: '700' },
-  linkButton: { alignItems: 'center', marginTop: 16 },
-  linkText: { color: brandColors.primary, fontSize: 14 },
-});

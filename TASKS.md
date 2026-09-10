@@ -89,17 +89,19 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 - [ ] `appId` y `appName` quedan definidos sin secretos.
 - [ ] Instalación reproducible desde un checkout limpio.
 
-## M0.5 — Configurar theme, Tailwind, environments y proxy
+## M0.5 — Nativewind theme tokens en componentes + environments ajustados (PIVOT)
 **Prioridad:** 🔥 Alta · **Estimación:** 3 h · **Dependencias:** M0.4
+**Status:** ✅ DONE (rama `chore/m0-5-pivot`) — ver `.spec/2026-09-09-m0-5-pivot-theme-nativewind-env.md`
 
 **Objetivo**
-- Aplicar branding 101tags y separar configuración dev/prod.
+- Aplicar branding 101tags con Nativewind v4 (Tailwind 3.4) y separar configuración dev/prod usando getters `getApiBaseUrl()` / `getApiTimeoutMs()`.
 
 **Aceptación**
-- [ ] Colores, Montserrat y variables Ionic están centralizados.
-- [ ] Dev consume `/api` mediante proxy o configuración equivalente documentada.
-- [ ] Producción toma la URL desde environment/config de build.
-- [ ] No hay URLs productivas hardcodeadas en componentes.
+- [x] Colores, Montserrat y tokens están centralizados en `src/theme/tokens.ts` + `tailwind.config.js` + `src/global.css` con tests de sincronía.
+- [x] Dev consume `/api` mediante `getApiBaseUrl()` (web → `http://localhost:8080/api`, native → `http://localhost:8000/api`).
+- [x] Producción toma la URL desde `getApiBaseUrl()` cuando `EXPO_PUBLIC_ENV === 'production'` (`https://api.101tags.com/api`).
+- [x] No hay URLs productivas hardcodeadas en componentes.
+- [x] `pnpm validate` exit 0 + `pnpm exec expo prebuild --no-install --clean` exit 0 + 49/49 tests verdes.
 
 ## M0.6 — Establecer baseline de calidad y estructura core
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M0.4

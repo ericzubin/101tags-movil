@@ -1,7 +1,7 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 / M0.4-PIVOT cerrado (scaffold RN+Expo SDK 57 real generado)
+IN PROGRESS — F0 / M0.5-PIVOT cerrado (Nativewind theme tokens en componentes + environments ajustados)
 
 ## Adoption status
 **Scaffold generado**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerados con `expo prebuild`. Compilación nativa cloud via EAS Build (sin Xcode/Android SDK local).
@@ -139,12 +139,14 @@ Workspace completo en repo root:
 ## Testing
 
 - **Runner**: Jest 29 + jest-expo preset + `@testing-library/react-native`.
-- **5 spec files / 28 tests verdes**:
-  - `src/theme/__tests__/tokens.spec.ts` (5 tests)
-  - `src/constants/__tests__/env.spec.ts` (7 tests)
+- **7 spec files / 49 tests verdes** (M0.5-PIVOT):
+  - `src/theme/__tests__/tokens.spec.ts` (8 tests — +3 fontWeights/radii/spacing-brand-1..8)
+  - `src/theme/__tests__/nativewind-tokens.spec.ts` (4 tests — sync tokens.ts ↔ tailwind.config.js)
+  - `src/constants/__tests__/env.spec.ts` (12 tests — +5 getApiBaseUrl/getApiTimeoutMs)
   - `src/core/storage/__tests__/secure-store.spec.ts` (7 tests)
   - `src/core/api/__tests__/client.spec.ts` (4 tests)
   - `src/stores/__tests__/auth-store.spec.ts` (5 tests)
+  - `src/app/__tests__/splash-theme.spec.ts` (8 tests — no hex literals en componentes)
 
 ## Verification commands (reales, ejecutadas)
 
@@ -201,29 +203,29 @@ Lo que se descartó:
 - `.spec/2026-09-09-m0-1-auditar-contratos.md` — **DONE** (preserved, agnóstico al stack)
 
 ## Current phase
-F0 / M0.4-PIVOT DONE — scaffold RN+Expo 57 funcional. Pendiente: PR + merge a `main`. Después M0.5 (Nativewind + theme), M0.6 (ESLint baseline), M1.1 (Auth models + secure-storage wrapper funcional).
+F0 / M0.5-PIVOT DONE — Nativewind theme tokens en componentes + environments ajustados. Pendiente: PR + merge a `main`. Después M0.6 (ESLint baseline), M1.1 (Auth models + secure-storage wrapper funcional).
 
 ## Next action
 
-1. **PR + merge**: rama `chore/rn-pivot-f0` → `main`. Mensaje documenta pivote + sustituciones.
-2. **M0.5-PIVOT**: Nativewind theme tokens en componentes + environments ajustados + branding refinado.
-3. **M0.6-PIVOT**: ESLint custom rules + smoke tests reales + docs/quality/baseline.md.
-4. **M1.1**: Auth models (7) + SecureStorageService + AuthService + interceptor.
+1. **PR + merge**: rama `chore/m0-5-pivot` → `main`. Mensaje documenta M0.5-PIVOT + sustituciones.
+2. **M0.6-PIVOT**: ESLint custom rules + smoke tests reales + docs/quality/baseline.md.
+3. **M1.1**: Auth models (7) + SecureStorageService + AuthService + interceptor.
 
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: F0 / M0.4-PIVOT DONE — scaffold RN+Expo 57 funcional
+- Fase actual: F0 / M0.5-PIVOT DONE — Nativewind theme tokens + environments ajustados
 - Specs activas:
   - `.spec/00-rn-expo-scaffold.md` (APPROVED)
   - `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED — RN+Expo)
   - `.spec/2026-09-09-m0-4-workspace-rn-expo.md` (DONE)
+  - `.spec/2026-09-09-m0-5-pivot-theme-nativewind-env.md` (DRAFT → DONE en este commit)
   - `.spec/2026-09-09-m0-1-auditar-contratos.md` (DONE — preserved)
-- Componente actual: app/ (expo-router) + ios/ + android/ + 28/28 tests verdes
-- Stack real instalado y verificado: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2
+- Componente actual: app/ (expo-router) + ios/ + android/ + 49/49 tests verdes
+- Stack real instalado y verificado: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6
 - Discrepancias activas: PIVOTE documentado (sustituye stack Ionic+Angular+Cap)
-- Tests: 28/28 smoke verdes
-- Última acción: scaffold generado + prebuild OK + web export OK + 28/28 tests verdes
-- Próximo paso exacto: commit + push + PR + merge de `chore/rn-pivot-f0` a `main`
+- Tests: 49/49 smoke verdes (delta +21 vs M0.4-PIVOT)
+- Última acción: M0.5-PIVOT commit (theme tokens sincronizados entre tokens.ts + tailwind.config.js + global.css; getApiBaseUrl()/getApiTimeoutMs(); login/register/_layout/(tabs)/index refactorizados a Nativewind classes)
+- Próximo paso exacto: commit (ya ejecutado localmente en `chore/m0-5-pivot`); push + PR + merge quedan para el usuario
 - Decisiones pendientes: OpenPay nativo (M3.6), deep links reset (M1.4), EAS Update (F7)
 - Pre-F7: compilación nativa cloud via EAS Build (sin Xcode/Android SDK local; primera compilación EAS debe hacerse con `eas login` + `eas build`)
