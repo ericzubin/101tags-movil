@@ -117,7 +117,11 @@ F0 / M0.3 DONE — **esperando visto bueno explícito del usuario sobre la ENMIE
 
 ## Next action
 
-1. **Esperar visto bueno del usuario sobre ENMIENDA MAYOR**.
+1. **Pre-M0.4 cumplido**: usuario ejecutó `nvm install 24 && nvm alias default 24`. Verificado en shell:
+   - `nvm alias default` → `default -> 24 (-> v24.21.0)` ✓
+   - `nvm current` → `v25.0.0` (sesión actual antes de `nvm use`)
+   - `nvm use 24` → activa `v24.21.0` (npm v11.19.0)
+   - pnpm 10.32.1 detectado vía `which pnpm` ✓
 2. **M0.4 (Issue #4)** en rama `chore/m0-4-workspace-ionic`: ejecutar `ionic start` con pnpm + `@ionic/cli 9`, agregar `ionic cap add ios android`. Bump manual de `targetSdk` Android a 36. Documentar Swift Package Manager como default en iOS.
 3. **M0.5 (Issue #5)**: Tailwind 4 CSS-first, theme, environments, proxy.
 4. **M0.6 (Issue #6)**: baseline de calidad — `.eslint.config.js` flat, scripts reales, smoke test.
@@ -137,7 +141,7 @@ F0 / M0.3 DONE — **esperando visto bueno explícito del usuario sobre la ENMIE
 - Tests: no existen aún (se crean en M0.4–M0.6)
 - Última acción: validar matriz de versiones → ENMIENDA MAYOR aplicada a `.spec/00-ionic-scaffold.md`
 - Problema actual: ninguno técnico; **esperando OK del usuario sobre ENMIENDA MAYOR**
-- Próximo paso exacto (post-aprobación): M0.4 — `nvm install 24 && nvm alias default 24`, luego `ionic start` con stack enmendado
+- Próximo paso exacto (post-aprobación): M0.4 — pre-M0.4 cumplido (nvm 24 + alias default 24 + Node v24.21.0 disponible vía `nvm use 24`), pendiente ejecutar `ionic start` con stack enmendado
 - Decisiones abiertas que NO bloquean M0.4: secure storage (M1.1), OpenPay nativo (M3.6), deep links reset (M1.4), pagination cache (F2), multi-house cart (M3.2)
 - Decisiones abiertas que SÍ requieren gate pre-M0.4: confirmación del usuario sobre el stack enmendado de M0.3
 - Divergencia con `chore/m0-1-auditar-contratos`: NO resuelta; queda como tarea futura (merge del audit a main y reconciliación con `DISCOVERY.md` del usuario)
