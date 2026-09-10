@@ -1,4 +1,5 @@
 import { getApiBaseUrl, getApiTimeoutMs } from '@/constants/env';
+import { toCamel } from '@/core/utils/snake-camel';
 
 /**
  * Endpoints that must NOT carry an `Authorization` header.
@@ -121,7 +122,7 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
         if (response.status === 401 && onUnauthorized) await onUnauthorized();
         throw error;
       }
-      return parsed as T;
+      return toCamel(parsed) as T;
     } catch (err) {
       if (err instanceof HttpError) throw err;
       if (abortReason === 'timeout') {
