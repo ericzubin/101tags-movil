@@ -41,22 +41,14 @@ describe('catalogService', () => {
   it('AC16: getProducts({q,sort}) llama GET /catalog/products?q=...&sort=price_asc (sort snake_case)', async () => {
     mockedHttpClient.request.mockResolvedValueOnce({
       data: [],
-      meta: {
-        current_page: 1,
-        from: null,
-        last_page: 1,
-        per_page: 20,
-        to: null,
-        total: 0,
-      },
-      links: {
-        first_page_url: '',
-        last_page_url: '',
-        next_page_url: null,
-        prev_page_url: null,
-        path: '',
-        links: [],
-      },
+      currentPage: 1,
+      lastPage: 1,
+      perPage: 20,
+      total: 0,
+      from: null,
+      to: null,
+      nextPageUrl: null,
+      prevPageUrl: null,
     });
 
     await catalogService.getProducts({ q: 'camisa', sort: 'price_asc' });
@@ -66,25 +58,37 @@ describe('catalogService', () => {
     expect(options?.query).toEqual({ q: 'camisa', sort: 'price_asc' });
   });
 
+  it('AC20: getProducts propaga options.signal a httpClient.request', async () => {
+    mockedHttpClient.request.mockResolvedValueOnce({
+      data: [],
+      currentPage: 1,
+      lastPage: 1,
+      perPage: 20,
+      total: 0,
+      from: null,
+      to: null,
+      nextPageUrl: null,
+      prevPageUrl: null,
+    });
+
+    const controller = new AbortController();
+    await catalogService.getProducts({ q: 'camisa' }, { signal: controller.signal });
+
+    const [, options] = mockedHttpClient.request.mock.calls[0];
+    expect(options?.signal).toBe(controller.signal);
+  });
+
   it('AC17: getProducts({category: ["ropa","calzado"]}) serializa CSV en single key', async () => {
     mockedHttpClient.request.mockResolvedValueOnce({
       data: [],
-      meta: {
-        current_page: 1,
-        from: null,
-        last_page: 1,
-        per_page: 20,
-        to: null,
-        total: 0,
-      },
-      links: {
-        first_page_url: '',
-        last_page_url: '',
-        next_page_url: null,
-        prev_page_url: null,
-        path: '',
-        links: [],
-      },
+      currentPage: 1,
+      lastPage: 1,
+      perPage: 20,
+      total: 0,
+      from: null,
+      to: null,
+      nextPageUrl: null,
+      prevPageUrl: null,
     });
 
     await catalogService.getProducts({ category: ['ropa', 'calzado'] });
@@ -180,22 +184,14 @@ describe('catalogService', () => {
   it('serializeFilters convierte booleanos a 1/0 y snake_case campos snake', async () => {
     mockedHttpClient.request.mockResolvedValueOnce({
       data: [],
-      meta: {
-        current_page: 1,
-        from: null,
-        last_page: 1,
-        per_page: 20,
-        to: null,
-        total: 0,
-      },
-      links: {
-        first_page_url: '',
-        last_page_url: '',
-        next_page_url: null,
-        prev_page_url: null,
-        path: '',
-        links: [],
-      },
+      currentPage: 1,
+      lastPage: 1,
+      perPage: 20,
+      total: 0,
+      from: null,
+      to: null,
+      nextPageUrl: null,
+      prevPageUrl: null,
     });
 
     await catalogService.getProducts({

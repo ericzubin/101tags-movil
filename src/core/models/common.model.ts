@@ -11,26 +11,23 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-export interface PaginatedMeta {
-  current_page: number;
-  from: number | null;
-  last_page: number;
-  per_page: number;
-  to: number | null;
-  total: number;
-}
-
-export interface PaginatedLinks {
-  first_page_url: string;
-  last_page_url: string;
-  next_page_url: string | null;
-  prev_page_url: string | null;
-  path: string;
-  links: { url: string | null; label: string; active: boolean; page?: number }[];
-}
-
+/**
+ * Shape real del `LengthAwarePaginator` de Laravel tras `toCamel`
+ * (`GET /api/catalog/products` → `response()->json($products)`).
+ *
+ * NO es el shape anidado `{ data, meta, links }` de los API Resources;
+ * el paginador flat expone las claves en la raíz.
+ *
+ * @see .spec/2026-09-11-m2-3-list.md §Paginated<T> corregido
+ */
 export interface Paginated<T> {
   data: T[];
-  meta: PaginatedMeta;
-  links: PaginatedLinks;
+  currentPage: number;
+  lastPage: number;
+  perPage: number;
+  total: number;
+  from: number | null;
+  to: number | null;
+  nextPageUrl: string | null;
+  prevPageUrl: string | null;
 }

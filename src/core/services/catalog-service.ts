@@ -16,10 +16,14 @@ export const catalogService = {
     });
   },
 
-  async getProducts(filters: CatalogFilters = {}): Promise<CatalogProductListResponse> {
+  async getProducts(
+    filters: CatalogFilters = {},
+    options: { signal?: AbortSignal } = {},
+  ): Promise<CatalogProductListResponse> {
     return httpClient.request<CatalogProductListResponse>('/catalog/products', {
       method: 'GET',
       query: serializeFilters(filters),
+      signal: options.signal,
     });
   },
 
