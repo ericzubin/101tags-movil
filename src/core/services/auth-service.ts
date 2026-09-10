@@ -161,7 +161,10 @@ class AuthService {
       if (err.status === 422) return new AuthError('VALIDATION_ERROR', body?.message ?? 'Revisa los datos enviados', err.status, body?.errors);
       if (err.status === 429) return new AuthError('RATE_LIMITED', body?.message ?? 'Demasiados intentos', err.status, body?.errors);
       if (err.status >= 500 && err.status <= 599) return new AuthError('SERVER_ERROR', body?.message ?? 'Error del servidor', err.status, body?.errors);
-      if (err.status === 0) return new AuthError('NETWORK_ERROR', 'No se pudo conectar con el servidor', err.status);
+      if (err.status === 0) {
+        if (err.cause === 'canceled') return new AuthError('CANCELED', 'Operación cancelada', err.status);
+        return new AuthError('NETWORK_ERROR', 'No se pudo conectar con el servidor', err.status);
+      }
       return new AuthError('UNKNOWN', body?.message ?? 'Ocurrió un error inesperado', err.status, body?.errors);
     }
     return new AuthError('NETWORK_ERROR', 'No se pudo conectar con el servidor', 0);

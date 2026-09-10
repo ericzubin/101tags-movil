@@ -21,15 +21,21 @@ export function isPublicPath(path: string): boolean {
   return PUBLIC_PATH_PATTERNS.some((re) => re.test(path));
 }
 
+export type HttpErrorCause = 'timeout' | 'canceled' | 'unknown';
+
 export class HttpError extends Error {
+  readonly cause?: HttpErrorCause;
+
   constructor(
     public readonly status: number,
     public readonly statusText: string,
     public readonly body: unknown,
     message: string,
+    cause?: HttpErrorCause,
   ) {
     super(message);
     this.name = 'HttpError';
+    this.cause = cause;
   }
 }
 
@@ -75,8 +81,25 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
       }
     }
 
-    const controller = signal ? null : new AbortController();
-    const timeoutId = controller ? setTimeout(() => controller.abort(), getApiTimeoutMs()) : null;
+    const internalController = new AbortController();
+    let abortReason: 'timeout' | 'canceled' | undefined;
+    const timeoutId = setTimeout(() => {
+      abortReason = 'timeout';
+      internalController.abort();
+    }, getApiTimeoutMs());
+
+    const onExternalAbort = () => {
+      abortReason = 'canceled';
+      internalController.abort();
+    };
+    if (signal) {
+      if (signal.aborted) {
+        clearTimeout(timeoutId);
+        throw new HttpError(0, 'Canceled', null, 'Request canceled', 'canceled');
+      }
+      signal.addEventListener('abort', onExternalAbort);
+    }
+
     const finalHeaders: Record<string, string> = { Accept: 'application/json', ...headers };
 
     if (body !== undefined && !(body instanceof FormData)) finalHeaders['Content-Type'] = 'application/json';
@@ -88,7 +111,7 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
         method,
         headers: finalHeaders,
         body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-        signal: signal ?? controller?.signal,
+        signal: internalController.signal,
       });
 
       const text = await response.text();
@@ -100,12 +123,20 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
       }
       return parsed as T;
     } catch (err) {
-      if (timeoutId) clearTimeout(timeoutId);
       if (err instanceof HttpError) throw err;
-      if (err instanceof Error && err.name === 'AbortError') throw new HttpError(0, 'Timeout', null, 'Request timeout');
+      if (abortReason === 'timeout') {
+        throw new HttpError(0, 'Timeout', null, 'Request timeout', 'timeout');
+      }
+      if (abortReason === 'canceled') {
+        throw new HttpError(0, 'Canceled', null, 'Request canceled', 'canceled');
+      }
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new HttpError(0, 'Canceled', null, 'Request canceled', 'canceled');
+      }
       throw err;
     } finally {
-      if (timeoutId) clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
+      if (signal) signal.removeEventListener('abort', onExternalAbort);
     }
   }
 
