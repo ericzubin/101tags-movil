@@ -25,6 +25,14 @@ declare module 'node:module' {
   export function createRequire(filename: string): NodeRequire;
 }
 
+declare module 'node:child_process' {
+  export function execFileSync(
+    file: string,
+    args?: readonly string[],
+    options?: { cwd?: string; encoding?: 'utf8'; stdio?: readonly string[] },
+  ): string;
+}
+
 interface NodeRequire {
   (id: string): unknown;
 }

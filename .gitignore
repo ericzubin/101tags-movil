@@ -114,3 +114,15 @@ eas-build-logs/
 .playwright-mcp/
 www/
 node_modules/.cache/
+
+# Credenciales de build / signing (M7.1 — NO commitear)
+# `*.keystore` + `!debug.keystore` ya están definidos arriba.
+*.jks
+*.p12
+*.mobileprovision
+*.cer
+*.p8
+keystore.properties
+credentials.json
+.env*
+!.env.example
