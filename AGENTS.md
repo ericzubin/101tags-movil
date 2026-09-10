@@ -153,6 +153,8 @@ La metodología importa más que la existencia física de subagentes.
 
 **Toda la actividad multi-agente debe respetar la [§ Disciplina de I/O](#-disciplina-de-io--bajo-consumo-obligatorio).** El paralelismo sin control puede saturar el disco y dejar el host (incluido WSL) inutilizable.
 
+**Resumen de cuotas:** máximo 2 workers pesados simultáneos (tests/builds/installs), máximo 3 subagentes de análisis/edición simultáneos (sin tests/builds), builds completos siempre de uno en uno.
+
 ## ⚡ Disciplina de I/O — bajo consumo obligatorio
 
 Esta sección es **permanente y no negociable** para OpenCode, Hermes, Codex y cualquier otro agente (humano o IA) que trabaje sobre este repositorio. Es consecuencia directa de un incidente en el que el paralelismo de subagentes saturó el disco de WSL al 100% durante M0.6/M1.1.
@@ -161,7 +163,11 @@ Esta sección es **permanente y no negociable** para OpenCode, Hermes, Codex y c
 
 1. **Bajo consumo por defecto.** Todo comando que pueda generar mucha E/S (tests, builds, installs, lint completo, exports, prebuilds) debe ejecutarse con prioridad reducida.
 2. **Una tarea pesada a la vez.** No se ejecutan en paralelo `pnpm test:ci`, `pnpm build`, `pnpm exec expo prebuild`, `pnpm exec expo export` ni limpiezas de `node_modules` o cachés.
-3. **Un solo subagente pesado a la vez.** Nunca lanzar dos subagentes que ejecuten tests/builds simultáneamente. Si se delega, secuencializar; si el runner del agente lo permite, máximo 2 workers dentro del mismo subagente.
+3. **Cuotas de paralelismo.**
+   - **Máximo 2 workers para pruebas/tareas intensivas de I/O** (tests, builds, installs, exports) corriendo simultáneamente. Builds completos siempre de uno en uno.
+   - **Máximo 3 subagentes para análisis o edición de código** (lectura, grep, diff, edición de archivos) — pero estos subagentes no pueden ejecutar tests/builds/installs en paralelo. Si dos subagentes de análisis tocan archivos, secuencializar commits.
+   - **Nunca** permitir que más de 2 procesos pesados ejecuten tests/builds/installs simultáneamente.
+   - Si se delega trabajo pesado a subagentes, secuencializar; si el runner del agente lo permite, máximo 2 workers dentro del mismo subagente.
 4. **Lo pequeño primero.** Si una validación admite análisis estático o lectura de archivos (grep, read, diff), hacerlo antes de ejecutar tests. Si hay que ejecutar tests, empezar por el archivo `.spec.ts` directamente relacionado con el archivo modificado, no por la suite completa.
 5. **Preguntar antes de lo costoso.** Antes de ejecutar test suite completa, build completo, `pnpm install`, limpieza de `node_modules` o cualquier comando que pueda tardar minutos, **preguntar al usuario**.
 6. **Detener lo que se desboca.** Si un comando lleva varios minutos sin progresar o empieza a consumir recursos excesivos, **detenerlo** en vez de dejarlo correr. Reportar al usuario y proponer alternativa.
