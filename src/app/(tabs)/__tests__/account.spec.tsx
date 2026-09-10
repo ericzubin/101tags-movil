@@ -94,6 +94,16 @@ describe('AccountTab — placeholder + logout (M1.10 AC6, AC7)', () => {
     expect(mockPushRouter).toHaveBeenCalledWith('/profile');
   });
 
+  it('M6.2: muestra "Mis cupones" y navega a /coupons', () => {
+    render(<AccountTab />);
+
+    expect(screen.getByText('Mis cupones')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('account-coupons'));
+
+    expect(mockPushRouter).toHaveBeenCalledWith('/coupons');
+  });
+
   it('M4.1: muestra "Mis pedidos" y navega a /orders', () => {
     render(<AccountTab />);
 

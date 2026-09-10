@@ -94,6 +94,19 @@ export default function AccountTab() {
           <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
         </Pressable>
         <Pressable
+          onPress={() => router.push('/coupons')}
+          className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
+          testID="account-coupons"
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="pricetags-outline" size={20} color={brandColors.dark} />
+            <Text className="font-brand-bold text-base text-brand-dark ml-brand-3">
+              Mis cupones
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
+        </Pressable>
+        <Pressable
           onPress={() => router.push('/notifications')}
           className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
           testID="account-notifications"
@@ -129,7 +142,7 @@ export default function AccountTab() {
           )}
         </Pressable>
         <Text className="font-brand text-xs text-brand-dark/50 text-center mt-brand-4">
-          Próximamente — Fase 6 (perfil completo, cupones, ayuda)
+          Próximamente — ayuda y configuración avanzada
         </Text>
       </View>
     </SafeAreaView>

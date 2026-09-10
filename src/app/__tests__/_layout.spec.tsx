@@ -200,4 +200,8 @@ describe('RootLayout — rutas registradas (M3.4 / M3.5)', () => {
   it('M6.1: registra profile en el root stack', () => {
     expect(layoutSource).toContain('name="profile"');
   });
+
+  it('M6.2: registra coupons en el root stack', () => {
+    expect(layoutSource).toContain('name="coupons"');
+  });
 });

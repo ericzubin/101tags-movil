@@ -124,32 +124,11 @@ export interface PostalCodeLookup {
   readonly settlements: PostalSettlement[];
 }
 
-export interface CouponDefinition {
-  readonly id: string;
-  readonly code: string;
-  readonly issuer: string;
-  readonly title: string;
-  readonly description: string;
-  readonly discountType: string;
-  readonly value: number;
-  readonly minSubtotal: number | null;
-  readonly segment: string | null;
-  readonly storeSlug: string | null;
-  readonly storeName: string | null;
-  readonly assignedEmails: string[];
-  readonly expiresAt: string | null;
-  readonly oneTime: boolean;
-  readonly keywords: string[];
-}
-
-export interface CouponValidation {
-  readonly valid: boolean;
-  readonly message: string;
-  readonly coupon?: CouponDefinition;
-  readonly discountAmount: number;
-  readonly shippingDiscount: number;
-  readonly eligibleSubtotal: number;
-}
+/**
+ * Coupon contracts now live in `coupon.model.ts` (M6.2). Re-exported here so
+ * existing checkout imports keep working without duplicating the shape.
+ */
+export type { CouponDefinition, CouponValidation } from '@/core/models/coupon.model';
 
 /** Item for `POST /checkout/request-orders` — backend expects snake_case. */
 export interface CheckoutOrderItem {
