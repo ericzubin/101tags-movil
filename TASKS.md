@@ -323,29 +323,32 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M5.1 — Conversaciones y chat de orden con polling
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-1-chat.md`
 
 **Aceptación**
-- [ ] Lista/conversación usa contratos reales.
-- [ ] Polling se inicia al entrar y se cancela al salir/destroy.
-- [ ] No acumula timers ni requests en background.
-- [ ] Mensajes mantienen orden y no se duplican.
+- [x] Lista/conversación usa contratos reales.
+- [x] Polling se inicia al entrar y se cancela al salir/destroy.
+- [x] No acumula timers ni requests en background.
+- [x] Mensajes mantienen orden y no se duplican.
 
 ## M5.2 — Adjuntos del chat
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** M5.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-2-chat-attachments.md`
 
 **Aceptación**
-- [ ] Multipart respeta tipos/tamaños backend.
-- [ ] Adjuntos descargables usan acceso autorizado/signed URL cuando corresponda.
-- [ ] `proof_of_payment` se trata según contrato sin duplicar lógica insegura.
+- [x] Multipart respeta tipos/tamaños backend.
+- [x] Adjuntos descargables usan acceso autorizado/signed URL cuando corresponda.
+- [x] `proof_of_payment` se trata según contrato sin duplicar lógica insegura.
 
 ## M5.3 — Notificaciones in-app
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-3-notifications.md`
 
 **Aceptación**
-- [ ] GET lista notificaciones.
-- [ ] PATCH marca individual leída.
-- [ ] POST read-all actualiza servidor y UI.
-- [ ] Push remoto queda explícitamente fuera del MVP salvo nueva spec.
+- [x] GET lista notificaciones.
+- [x] PATCH marca individual leída.
+- [x] POST read-all actualiza servidor y UI.
+- [x] Push remoto queda explícitamente fuera del MVP salvo nueva spec.
 
 ---
 
