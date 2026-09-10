@@ -167,6 +167,51 @@ export function returnStatusLabel(status: string): string {
   return RETURN_STATUS_LABELS[status as ReturnStatus] ?? status;
 }
 
+/* ------------------------------------------------------------------ *
+ * Supplier rating (M4.3) — mirror of SupplierRatingController::store
+ *   POST /api/orders/{orderNumber}/rating
+ * @see .spec/2026-09-11-m4-3-rating.md §Contratos
+ * ------------------------------------------------------------------ */
+
+export const SUPPLIER_RATING_MIN = 1;
+export const SUPPLIER_RATING_MAX = 5;
+export const SUPPLIER_RATING_COMMENT_MAX = 500;
+
+/** `POST /orders/{orderNumber}/rating` body (backend: integer 1..5, comment ≤500). */
+export interface SupplierRatingInput {
+  readonly rating: number;
+  readonly comment?: string;
+}
+
+/** `SupplierRatingService::formatPublic` — the 201 response `rating` block. */
+export interface PublicSupplierRating {
+  readonly id: number;
+  readonly rating: number;
+  readonly comment: string | null;
+  readonly createdAt: string | null;
+  readonly verifiedPurchase: boolean;
+  readonly customerLabel: string;
+}
+
+/** `POST /orders/{orderNumber}/rating` → `201 { message, rating, supplier_rating }`. */
+export interface SupplierRatingResult {
+  readonly message: string;
+  readonly rating: PublicSupplierRating;
+  readonly supplierRating: SupplierRatingState;
+}
+
+/**
+ * Client-side UX guard for AC3. The backend remains the authority
+ * (`rating` required, integer, min:1, max:5).
+ */
+export function isValidSupplierRating(rating: number): boolean {
+  return (
+    Number.isInteger(rating) &&
+    rating >= SUPPLIER_RATING_MIN &&
+    rating <= SUPPLIER_RATING_MAX
+  );
+}
+
 /**
  * True when the order carries any shippable tracking data. Used by the detail
  * screen to render the tracking block only when it exists (AC4).

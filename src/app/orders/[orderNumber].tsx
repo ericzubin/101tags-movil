@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Redirect, Stack, router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
@@ -13,9 +14,21 @@ import { orderKeys } from '@/core/query/keys';
 import { orderService } from '@/core/services/order-service';
 import { formatMXN } from '@/core/utils/format-currency';
 import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
+import { useOrderStore } from '@/stores/order-store';
+import { brandColors } from '@/theme/tokens';
 
-import type { OrderDetail, OrderItem } from '@/core/models/order.model';
-import { canCancelOrder, canReturnOrder, hasTracking } from '@/core/models/order.model';
+import type { OrderDetail, OrderItem, SupplierRatingState } from '@/core/models/order.model';
+import {
+  SUPPLIER_RATING_COMMENT_MAX,
+  SUPPLIER_RATING_MAX,
+  canCancelOrder,
+  canReturnOrder,
+  hasTracking,
+  isValidSupplierRating,
+} from '@/core/models/order.model';
+
+const STAR_VALUES = [1, 2, 3, 4, 5];
+const RATING_RANGE_ERROR = 'Selecciona una calificación de 1 a 5 estrellas.';
 
 function DetailSkeleton() {
   return (
@@ -59,6 +72,174 @@ function SummaryRow({
       >
         {value}
       </Text>
+    </View>
+  );
+}
+
+function SupplierRatingBlock({
+  orderNumber,
+  state,
+}: {
+  orderNumber: string;
+  state: SupplierRatingState;
+}) {
+  const ratingStatus = useOrderStore((s) => s.ratingStatus);
+  const ratingError = useOrderStore((s) => s.ratingError);
+  const ratingMessage = useOrderStore((s) => s.ratingMessage);
+  const submitRating = useOrderStore((s) => s.submitRating);
+  const resetRatingSubmission = useOrderStore((s) => s.resetRatingSubmission);
+
+  const [selected, setSelected] = useState(0);
+  const [comment, setComment] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    resetRatingSubmission();
+  }, [resetRatingSubmission]);
+
+  if (!state.canRate && !state.hasRated) return null;
+
+  if (state.hasRated) {
+    const stars = Math.max(0, Math.min(SUPPLIER_RATING_MAX, state.rating?.stars ?? 0));
+    const display = `${'★'.repeat(stars)}${'☆'.repeat(SUPPLIER_RATING_MAX - stars)}`;
+
+    return (
+      <View
+        testID="supplier-rating-block"
+        className="mt-brand-4 rounded-brand-lg bg-brand-white p-brand-4"
+      >
+        <Text className="mb-brand-2 font-brand-bold text-base text-brand-dark">
+          Tu calificación
+        </Text>
+        <View testID="supplier-rating-display">
+          <Text testID="supplier-rating-stars" className="text-[24px] text-brand-warning">
+            {display}
+          </Text>
+          {state.rating?.comment ? (
+            <Text
+              testID="supplier-rating-comment"
+              className="mt-brand-1 font-brand text-sm text-brand-dark/70"
+            >
+              {state.rating.comment}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
+
+  const isSubmitting = ratingStatus === 'submitting';
+
+  const onSubmit = () => {
+    if (isSubmitting) return;
+
+    if (!isValidSupplierRating(selected)) {
+      setValidationError(RATING_RANGE_ERROR);
+      return;
+    }
+
+    const trimmedComment = comment.trim();
+    if (trimmedComment.length > SUPPLIER_RATING_COMMENT_MAX) {
+      setValidationError(
+        `El comentario no puede exceder ${SUPPLIER_RATING_COMMENT_MAX} caracteres.`,
+      );
+      return;
+    }
+
+    setValidationError(null);
+    void submitRating(
+      orderNumber,
+      trimmedComment ? { rating: selected, comment: trimmedComment } : { rating: selected },
+    );
+  };
+
+  return (
+    <View
+      testID="supplier-rating-block"
+      className="mt-brand-4 rounded-brand-lg bg-brand-white p-brand-4"
+    >
+      <Text className="mb-brand-2 font-brand-bold text-base text-brand-dark">
+        Califica al proveedor
+      </Text>
+
+      {ratingStatus === 'success' ? (
+        <Text testID="rating-success" className="font-brand-bold text-sm text-brand-success">
+          {ratingMessage}
+        </Text>
+      ) : (
+        <View testID="supplier-rating-form">
+          {ratingStatus === 'error' && ratingError ? (
+            <Text
+              testID="rating-error"
+              accessibilityRole="alert"
+              className="mb-brand-2 font-brand text-sm text-brand-danger"
+            >
+              {ratingError}
+            </Text>
+          ) : null}
+
+          <View className="flex-row">
+            {STAR_VALUES.map((value) => (
+              <Pressable
+                key={value}
+                testID={`rating-star-${value}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${value} estrellas`}
+                disabled={isSubmitting}
+                onPress={() => {
+                  setSelected(value);
+                  setValidationError(null);
+                }}
+                className="mr-brand-1"
+              >
+                <Text
+                  className={
+                    value <= selected
+                      ? 'text-[28px] text-brand-warning'
+                      : 'text-[28px] text-brand-dark/20'
+                  }
+                >
+                  {value <= selected ? '★' : '☆'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <TextInput
+            testID="rating-comment"
+            accessibilityLabel="Comentario"
+            className="mt-brand-3 rounded-brand-md border border-neutral-300 bg-brand-white px-3 py-2.5 text-base text-brand-dark"
+            value={comment}
+            onChangeText={(text) => {
+              setComment(text);
+              if (validationError) setValidationError(null);
+            }}
+            placeholder="Cuéntanos tu experiencia (opcional)"
+            placeholderTextColor={brandColors.dark}
+            maxLength={SUPPLIER_RATING_COMMENT_MAX}
+            multiline
+            numberOfLines={3}
+          />
+
+          {validationError ? (
+            <Text
+              testID="rating-validation-error"
+              accessibilityRole="alert"
+              className="mt-1 font-brand text-xs text-brand-danger"
+            >
+              {validationError}
+            </Text>
+          ) : null}
+
+          <Button
+            testID="rating-submit"
+            label="Enviar calificación"
+            className="mt-brand-3"
+            loading={isSubmitting}
+            onPress={onSubmit}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -167,6 +348,8 @@ function DetailBody({ order }: { order: OrderDetail }) {
             ) : null}
           </View>
         ) : null}
+
+        <SupplierRatingBlock orderNumber={order.orderNumber} state={order.supplierRating} />
 
         {canReturnOrder(order.status) || canCancelOrder(order.status) ? (
           <View testID="order-actions" className="mt-brand-4">

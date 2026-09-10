@@ -2,11 +2,13 @@ import {
   canCancelOrder,
   canReturnOrder,
   hasTracking,
+  isValidSupplierRating,
   returnStatusLabel,
   returnTypeLabel,
   type OrderDetail,
   type OrderSummary,
   type ReturnRequest,
+  type SupplierRatingResult,
 } from '@/core/models/order.model';
 import { toCamel } from '@/core/utils/snake-camel';
 
@@ -216,5 +218,50 @@ describe('order.model — ReturnRequest (M4.2)', () => {
     expect(returnStatusLabel('rejected')).toBe('Rechazada');
     expect(returnStatusLabel('refunded')).toBe('Reembolsada');
     expect(returnStatusLabel('otro')).toBe('otro');
+  });
+});
+
+const rawRatingResponse = {
+  message: 'Gracias por calificar al proveedor',
+  rating: {
+    id: 3,
+    rating: 4,
+    comment: 'Buen servicio',
+    created_at: '2026-09-11T12:00:00Z',
+    verified_purchase: true,
+    customer_label: 'Cliente verificado',
+  },
+  supplier_rating: {
+    can_rate: true,
+    has_rated: true,
+    rating: { stars: 4, comment: 'Buen servicio', created_at: '2026-09-11T12:00:00Z' },
+  },
+};
+
+describe('order.model — SupplierRating (M4.3)', () => {
+  it('AC6: SupplierRatingResult mapea el 201 con rating público y supplier_rating', () => {
+    const result = toCamel<SupplierRatingResult>(rawRatingResponse);
+
+    expect(result.message).toBe('Gracias por calificar al proveedor');
+    expect(result.rating.id).toBe(3);
+    expect(result.rating.rating).toBe(4);
+    expect(result.rating.comment).toBe('Buen servicio');
+    expect(result.rating.createdAt).toBe('2026-09-11T12:00:00Z');
+    expect(result.rating.verifiedPurchase).toBe(true);
+    expect(result.rating.customerLabel).toBe('Cliente verificado');
+    expect(result.supplierRating.hasRated).toBe(true);
+    expect(result.supplierRating.rating?.stars).toBe(4);
+  });
+
+  it('AC3: isValidSupplierRating acepta enteros 1..5 y rechaza fuera de rango/no enteros', () => {
+    expect(isValidSupplierRating(1)).toBe(true);
+    expect(isValidSupplierRating(3)).toBe(true);
+    expect(isValidSupplierRating(5)).toBe(true);
+
+    expect(isValidSupplierRating(0)).toBe(false);
+    expect(isValidSupplierRating(6)).toBe(false);
+    expect(isValidSupplierRating(-1)).toBe(false);
+    expect(isValidSupplierRating(4.5)).toBe(false);
+    expect(isValidSupplierRating(Number.NaN)).toBe(false);
   });
 });

@@ -158,4 +158,35 @@ describe('orderService', () => {
     expect(result.applied).toBe(true);
     expect(result.message).toBe('Pedido cancelado');
   });
+
+  it('M4.3 AC1/AC6: submitRating() llama POST /orders/{n}/rating con rating y comentario', async () => {
+    const response = {
+      message: 'Gracias por calificar al proveedor',
+      rating: { id: 3, rating: 4, comment: 'Buen servicio' },
+      supplierRating: { canRate: true, hasRated: true, rating: { stars: 4 } },
+    };
+    mockedHttpClient.request.mockResolvedValueOnce(response);
+
+    const result = await orderService.submitRating('ORD-0001', {
+      rating: 4,
+      comment: 'Buen servicio',
+    });
+
+    const [path, options] = mockedHttpClient.request.mock.calls[0];
+    expect(path).toBe('/orders/ORD-0001/rating');
+    expect(options?.method).toBe('POST');
+    expect(options?.body).toEqual({ rating: 4, comment: 'Buen servicio' });
+    expect(result).toBe(response);
+    expect(result.supplierRating.hasRated).toBe(true);
+  });
+
+  it('M4.3: submitRating() encoda el orderNumber y omite el comentario opcional', async () => {
+    mockedHttpClient.request.mockResolvedValueOnce({ message: 'ok' });
+
+    await orderService.submitRating('A/B', { rating: 5 });
+
+    const [path, options] = mockedHttpClient.request.mock.calls[0];
+    expect(path).toBe('/orders/A%2FB/rating');
+    expect(options?.body).toEqual({ rating: 5 });
+  });
 });

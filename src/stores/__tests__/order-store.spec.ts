@@ -4,18 +4,22 @@ import { useOrderStore } from '../order-store';
 
 const mockRequestReturn = jest.fn();
 const mockRequestCancellation = jest.fn();
+const mockSubmitRating = jest.fn();
 const mockInvalidateQueries = jest.fn();
+const mockSetQueryData = jest.fn();
 
 jest.mock('@/core/services/order-service', () => ({
   orderService: {
     requestReturn: (...args: unknown[]) => mockRequestReturn(...args),
     requestCancellation: (...args: unknown[]) => mockRequestCancellation(...args),
+    submitRating: (...args: unknown[]) => mockSubmitRating(...args),
   },
 }));
 
 jest.mock('@/core/query/client', () => ({
   queryClient: {
     invalidateQueries: (...args: unknown[]) => mockInvalidateQueries(...args),
+    setQueryData: (...args: unknown[]) => mockSetQueryData(...args),
   },
 }));
 
@@ -23,6 +27,9 @@ function resetStore() {
   useOrderStore.setState({
     returnSubmission: { status: 'idle', error: null, message: null, applied: false },
     cancellationSubmission: { status: 'idle', error: null, message: null, applied: false },
+    ratingStatus: 'idle',
+    ratingError: null,
+    ratingMessage: null,
   });
 }
 
@@ -142,5 +149,119 @@ describe('order-store — devoluciones/cancelaciones (M4.2)', () => {
       message: null,
       applied: false,
     });
+  });
+});
+
+const ratingResult = {
+  message: 'Gracias por calificar al proveedor',
+  rating: { id: 3, rating: 4, comment: 'Buen servicio' },
+  supplierRating: { canRate: true, hasRated: true, rating: { stars: 4 } },
+};
+
+describe('order-store — calificación de proveedor (M4.3)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetStore();
+  });
+
+  it('AC6: submitRating exitoso llama al service, marca success y hasRated=true en cache', async () => {
+    mockSubmitRating.mockResolvedValueOnce(ratingResult);
+
+    const ok = await useOrderStore.getState().submitRating('ORD-0001', {
+      rating: 4,
+      comment: 'Buen servicio',
+    });
+
+    expect(ok).toBe(true);
+    expect(mockSubmitRating).toHaveBeenCalledWith('ORD-0001', {
+      rating: 4,
+      comment: 'Buen servicio',
+    });
+    expect(useOrderStore.getState().ratingStatus).toBe('success');
+    expect(useOrderStore.getState().ratingMessage).toBe('Gracias por calificar al proveedor');
+    expect(useOrderStore.getState().ratingError).toBeNull();
+
+    expect(mockSetQueryData).toHaveBeenCalledWith(
+      ['orders', 'detail', 'ORD-0001'],
+      expect.any(Function),
+    );
+    const updater = mockSetQueryData.mock.calls[0][1] as (prev: unknown) => {
+      supplierRating: { hasRated: boolean };
+    };
+    const next = updater({
+      supplierRating: { canRate: true, hasRated: false, rating: null },
+    });
+    expect(next.supplierRating.hasRated).toBe(true);
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders', 'detail', 'ORD-0001'] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders', 'list'] });
+  });
+
+  it('AC5: 422 se guarda como error con el mensaje del backend (nunca success)', async () => {
+    mockSubmitRating.mockRejectedValueOnce(
+      new HttpError(422, 'Unprocessable Entity', {
+        message: 'Este pedido no admite calificación en este momento.',
+      }, 'HTTP 422'),
+    );
+
+    const ok = await useOrderStore.getState().submitRating('ORD-0002', { rating: 5 });
+
+    expect(ok).toBe(false);
+    expect(useOrderStore.getState().ratingStatus).toBe('error');
+    expect(useOrderStore.getState().ratingError).toBe(
+      'Este pedido no admite calificación en este momento.',
+    );
+    expect(useOrderStore.getState().ratingMessage).toBeNull();
+    expect(mockSetQueryData).not.toHaveBeenCalled();
+  });
+
+  it('AC5: 403 sin body usa mensaje fallback y no marca success', async () => {
+    mockSubmitRating.mockRejectedValueOnce(new HttpError(403, 'Forbidden', null, 'HTTP 403'));
+
+    const ok = await useOrderStore.getState().submitRating('ORD-0003', { rating: 3 });
+
+    expect(ok).toBe(false);
+    expect(useOrderStore.getState().ratingStatus).toBe('error');
+    expect(useOrderStore.getState().ratingError).toBeTruthy();
+    expect(useOrderStore.getState().ratingStatus).not.toBe('success');
+  });
+
+  it('AC3: rating fuera de rango no llama al service y deja estado de error', async () => {
+    const ok = await useOrderStore.getState().submitRating('ORD-0004', { rating: 6 });
+
+    expect(ok).toBe(false);
+    expect(mockSubmitRating).not.toHaveBeenCalled();
+    expect(useOrderStore.getState().ratingStatus).toBe('error');
+    expect(useOrderStore.getState().ratingError).toBeTruthy();
+  });
+
+  it('AC4: anti-doble-submit — un submit en curso no dispara una segunda llamada', async () => {
+    let resolveFirst: (value: typeof ratingResult) => void = () => {};
+    mockSubmitRating.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+
+    const first = useOrderStore.getState().submitRating('ORD-0005', { rating: 5 });
+    expect(useOrderStore.getState().ratingStatus).toBe('submitting');
+
+    const second = await useOrderStore.getState().submitRating('ORD-0005', { rating: 5 });
+    expect(second).toBe(false);
+    expect(mockSubmitRating).toHaveBeenCalledTimes(1);
+
+    resolveFirst(ratingResult);
+    await expect(first).resolves.toBe(true);
+  });
+
+  it('resetRatingSubmission vuelve a idle y limpia error/message', () => {
+    useOrderStore.setState({ ratingStatus: 'error', ratingError: 'boom', ratingMessage: null });
+
+    useOrderStore.getState().resetRatingSubmission();
+
+    expect(useOrderStore.getState().ratingStatus).toBe('idle');
+    expect(useOrderStore.getState().ratingError).toBeNull();
+    expect(useOrderStore.getState().ratingMessage).toBeNull();
   });
 });

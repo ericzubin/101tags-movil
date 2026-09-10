@@ -7,6 +7,8 @@ import type {
   ReturnListResponse,
   ReturnRequestInput,
   ReturnSubmissionResponse,
+  SupplierRatingInput,
+  SupplierRatingResult,
 } from '@/core/models/order.model';
 
 function orderPath(orderNumber: string, suffix: string): string {
@@ -66,5 +68,16 @@ export const orderService = {
         body: input,
       },
     );
+  },
+
+  /** `POST /orders/{orderNumber}/rating` → `201 { message, rating, supplier_rating }`. */
+  async submitRating(
+    orderNumber: string,
+    input: SupplierRatingInput,
+  ): Promise<SupplierRatingResult> {
+    return httpClient.request<SupplierRatingResult>(orderPath(orderNumber, '/rating'), {
+      method: 'POST',
+      body: input,
+    });
   },
 };

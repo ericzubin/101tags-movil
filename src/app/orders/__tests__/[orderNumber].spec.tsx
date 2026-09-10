@@ -10,9 +10,14 @@ const mockRefetch = jest.fn();
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
 const mockRedirect = jest.fn();
+const mockSubmitRating = jest.fn().mockResolvedValue(true);
+const mockResetRating = jest.fn();
 
 let mockIsAuthenticated = true;
 let mockIsHydrated = true;
+let mockRatingStatus: 'idle' | 'submitting' | 'error' | 'success' = 'idle';
+let mockRatingError: string | null = null;
+let mockRatingMessage: string | null = null;
 let mockQueryState: {
   isLoading: boolean;
   isError: boolean;
@@ -40,6 +45,17 @@ jest.mock('@tanstack/react-query', () => ({
 
 jest.mock('@/core/services/order-service', () => ({
   orderService: { getOrder: jest.fn() },
+}));
+
+jest.mock('@/stores/order-store', () => ({
+  useOrderStore: (selector: (s: Record<string, unknown>) => unknown) =>
+    selector({
+      ratingStatus: mockRatingStatus,
+      ratingError: mockRatingError,
+      ratingMessage: mockRatingMessage,
+      submitRating: (...args: unknown[]) => mockSubmitRating(...args),
+      resetRatingSubmission: (...args: unknown[]) => mockResetRating(...args),
+    }),
 }));
 
 jest.mock('expo-router', () => {
@@ -107,6 +123,10 @@ describe('OrderDetailScreen — detalle, timeline y tracking (M4.1 AC3, AC4, AC5
     jest.clearAllMocks();
     mockIsAuthenticated = true;
     mockIsHydrated = true;
+    mockRatingStatus = 'idle';
+    mockRatingError = null;
+    mockRatingMessage = null;
+    mockSubmitRating.mockResolvedValue(true);
     mockQueryState = { isLoading: false, isError: false, error: null, data: undefined };
   });
 
@@ -263,5 +283,160 @@ describe('OrderDetailScreen — detalle, timeline y tracking (M4.1 AC3, AC4, AC5
 
     expect(screen.getByTestId('order-return-action')).toBeTruthy();
     expect(screen.getByTestId('order-cancel-action')).toBeTruthy();
+  });
+});
+
+describe('OrderDetailScreen — calificación de proveedor (M4.3)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsAuthenticated = true;
+    mockIsHydrated = true;
+    mockRatingStatus = 'idle';
+    mockRatingError = null;
+    mockRatingMessage = null;
+    mockSubmitRating.mockResolvedValue(true);
+    mockQueryState = { isLoading: false, isError: false, error: null, data: undefined };
+  });
+
+  it('AC1: can_rate=true muestra el formulario y envía 4 estrellas + comentario', () => {
+    mockQueryState = {
+      ...mockQueryState,
+      data: makeDetail({
+        supplierRating: { canRate: true, hasRated: false, rating: null },
+      }),
+    };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.getByTestId('supplier-rating-form')).toBeTruthy();
+    expect(screen.queryByTestId('supplier-rating-display')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('rating-star-4'));
+    fireEvent.changeText(screen.getByTestId('rating-comment'), '  Buen servicio  ');
+    fireEvent.press(screen.getByTestId('rating-submit'));
+
+    expect(mockSubmitRating).toHaveBeenCalledWith('ORD-0001', {
+      rating: 4,
+      comment: 'Buen servicio',
+    });
+  });
+
+  it('AC1: sin comentario envía solo rating', () => {
+    mockQueryState = {
+      ...mockQueryState,
+      data: makeDetail({
+        supplierRating: { canRate: true, hasRated: false, rating: null },
+      }),
+    };
+
+    render(<OrderDetailScreen />);
+
+    fireEvent.press(screen.getByTestId('rating-star-5'));
+    fireEvent.press(screen.getByTestId('rating-submit'));
+
+    expect(mockSubmitRating).toHaveBeenCalledWith('ORD-0001', { rating: 5 });
+  });
+
+  it('AC2: has_rated=true muestra la calificación existente y oculta el formulario', () => {
+    mockQueryState = {
+      ...mockQueryState,
+      data: makeDetail({
+        supplierRating: {
+          canRate: true,
+          hasRated: true,
+          rating: { stars: 4, comment: 'Buen servicio', createdAt: '2026-09-11T12:00:00Z' },
+        },
+      }),
+    };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.getByTestId('supplier-rating-display')).toBeTruthy();
+    expect(screen.getByTestId('supplier-rating-stars').props.children).toBe('★★★★☆');
+    expect(screen.getByTestId('supplier-rating-comment').props.children).toBe('Buen servicio');
+    expect(screen.queryByTestId('supplier-rating-form')).toBeNull();
+  });
+
+  it('AC2: can_rate=false y has_rated=false no muestra el bloque', () => {
+    mockQueryState = {
+      ...mockQueryState,
+      data: makeDetail({
+        supplierRating: { canRate: false, hasRated: false, rating: null },
+      }),
+    };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.queryByTestId('supplier-rating-block')).toBeNull();
+    expect(screen.queryByTestId('supplier-rating-form')).toBeNull();
+  });
+
+  it('AC3: sin estrellas muestra validación y NO llama al service', () => {
+    mockQueryState = {
+      ...mockQueryState,
+      data: makeDetail({
+        supplierRating: { canRate: true, hasRated: false, rating: null },
+      }),
+    };
+
+    render(<OrderDetailScreen />);
+
+    fireEvent.press(screen.getByTestId('rating-submit'));
+
+    expect(screen.getByTestId('rating-validation-error')).toBeTruthy();
+    expect(mockSubmitRating).not.toHaveBeenCalled();
+  });
+
+  it('AC4: submit en curso deshabilita el botón y no reenvía', () => {
+    mockRatingStatus = 'submitting';
+    mockQueryState = {
+      ...mockQueryState,
+      data: makeDetail({
+        supplierRating: { canRate: true, hasRated: false, rating: null },
+      }),
+    };
+
+    render(<OrderDetailScreen />);
+
+    const button = screen.getByTestId('rating-submit');
+    expect(button.props.accessibilityState?.disabled).toBe(true);
+
+    fireEvent.press(button);
+    expect(mockSubmitRating).not.toHaveBeenCalled();
+  });
+
+  it('AC5: 403/422 muestra estado de error con mensaje y no marca éxito', () => {
+    mockRatingStatus = 'error';
+    mockRatingError = 'Este pedido no admite calificación en este momento.';
+    mockQueryState = {
+      ...mockQueryState,
+      data: makeDetail({
+        supplierRating: { canRate: true, hasRated: false, rating: null },
+      }),
+    };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.getByTestId('rating-error').props.children).toBe(
+      'Este pedido no admite calificación en este momento.',
+    );
+    expect(screen.queryByTestId('rating-success')).toBeNull();
+  });
+
+  it('AC6: éxito muestra el mensaje del backend', () => {
+    mockRatingStatus = 'success';
+    mockRatingMessage = 'Gracias por calificar al proveedor';
+    mockQueryState = {
+      ...mockQueryState,
+      data: makeDetail({
+        supplierRating: { canRate: true, hasRated: false, rating: null },
+      }),
+    };
+
+    render(<OrderDetailScreen />);
+
+    expect(screen.getByTestId('rating-success').props.children).toBe(
+      'Gracias por calificar al proveedor',
+    );
   });
 });
