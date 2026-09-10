@@ -104,6 +104,26 @@ describe('AccountTab — placeholder + logout (M1.10 AC6, AC7)', () => {
     expect(mockPushRouter).toHaveBeenCalledWith('/coupons');
   });
 
+  it('M6.3: muestra "Ayuda" y navega a /legal/help', () => {
+    render(<AccountTab />);
+
+    expect(screen.getByText('Ayuda')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('account-help'));
+
+    expect(mockPushRouter).toHaveBeenCalledWith('/legal/help');
+  });
+
+  it('M6.3: muestra "Términos y privacidad" y navega a /legal/terms', () => {
+    render(<AccountTab />);
+
+    expect(screen.getByText('Términos y privacidad')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('account-legal'));
+
+    expect(mockPushRouter).toHaveBeenCalledWith('/legal/terms');
+  });
+
   it('M4.1: muestra "Mis pedidos" y navega a /orders', () => {
     render(<AccountTab />);
 

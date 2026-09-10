@@ -204,4 +204,16 @@ describe('RootLayout — rutas registradas (M3.4 / M3.5)', () => {
   it('M6.2: registra coupons en el root stack', () => {
     expect(layoutSource).toContain('name="coupons"');
   });
+
+  it('M6.3: registra legal/terms en el root stack', () => {
+    expect(layoutSource).toContain('name="legal/terms"');
+  });
+
+  it('M6.3: registra legal/privacy en el root stack', () => {
+    expect(layoutSource).toContain('name="legal/privacy"');
+  });
+
+  it('M6.3: registra legal/help en el root stack', () => {
+    expect(layoutSource).toContain('name="legal/help"');
+  });
 });

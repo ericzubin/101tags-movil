@@ -1,4 +1,5 @@
 import { httpClient } from '@/core/api/client';
+import { contentService } from '@/core/services/content-service';
 
 import type {
   CheckoutConfig,
@@ -26,8 +27,9 @@ export const checkoutService = {
     return httpClient.request<CheckoutConfig>('/checkout/config', { method: 'GET' });
   },
 
+  /** `/policies` now lives in `contentService` (shared with the legal screens). */
   async getPolicies(): Promise<CheckoutPolicies> {
-    return httpClient.request<CheckoutPolicies>('/policies', { method: 'GET' });
+    return contentService.getPolicies();
   },
 
   async lookupPostalCode(postalCode: string): Promise<PostalCodeLookup> {

@@ -130,6 +130,30 @@ export default function AccountTab() {
           </View>
         </Pressable>
         <Pressable
+          onPress={() => router.push('/legal/help')}
+          className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
+          testID="account-help"
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="help-circle-outline" size={20} color={brandColors.dark} />
+            <Text className="font-brand-bold text-base text-brand-dark ml-brand-3">Ayuda</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/legal/terms')}
+          className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
+          testID="account-legal"
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="document-text-outline" size={20} color={brandColors.dark} />
+            <Text className="font-brand-bold text-base text-brand-dark ml-brand-3">
+              Términos y privacidad
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
+        </Pressable>
+        <Pressable
           onPress={handleLogout}
           disabled={loggingOut}
           className="bg-brand-primary rounded-brand-lg px-brand-6 py-3 active:opacity-80 mt-auto flex-row justify-center items-center"

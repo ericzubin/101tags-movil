@@ -123,6 +123,9 @@ export default function RootLayout() {
             <Stack.Screen name="notifications" options={{ title: 'Notificaciones' }} />
             <Stack.Screen name="coupons" options={{ title: 'Mis cupones' }} />
             <Stack.Screen name="profile" options={{ title: 'Mi perfil' }} />
+            <Stack.Screen name="legal/terms" options={{ title: 'Términos y condiciones' }} />
+            <Stack.Screen name="legal/privacy" options={{ title: 'Aviso de privacidad' }} />
+            <Stack.Screen name="legal/help" options={{ title: 'Ayuda' }} />
           </Stack>
         </View>
       </QueryClientProvider>

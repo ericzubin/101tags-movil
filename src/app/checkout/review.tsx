@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
@@ -223,6 +223,33 @@ export default function ReviewScreen() {
           disabled={!canSubmit}
           className="mt-brand-4"
         />
+
+        <View testID="checkout-legal" className="mt-brand-4 flex-row flex-wrap justify-center">
+          <Pressable
+            testID="checkout-legal-terms"
+            accessibilityRole="link"
+            onPress={() => router.push('/legal/terms')}
+            className="px-brand-2 py-brand-1 active:opacity-80"
+          >
+            <Text className="font-brand text-xs text-brand-primary">Términos</Text>
+          </Pressable>
+          <Pressable
+            testID="checkout-legal-privacy"
+            accessibilityRole="link"
+            onPress={() => router.push('/legal/privacy')}
+            className="px-brand-2 py-brand-1 active:opacity-80"
+          >
+            <Text className="font-brand text-xs text-brand-primary">Privacidad</Text>
+          </Pressable>
+          <Pressable
+            testID="checkout-legal-help"
+            accessibilityRole="link"
+            onPress={() => router.push('/legal/help')}
+            className="px-brand-2 py-brand-1 active:opacity-80"
+          >
+            <Text className="font-brand text-xs text-brand-primary">Ayuda</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

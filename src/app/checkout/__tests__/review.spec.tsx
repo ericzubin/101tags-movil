@@ -196,4 +196,17 @@ describe('ReviewScreen — checkout M3.3', () => {
     expect(screen.getByTestId('review-summary-discount').props.children).toBe('-$50.00');
     expect(screen.getByTestId('review-summary-total').props.children).toBe('$209.00');
   });
+
+  it('M6.3: ofrece accesos legales (términos, privacidad y ayuda)', () => {
+    render(<ReviewScreen />);
+
+    fireEvent.press(screen.getByTestId('checkout-legal-terms'));
+    expect(mockPush).toHaveBeenCalledWith('/legal/terms');
+
+    fireEvent.press(screen.getByTestId('checkout-legal-privacy'));
+    expect(mockPush).toHaveBeenCalledWith('/legal/privacy');
+
+    fireEvent.press(screen.getByTestId('checkout-legal-help'));
+    expect(mockPush).toHaveBeenCalledWith('/legal/help');
+  });
 });
