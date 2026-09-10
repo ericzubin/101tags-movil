@@ -356,27 +356,30 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M6.1 — Perfil, settings y logout
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-1-profile.md`
 
 **Aceptación**
-- [ ] Perfil usa `/auth/customer/me`.
-- [ ] Logout invalida backend cuando aplique y limpia storage local.
-- [ ] Settings no expone secretos ni datos técnicos innecesarios.
+- [x] Perfil usa `/auth/customer/me`.
+- [x] Logout invalida backend cuando aplique y limpia storage local.
+- [x] Settings no expone secretos ni datos técnicos innecesarios.
 
 ## M6.2 — Cupones wallet/validación
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-2-coupons.md`
 
 **Aceptación**
-- [ ] Cupones del usuario se listan con estado/validez.
-- [ ] Validación usa endpoint real y contexto de checkout.
-- [ ] Cupón inválido/expirado muestra razón utilizable cuando API la entregue.
+- [x] Cupones del usuario se listan con estado/validez.
+- [x] Validación usa endpoint real y contexto de checkout.
+- [x] Cupón inválido/expirado muestra razón utilizable cuando API la entregue.
 
 ## M6.3 — Términos, privacidad y ayuda
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** F0
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-3-legal-help.md`
 
 **Aceptación**
-- [ ] Rutas accesibles desde cuenta/checkout donde aplique.
-- [ ] Contenido y enlaces no quedan hardcodeados si backend/config ya ofrece una fuente.
-- [ ] Texto legal pendiente se marca como dependencia de negocio, no se inventa.
+- [x] Rutas accesibles desde cuenta/checkout donde aplique.
+- [x] Contenido y enlaces no quedan hardcodeados si backend/config ya ofrece una fuente.
+- [x] Texto legal pendiente se marca como dependencia de negocio, no se inventa.
 
 ---
 
