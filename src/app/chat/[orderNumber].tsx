@@ -1,18 +1,56 @@
+import * as DocumentPicker from 'expo-document-picker';
 import { Redirect, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Text, TextInput, View } from 'react-native';
+import { FlatList, Linking, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useConversationPolling } from '@/core/hooks/useConversationPolling';
-import { CHAT_MESSAGE_MAX } from '@/core/models/chat.model';
+import {
+  CHAT_MESSAGE_MAX,
+  canSendPaymentProof,
+  formatAttachmentSize,
+} from '@/core/models/chat.model';
 import { authGuard } from '@/core/navigation/guards';
 import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
 import { brandColors } from '@/theme/tokens';
 
-import type { ChatMessage } from '@/core/models/chat.model';
+import type { ChatAttachment, ChatAttachmentAsset, ChatMessage } from '@/core/models/chat.model';
+
+const PROOF_TYPE = 'proof_of_payment';
+
+function AttachmentRow({ attachment }: { attachment: ChatAttachment }) {
+  const size = formatAttachmentSize(attachment.size);
+  return (
+    <Pressable
+      testID={`chat-attachment-${attachment.id}`}
+      accessibilityRole="link"
+      accessibilityLabel={attachment.originalName}
+      onPress={() => void Linking.openURL(attachment.downloadUrl)}
+      className="mt-brand-2 flex-row items-center rounded-brand-md bg-black/10 px-brand-3 py-brand-2 active:opacity-80"
+    >
+      <View className="flex-1">
+        <Text
+          testID={`chat-attachment-name-${attachment.id}`}
+          numberOfLines={1}
+          className="font-brand text-sm text-brand-dark"
+        >
+          {attachment.originalName}
+        </Text>
+        {size ? (
+          <Text
+            testID={`chat-attachment-size-${attachment.id}`}
+            className="font-brand text-xs text-brand-dark/60"
+          >
+            {size}
+          </Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
 
 function ConversationSkeleton() {
   return (
@@ -54,6 +92,9 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         >
           {message.body}
         </Text>
+        {message.attachments.map((attachment) => (
+          <AttachmentRow key={attachment.id} attachment={attachment} />
+        ))}
       </View>
     </View>
   );
@@ -68,10 +109,21 @@ export default function ConversationScreen() {
   const authed = isAuthenticated({ token, user });
   const guard = authGuard({ isAuthenticated: authed, isHydrated });
 
-  const { detail, messages, isLoading, isSending, fatalError, sendError, sendMessage, retry } =
-    useConversationPolling(orderNumber);
+  const {
+    detail,
+    messages,
+    isLoading,
+    isSending,
+    fatalError,
+    sendError,
+    sendMessage,
+    sendAttachment,
+    retry,
+  } = useConversationPolling(orderNumber);
 
   const [draft, setDraft] = useState('');
+  const [asset, setAsset] = useState<ChatAttachmentAsset | null>(null);
+  const [pendingProof, setPendingProof] = useState(false);
 
   const handleSend = useCallback(() => {
     const trimmed = draft.trim();
@@ -80,6 +132,40 @@ export default function ConversationScreen() {
       if (ok) setDraft('');
     });
   }, [draft, isSending, sendMessage]);
+
+  const pickAttachment = useCallback(async (asProof: boolean) => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ['image/*', 'application/pdf'],
+      copyToCacheDirectory: true,
+    });
+    // Cancel is a no-op: keep the previous selection untouched.
+    if (result.canceled || !result.assets?.length) return;
+    const picked = result.assets[0];
+    setAsset({
+      uri: picked.uri,
+      name: picked.name,
+      type: picked.mimeType ?? null,
+      size: picked.size ?? null,
+    });
+    setPendingProof(asProof);
+  }, []);
+
+  const clearAsset = useCallback(() => {
+    setAsset(null);
+    setPendingProof(false);
+  }, []);
+
+  const handleSendAttachment = useCallback(() => {
+    if (!asset || isSending) return;
+    const options = pendingProof ? { type: PROOF_TYPE } : undefined;
+    void sendAttachment(asset, options).then((ok) => {
+      if (ok) clearAsset();
+    });
+  }, [asset, isSending, pendingProof, sendAttachment, clearAsset]);
+
+  // AC3: the manual-proof option is only offered for supplier_* orders whose
+  // payment is pending/rejected. The backend remains the authority (422).
+  const proofEligible = canSendPaymentProof(detail?.paymentMethod, detail?.paymentStatus);
 
   if (!isHydrated) return null;
   if (guard !== true) return <Redirect href={guard.redirect} />;
@@ -137,6 +223,69 @@ export default function ConversationScreen() {
             {sendError}
           </Text>
         ) : null}
+
+        {asset ? (
+          <View
+            testID="chat-attachment-preview"
+            className="border-t border-brand-dark/10 bg-brand-white px-brand-4 py-brand-3"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 pr-brand-2">
+                <Text
+                  testID="chat-attachment-name"
+                  numberOfLines={1}
+                  className="font-brand text-sm text-brand-dark"
+                >
+                  {asset.name}
+                </Text>
+                {formatAttachmentSize(asset.size) ? (
+                  <Text testID="chat-attachment-size" className="font-brand text-xs text-brand-dark/60">
+                    {formatAttachmentSize(asset.size)}
+                  </Text>
+                ) : null}
+                {pendingProof ? (
+                  <Text testID="chat-attachment-proof-note" className="mt-1 font-brand text-xs text-brand-primary">
+                    Se enviará como comprobante de pago.
+                  </Text>
+                ) : null}
+              </View>
+              <Button
+                testID="chat-attachment-remove"
+                label="Quitar"
+                variant="ghost"
+                onPress={clearAsset}
+              />
+            </View>
+            <Button
+              testID="chat-attachment-send"
+              label={pendingProof ? 'Enviar comprobante de pago' : 'Enviar adjunto'}
+              loading={isSending}
+              onPress={handleSendAttachment}
+              className="mt-brand-2"
+            />
+          </View>
+        ) : null}
+
+        <View className="flex-row items-center border-t border-brand-dark/10 bg-brand-white px-brand-3 pt-brand-2">
+          <Button
+            testID="chat-attach"
+            label="Adjuntar"
+            variant="secondary"
+            disabled={isSending}
+            onPress={() => void pickAttachment(false)}
+            className="mr-brand-2 px-3 py-2"
+          />
+          {proofEligible ? (
+            <Button
+              testID="chat-proof"
+              label="Enviar comprobante de pago"
+              variant="secondary"
+              disabled={isSending}
+              onPress={() => void pickAttachment(true)}
+              className="px-3 py-2"
+            />
+          ) : null}
+        </View>
 
         <View className="flex-row items-end border-t border-brand-dark/10 bg-brand-white p-brand-3">
           <TextInput

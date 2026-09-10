@@ -1,13 +1,21 @@
 import { httpClient } from '@/core/api/client';
 
 import type {
+  ChatAttachmentAsset,
   ConversationDetail,
   ConversationListResponse,
+  SendAttachmentResponse,
   SendMessageResponse,
 } from '@/core/models/chat.model';
 
 function messagesPath(orderNumber: string): string {
   return `/orders/${encodeURIComponent(orderNumber)}/messages`;
+}
+
+export interface SendAttachmentOptions {
+  /** `proof_of_payment` triggers the backend payment-status update (AC6). */
+  readonly type?: string;
+  readonly body?: string;
 }
 
 /**
@@ -34,6 +42,35 @@ export const chatService = {
     return httpClient.request<SendMessageResponse>(messagesPath(orderNumber), {
       method: 'POST',
       body: { body },
+    });
+  },
+
+  /**
+   * `POST /orders/{orderNumber}/messages/attachments` → `201 { message, data }`.
+   *
+   * The backend expects `multipart/form-data`, so we build a `FormData` with
+   * `attachment` (+ optional `type`/`body`) and let the runtime set the
+   * multipart boundary (no manual `Content-Type`, no `JSON.stringify`).
+   *
+   * @see 101tags.com- OrderMessageController::storeAttachment
+   */
+  async sendAttachment(
+    orderNumber: string,
+    asset: ChatAttachmentAsset,
+    options: SendAttachmentOptions = {},
+  ): Promise<SendAttachmentResponse> {
+    const formData = new FormData();
+    formData.append('attachment', {
+      uri: asset.uri,
+      name: asset.name,
+      type: asset.type || 'application/octet-stream',
+    } as unknown as Blob);
+    if (options.type) formData.append('type', options.type);
+    if (options.body) formData.append('body', options.body);
+
+    return httpClient.request<SendAttachmentResponse>(`${messagesPath(orderNumber)}/attachments`, {
+      method: 'POST',
+      body: formData,
     });
   },
 };

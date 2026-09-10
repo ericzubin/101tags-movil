@@ -1,8 +1,15 @@
 import {
+  CHAT_ATTACHMENT_MAX_BYTES,
   CHAT_MESSAGE_MAX,
+  canSendPaymentProof,
   chatErrorMessage,
+  formatAttachmentSize,
+  isAllowedAttachment,
+  isAllowedAttachmentSize,
   isValidMessageBody,
   mergeMessages,
+  validateChatAttachment,
+  type ChatAttachmentAsset,
   type ChatMessage,
   type Conversation,
   type ConversationDetail,
@@ -169,5 +176,74 @@ describe('chat.model — contratos (M5.1)', () => {
     );
     expect(chatErrorMessage(new Error('boom'), 'fallback')).toBe('boom');
     expect(chatErrorMessage(null, 'fallback')).toBe('fallback');
+  });
+});
+
+function makeAsset(overrides: Partial<ChatAttachmentAsset> = {}): ChatAttachmentAsset {
+  return {
+    uri: 'file:///tmp/foto.jpg',
+    name: 'foto.jpg',
+    type: 'image/jpeg',
+    size: 1024,
+    ...overrides,
+  };
+}
+
+describe('chat.model — adjuntos (M5.2)', () => {
+  it('AC2: expone el máximo del backend (max:8192 KB) como 8 MiB', () => {
+    expect(CHAT_ATTACHMENT_MAX_BYTES).toBe(8 * 1024 * 1024);
+  });
+
+  it('AC2: isAllowedAttachment acepta jpg/jpeg/png/webp/pdf por MIME', () => {
+    for (const type of ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']) {
+      expect(isAllowedAttachment(makeAsset({ type }))).toBe(true);
+    }
+  });
+
+  it('AC2: isAllowedAttachment acepta por extensión cuando el picker omite el MIME', () => {
+    for (const name of ['a.JPG', 'b.jpeg', 'c.png', 'd.webp', 'e.PDF']) {
+      expect(isAllowedAttachment(makeAsset({ name, type: null }))).toBe(true);
+    }
+  });
+
+  it('AC2: isAllowedAttachment rechaza tipos no permitidos', () => {
+    expect(isAllowedAttachment(makeAsset({ name: 'nota.txt', type: 'text/plain' }))).toBe(false);
+    expect(isAllowedAttachment(makeAsset({ name: 'anim.gif', type: 'image/gif' }))).toBe(false);
+    expect(isAllowedAttachment(makeAsset({ name: 'script.exe', type: null }))).toBe(false);
+  });
+
+  it('AC2: isAllowedAttachmentSize rechaza >8MB y tolera size desconocido', () => {
+    expect(isAllowedAttachmentSize(CHAT_ATTACHMENT_MAX_BYTES)).toBe(true);
+    expect(isAllowedAttachmentSize(CHAT_ATTACHMENT_MAX_BYTES + 1)).toBe(false);
+    expect(isAllowedAttachmentSize(null)).toBe(true);
+    expect(isAllowedAttachmentSize(undefined)).toBe(true);
+  });
+
+  it('AC2: validateChatAttachment devuelve el error inline o null', () => {
+    expect(validateChatAttachment(makeAsset())).toBeNull();
+    expect(validateChatAttachment(makeAsset({ name: 'x.gif', type: 'image/gif' }))).toMatch(
+      /formato/i,
+    );
+    expect(
+      validateChatAttachment(makeAsset({ size: CHAT_ATTACHMENT_MAX_BYTES + 1 })),
+    ).toMatch(/8 MB/i);
+  });
+
+  it('formatAttachmentSize muestra B/KB/MB', () => {
+    expect(formatAttachmentSize(512)).toBe('512 B');
+    expect(formatAttachmentSize(2048)).toBe('2.0 KB');
+    expect(formatAttachmentSize(2 * 1024 * 1024)).toBe('2.0 MB');
+    expect(formatAttachmentSize(null)).toBeNull();
+  });
+
+  it('AC3: canSendPaymentProof solo para supplier_* con pago pendiente/rechazado', () => {
+    expect(canSendPaymentProof('supplier_oxxo', 'pending')).toBe(true);
+    expect(canSendPaymentProof('supplier_spei', 'rejected')).toBe(true);
+
+    expect(canSendPaymentProof('supplier_oxxo', 'paid')).toBe(false);
+    expect(canSendPaymentProof('supplier_oxxo', 'proof_submitted')).toBe(false);
+    expect(canSendPaymentProof('card', 'pending')).toBe(false);
+    expect(canSendPaymentProof(null, 'pending')).toBe(false);
+    expect(canSendPaymentProof('supplier_oxxo', null)).toBe(false);
   });
 });

@@ -1,14 +1,25 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import React from 'react';
+import { Linking } from 'react-native';
 
 import ConversationScreen from '../[orderNumber]';
 
-import type { ChatMessage, ConversationDetail } from '@/core/models/chat.model';
+import type { ChatAttachment, ChatMessage, ConversationDetail } from '@/core/models/chat.model';
 
 const mockSend = jest.fn();
+const mockSendAttachment = jest.fn();
 const mockRetry = jest.fn();
 const mockRedirect = jest.fn();
 const mockReplace = jest.fn();
+
+const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: jest.fn(),
+}));
+
+const mockedPicker = DocumentPicker as unknown as { getDocumentAsync: jest.Mock };
 
 let mockIsAuthenticated = true;
 let mockIsHydrated = true;
@@ -38,6 +49,7 @@ jest.mock('@/core/hooks/useConversationPolling', () => ({
   useConversationPolling: () => ({
     ...mockHookState,
     sendMessage: (...args: unknown[]) => mockSend(...args),
+    sendAttachment: (...args: unknown[]) => mockSendAttachment(...args),
     retry: (...args: unknown[]) => mockRetry(...args),
   }),
 }));
@@ -81,7 +93,10 @@ function makeMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
   };
 }
 
-function makeDetail(messages: ChatMessage[] = []): ConversationDetail {
+function makeDetail(
+  messages: ChatMessage[] = [],
+  overrides: Partial<ConversationDetail> = {},
+): ConversationDetail {
   return {
     orderNumber: 'ORD-0001',
     orderId: 10,
@@ -94,6 +109,7 @@ function makeDetail(messages: ChatMessage[] = []): ConversationDetail {
     canRejectPayment: false,
     policy: 'Toda la comunicación queda registrada en 101tags.',
     messages,
+    ...overrides,
   };
 }
 
@@ -101,9 +117,11 @@ describe('ConversationScreen — chat (M5.1 AC4, AC5, AC6)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSend.mockReset().mockResolvedValue(true);
+    mockSendAttachment.mockReset().mockResolvedValue(true);
     mockRetry.mockReset();
     mockRedirect.mockReset();
     mockReplace.mockReset();
+    mockedPicker.getDocumentAsync.mockReset().mockResolvedValue({ canceled: true, assets: null });
     mockIsAuthenticated = true;
     mockIsHydrated = true;
     mockHookState = {
@@ -195,5 +213,161 @@ describe('ConversationScreen — chat (M5.1 AC4, AC5, AC6)', () => {
     render(<ConversationScreen />);
 
     expect(mockRedirect).toHaveBeenCalledWith({ href: '/(auth)/login' });
+  });
+});
+
+const pickedImage = {
+  canceled: false,
+  assets: [
+    {
+      name: 'foto.jpg',
+      uri: 'file:///tmp/foto.jpg',
+      size: 2048,
+      mimeType: 'image/jpeg',
+      lastModified: 1,
+    },
+  ],
+};
+
+const expectedAsset = {
+  uri: 'file:///tmp/foto.jpg',
+  name: 'foto.jpg',
+  type: 'image/jpeg',
+  size: 2048,
+};
+
+const proofAttachment: ChatAttachment = {
+  id: 5,
+  originalName: 'comprobante.pdf',
+  mimeType: 'application/pdf',
+  size: 1048576,
+  downloadUrl: 'https://tags.test/private/5',
+};
+
+describe('ConversationScreen — adjuntos (M5.2)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSend.mockReset().mockResolvedValue(true);
+    mockSendAttachment.mockReset().mockResolvedValue(true);
+    mockedPicker.getDocumentAsync.mockReset().mockResolvedValue({ canceled: true, assets: null });
+    mockIsAuthenticated = true;
+    mockIsHydrated = true;
+    mockHookState = {
+      detail: makeDetail([makeMessage()]),
+      messages: [makeMessage()],
+      isLoading: false,
+      isSending: false,
+      fatalError: null,
+      sendError: null,
+    };
+  });
+
+  it('AC3: ofrece comprobante solo si paymentMethod supplier_* y status pending/rejected', () => {
+    mockHookState.detail = makeDetail([], {
+      paymentMethod: 'supplier_oxxo',
+      paymentStatus: 'pending',
+    });
+
+    render(<ConversationScreen />);
+
+    expect(screen.getByTestId('chat-proof')).toBeTruthy();
+  });
+
+  it('AC3: no ofrece comprobante en pedidos que no son supplier_*', () => {
+    mockHookState.detail = makeDetail([], { paymentMethod: 'card', paymentStatus: 'pending' });
+
+    render(<ConversationScreen />);
+
+    expect(screen.queryByTestId('chat-proof')).toBeNull();
+  });
+
+  it('AC3: no ofrece comprobante si el pago no está pending/rejected', () => {
+    mockHookState.detail = makeDetail([], {
+      paymentMethod: 'supplier_spei',
+      paymentStatus: 'paid',
+    });
+
+    render(<ConversationScreen />);
+
+    expect(screen.queryByTestId('chat-proof')).toBeNull();
+  });
+
+  it('AC1: elegir archivo muestra el preview y lo envía como adjunto', async () => {
+    mockedPicker.getDocumentAsync.mockResolvedValueOnce(pickedImage);
+
+    render(<ConversationScreen />);
+    fireEvent.press(screen.getByTestId('chat-attach'));
+
+    await waitFor(() => expect(mockedPicker.getDocumentAsync).toHaveBeenCalled());
+    expect(mockedPicker.getDocumentAsync).toHaveBeenCalledWith({
+      type: ['image/*', 'application/pdf'],
+      copyToCacheDirectory: true,
+    });
+
+    await waitFor(() => expect(screen.getByTestId('chat-attachment-name')).toBeTruthy());
+    expect(screen.getByTestId('chat-attachment-name').props.children).toBe('foto.jpg');
+    expect(screen.getByTestId('chat-attachment-size').props.children).toBe('2.0 KB');
+
+    fireEvent.press(screen.getByTestId('chat-attachment-send'));
+
+    await waitFor(() => expect(mockSendAttachment).toHaveBeenCalled());
+    expect(mockSendAttachment.mock.calls[0][0]).toEqual(expectedAsset);
+    expect(mockSendAttachment.mock.calls[0][1]).toBeUndefined();
+  });
+
+  it('AC1: cancelar el picker no muestra preview', async () => {
+    mockedPicker.getDocumentAsync.mockResolvedValueOnce({ canceled: true, assets: null });
+
+    render(<ConversationScreen />);
+    fireEvent.press(screen.getByTestId('chat-attach'));
+
+    await waitFor(() => expect(mockedPicker.getDocumentAsync).toHaveBeenCalled());
+    expect(screen.queryByTestId('chat-attachment-name')).toBeNull();
+  });
+
+  it('AC3: elegir desde comprobante envía type=proof_of_payment', async () => {
+    mockHookState.detail = makeDetail([], {
+      paymentMethod: 'supplier_oxxo',
+      paymentStatus: 'rejected',
+    });
+    mockedPicker.getDocumentAsync.mockResolvedValueOnce(pickedImage);
+
+    render(<ConversationScreen />);
+    fireEvent.press(screen.getByTestId('chat-proof'));
+
+    await waitFor(() => expect(screen.getByTestId('chat-attachment-send')).toBeTruthy());
+    fireEvent.press(screen.getByTestId('chat-attachment-send'));
+
+    await waitFor(() => expect(mockSendAttachment).toHaveBeenCalled());
+    expect(mockSendAttachment.mock.calls[0][0]).toEqual(expectedAsset);
+    expect(mockSendAttachment.mock.calls[0][1]).toEqual({ type: 'proof_of_payment' });
+  });
+
+  it('AC5: tocar un adjunto abre su downloadUrl', () => {
+    const message = makeMessage({ id: 1, attachments: [proofAttachment] });
+    mockHookState.messages = [message];
+    mockHookState.detail = makeDetail([message]);
+
+    render(<ConversationScreen />);
+
+    expect(screen.getByTestId('chat-attachment-name-5').props.children).toBe('comprobante.pdf');
+    fireEvent.press(screen.getByTestId('chat-attachment-5'));
+
+    expect(openURLSpy).toHaveBeenCalledWith('https://tags.test/private/5');
+  });
+
+  it('AC6: el botón de envío queda deshabilitado durante sending', async () => {
+    mockedPicker.getDocumentAsync.mockResolvedValueOnce(pickedImage);
+
+    const { rerender } = render(<ConversationScreen />);
+    fireEvent.press(screen.getByTestId('chat-attach'));
+    await waitFor(() => expect(screen.getByTestId('chat-attachment-send')).toBeTruthy());
+
+    mockHookState.isSending = true;
+    rerender(<ConversationScreen />);
+
+    expect(
+      screen.getByTestId('chat-attachment-send').props.accessibilityState.disabled,
+    ).toBe(true);
   });
 });

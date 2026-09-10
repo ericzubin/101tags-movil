@@ -5,10 +5,17 @@ import {
   chatErrorMessage,
   isValidMessageBody,
   mergeMessages,
+  validateChatAttachment,
 } from '@/core/models/chat.model';
 import { chatService } from '@/core/services/chat-service';
 
-import type { ChatMessage, ConversationDetail, SentChatMessage } from '@/core/models/chat.model';
+import type {
+  ChatAttachmentAsset,
+  ChatMessage,
+  ConversationDetail,
+  SentChatMessage,
+} from '@/core/models/chat.model';
+import type { SendAttachmentOptions } from '@/core/services/chat-service';
 
 /** Poll cadence while the conversation screen is focused (AC2). */
 export const CHAT_POLL_INTERVAL_MS = 8000;
@@ -46,7 +53,7 @@ function toConfirmedMessage(message: SentChatMessage): ChatMessage {
     createdAt: message.createdAt,
     type: message.type,
     metadata: message.metadata,
-    attachments: [],
+    attachments: message.attachment ? [message.attachment] : [],
   };
 }
 
@@ -59,6 +66,11 @@ export interface ConversationPollingResult {
   fatalError: string | null;
   sendError: string | null;
   sendMessage: (body: string) => Promise<boolean>;
+  /** AC1–AC6: uploads an attachment with the same optimistic/anti-double guard. */
+  sendAttachment: (
+    asset: ChatAttachmentAsset,
+    options?: SendAttachmentOptions,
+  ) => Promise<boolean>;
   retry: () => void;
 }
 
@@ -203,6 +215,78 @@ export function useConversationPolling(orderNumber?: string): ConversationPollin
     }
   }, []);
 
+  const sendAttachment = useCallback(
+    async (asset: ChatAttachmentAsset, options: SendAttachmentOptions = {}): Promise<boolean> => {
+      const current = orderNumberRef.current;
+      if (!current || sendInFlightRef.current) return false;
+
+      // AC2: client UX guard before any request; the backend stays authority.
+      const validationError = validateChatAttachment(asset);
+      if (validationError) {
+        setState((prev) => ({ ...prev, sendError: validationError }));
+        return false;
+      }
+
+      sendInFlightRef.current = true;
+      optimisticCounter += 1;
+      const optimisticId = -1000000 - optimisticCounter;
+      const optimistic: ChatMessage = {
+        id: optimisticId,
+        body: options.body?.trim() || 'Archivo adjunto.',
+        senderRole: 'customer',
+        senderName: 'Tú',
+        isMine: true,
+        createdAt: new Date().toISOString(),
+        type: options.type ?? 'text',
+        metadata: null,
+        attachments: [
+          {
+            id: optimisticId,
+            originalName: asset.name,
+            mimeType: asset.type || 'application/octet-stream',
+            size: asset.size ?? 0,
+            downloadUrl: asset.uri,
+          },
+        ],
+        pending: true,
+      };
+
+      setState((prev) => ({
+        ...prev,
+        isSending: true,
+        sendError: null,
+        messages: mergeMessages(prev.messages, [optimistic]),
+      }));
+
+      try {
+        const response = await chatService.sendAttachment(current, asset, options);
+        if (!mountedRef.current) return true;
+        setState((prev) => ({
+          ...prev,
+          isSending: false,
+          messages: mergeMessages(
+            prev.messages.filter((m) => m.id !== optimisticId),
+            [toConfirmedMessage(response.data)],
+          ),
+        }));
+        return true;
+      } catch (err) {
+        if (mountedRef.current) {
+          setState((prev) => ({
+            ...prev,
+            isSending: false,
+            messages: prev.messages.filter((m) => m.id !== optimisticId),
+            sendError: chatErrorMessage(err, SEND_FALLBACK),
+          }));
+        }
+        return false;
+      } finally {
+        sendInFlightRef.current = false;
+      }
+    },
+    [],
+  );
+
   return {
     detail: state.detail,
     messages: state.messages,
@@ -211,6 +295,7 @@ export function useConversationPolling(orderNumber?: string): ConversationPollin
     fatalError: state.fatalError,
     sendError: state.sendError,
     sendMessage,
+    sendAttachment,
     retry: load,
   };
 }

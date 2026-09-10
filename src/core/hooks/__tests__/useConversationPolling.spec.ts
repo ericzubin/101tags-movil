@@ -8,11 +8,13 @@ import type { ChatMessage, ConversationDetail } from '@/core/models/chat.model';
 
 const mockGetConversation = jest.fn();
 const mockSendMessage = jest.fn();
+const mockSendAttachment = jest.fn();
 
 jest.mock('@/core/services/chat-service', () => ({
   chatService: {
     getConversation: (...args: unknown[]) => mockGetConversation(...args),
     sendMessage: (...args: unknown[]) => mockSendMessage(...args),
+    sendAttachment: (...args: unknown[]) => mockSendAttachment(...args),
   },
 }));
 
@@ -305,5 +307,171 @@ describe('useConversationPolling (M5.1)', () => {
     expect(ok).toBe(false);
     expect(result.current.messages).toHaveLength(0);
     expect(result.current.sendError).toBe('No puedes compartir correos.');
+  });
+
+  describe('M5.2 adjuntos', () => {
+    const asset = {
+      uri: 'file:///tmp/foto.jpg',
+      name: 'foto.jpg',
+      type: 'image/jpeg',
+      size: 2048,
+    };
+
+    function attachmentResponse() {
+      return {
+        message: 'Archivo enviado',
+        data: {
+          id: 12,
+          body: 'Archivo adjunto.',
+          senderRole: 'customer',
+          type: 'text',
+          metadata: null,
+          createdAt: '2026-09-11T10:05:00Z',
+          attachment: {
+            id: 5,
+            originalName: 'foto.jpg',
+            mimeType: 'image/jpeg',
+            size: 2048,
+            downloadUrl: 'https://tags.test/private/5',
+          },
+        },
+      };
+    }
+
+    it('AC1/AC4: sube el archivo y reconcilia el mensaje con adjunto', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useConversationPolling('ORD-0001'));
+      await flushMicrotasks();
+
+      let resolveSend!: (value: unknown) => void;
+      mockSendAttachment.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveSend = resolve;
+        }),
+      );
+
+      let sendPromise!: Promise<boolean>;
+      await act(async () => {
+        sendPromise = result.current.sendAttachment(asset);
+      });
+
+      expect(mockSendAttachment).toHaveBeenCalledWith('ORD-0001', asset, {});
+      expect(result.current.isSending).toBe(true);
+
+      const optimistic = result.current.messages.find((m) => m.pending);
+      expect(optimistic?.attachments[0]?.originalName).toBe('foto.jpg');
+
+      await act(async () => {
+        resolveSend(attachmentResponse());
+        await sendPromise;
+      });
+
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.messages[0].id).toBe(12);
+      expect(result.current.messages[0].pending).toBeFalsy();
+      expect(result.current.messages[0].attachments[0].downloadUrl).toBe(
+        'https://tags.test/private/5',
+      );
+    });
+
+    it('AC3/AC6: propaga type=proof_of_payment al servicio', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useConversationPolling('ORD-0001'));
+      await flushMicrotasks();
+      mockSendAttachment.mockResolvedValueOnce(attachmentResponse());
+
+      await act(async () => {
+        await result.current.sendAttachment(asset, {
+          type: 'proof_of_payment',
+          body: 'Comprobante de pago',
+        });
+      });
+
+      expect(mockSendAttachment).toHaveBeenCalledWith('ORD-0001', asset, {
+        type: 'proof_of_payment',
+        body: 'Comprobante de pago',
+      });
+    });
+
+    it('AC2: tipo no permitido expone error inline sin llamar al servicio', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useConversationPolling('ORD-0001'));
+      await flushMicrotasks();
+
+      let ok = true;
+      await act(async () => {
+        ok = await result.current.sendAttachment({ ...asset, name: 'anim.gif', type: 'image/gif' });
+      });
+
+      expect(ok).toBe(false);
+      expect(mockSendAttachment).not.toHaveBeenCalled();
+      expect(result.current.sendError).toMatch(/formato/i);
+    });
+
+    it('AC2: archivo >8MB expone error inline sin llamar al servicio', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useConversationPolling('ORD-0001'));
+      await flushMicrotasks();
+
+      let ok = true;
+      await act(async () => {
+        ok = await result.current.sendAttachment({ ...asset, size: 9 * 1024 * 1024 });
+      });
+
+      expect(ok).toBe(false);
+      expect(mockSendAttachment).not.toHaveBeenCalled();
+      expect(result.current.sendError).toMatch(/8 MB/i);
+    });
+
+    it('AC6: error 422 quita el optimista y expone el message del backend', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useConversationPolling('ORD-0001'));
+      await flushMicrotasks();
+
+      mockSendAttachment.mockRejectedValueOnce({
+        name: 'HttpError',
+        message: 'HTTP 422',
+        body: { message: 'Este pedido no acepta comprobantes de pago manual.' },
+      });
+
+      let ok = true;
+      await act(async () => {
+        ok = await result.current.sendAttachment(asset, { type: 'proof_of_payment' });
+      });
+
+      expect(ok).toBe(false);
+      expect(result.current.messages).toHaveLength(0);
+      expect(result.current.sendError).toBe('Este pedido no acepta comprobantes de pago manual.');
+    });
+
+    it('AC6: anti-doble-submit descarta el segundo envío mientras está en vuelo', async () => {
+      jest.useFakeTimers();
+      const { result } = renderHook(() => useConversationPolling('ORD-0001'));
+      await flushMicrotasks();
+
+      let resolveSend!: (value: unknown) => void;
+      mockSendAttachment.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveSend = resolve;
+        }),
+      );
+
+      let first!: Promise<boolean>;
+      let second = true;
+      await act(async () => {
+        first = result.current.sendAttachment(asset);
+      });
+      await act(async () => {
+        second = await result.current.sendAttachment(asset);
+      });
+
+      expect(second).toBe(false);
+      expect(mockSendAttachment).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        resolveSend(attachmentResponse());
+        await first;
+      });
+    });
   });
 });

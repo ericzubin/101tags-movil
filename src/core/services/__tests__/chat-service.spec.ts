@@ -13,6 +13,27 @@ jest.mock('@/core/api/client', () => {
 
 const mockedHttpClient = httpClient as jest.Mocked<typeof httpClient>;
 
+/**
+ * Recording double for FormData. The test runtime (undici) stringifies plain
+ * objects, while React Native's runtime keeps the `{ uri, name, type }` object
+ * intact — so we substitute a double that preserves the raw parts.
+ */
+class RecordingFormData {
+  readonly parts: [string, unknown][] = [];
+  append(name: string, value: unknown): void {
+    this.parts.push([name, value]);
+  }
+  getAll(name: string): unknown[] {
+    return this.parts.filter(([key]) => key === name).map(([, value]) => value);
+  }
+}
+
+const realFormData = globalThis.FormData;
+
+function formValues(form: FormData, name: string): unknown[] {
+  return (form as unknown as RecordingFormData).getAll(name);
+}
+
 describe('chatService (M5.1)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -97,5 +118,99 @@ describe('chatService (M5.1)', () => {
 
     const [path] = mockedHttpClient.request.mock.calls[0];
     expect(path).toBe('/orders/A%2FB/messages');
+  });
+});
+
+describe('chatService — adjuntos (M5.2)', () => {
+  const asset = {
+    uri: 'file:///tmp/comprobante.pdf',
+    name: 'comprobante.pdf',
+    type: 'application/pdf',
+    size: 4096,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (globalThis as unknown as { FormData: unknown }).FormData = RecordingFormData;
+  });
+
+  afterEach(() => {
+    (globalThis as unknown as { FormData: unknown }).FormData = realFormData;
+  });
+
+  it('AC1: sendAttachment hace POST multipart con attachment + type + body', async () => {
+    const response = {
+      message: 'Archivo enviado',
+      data: {
+        id: 12,
+        type: 'proof_of_payment',
+        body: 'Comprobante de pago',
+        attachment: {
+          id: 5,
+          originalName: 'comprobante.pdf',
+          mimeType: 'application/pdf',
+          size: 4096,
+          downloadUrl: 'https://tags.test/private/5',
+        },
+        createdAt: '2026-09-11T10:05:00Z',
+      },
+    };
+    mockedHttpClient.request.mockResolvedValueOnce(response);
+
+    const result = await chatService.sendAttachment('ORD-0001', asset, {
+      type: 'proof_of_payment',
+      body: 'Comprobante de pago',
+    });
+
+    const [path, options] = mockedHttpClient.request.mock.calls[0];
+    expect(path).toBe('/orders/ORD-0001/messages/attachments');
+    expect(options?.method).toBe('POST');
+    expect(options?.body).toBeInstanceOf(FormData);
+
+    const form = options?.body as FormData;
+    expect(formValues(form, 'attachment')[0]).toEqual({
+      uri: asset.uri,
+      name: asset.name,
+      type: asset.type,
+    });
+    expect(formValues(form, 'type')[0]).toBe('proof_of_payment');
+    expect(formValues(form, 'body')[0]).toBe('Comprobante de pago');
+    // The runtime must set the multipart boundary: never a manual Content-Type.
+    expect(options?.headers ?? {}).not.toHaveProperty('Content-Type');
+    expect(result).toBe(response);
+    expect(result.data.attachment?.downloadUrl).toBe('https://tags.test/private/5');
+  });
+
+  it('AC1: sin opciones solo envía attachment (ni type ni body)', async () => {
+    mockedHttpClient.request.mockResolvedValueOnce({ message: 'ok', data: { id: 1 } });
+
+    await chatService.sendAttachment('ORD-0001', asset);
+
+    const [, options] = mockedHttpClient.request.mock.calls[0];
+    const form = options?.body as FormData;
+    expect(formValues(form, 'attachment')).toHaveLength(1);
+    expect(formValues(form, 'type')).toHaveLength(0);
+    expect(formValues(form, 'body')).toHaveLength(0);
+  });
+
+  it('AC1: usa application/octet-stream cuando el picker no da MIME', async () => {
+    mockedHttpClient.request.mockResolvedValueOnce({ message: 'ok', data: { id: 1 } });
+
+    await chatService.sendAttachment('ORD-0001', { ...asset, type: null });
+
+    const [, options] = mockedHttpClient.request.mock.calls[0];
+    const form = options?.body as FormData;
+    expect(formValues(form, 'attachment')[0]).toMatchObject({
+      type: 'application/octet-stream',
+    });
+  });
+
+  it('AC1: sendAttachment encoda el orderNumber', async () => {
+    mockedHttpClient.request.mockResolvedValueOnce({ message: 'ok', data: { id: 1 } });
+
+    await chatService.sendAttachment('A/B', asset);
+
+    const [path] = mockedHttpClient.request.mock.calls[0];
+    expect(path).toBe('/orders/A%2FB/messages/attachments');
   });
 });

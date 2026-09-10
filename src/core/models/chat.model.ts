@@ -27,6 +27,75 @@ export interface ChatAttachment {
   readonly downloadUrl: string;
 }
 
+/** Backend validates the file with `max:8192` (KB) → 8 MiB. */
+export const CHAT_ATTACHMENT_MAX_BYTES = 8 * 1024 * 1024;
+
+/** Backend `mimes:jpg,jpeg,png,webp,pdf` — primary MIME signal. */
+const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+]);
+
+/** Same rule by extension, for pickers that omit the MIME type. */
+const ALLOWED_ATTACHMENT_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf']);
+
+export const CHAT_ATTACHMENT_TYPE_ERROR = 'Formato no permitido. Usa JPG, PNG, WEBP o PDF.';
+export const CHAT_ATTACHMENT_SIZE_ERROR = 'El archivo supera el máximo de 8 MB.';
+
+/** A locally-picked file ready to upload as multipart form data. */
+export interface ChatAttachmentAsset {
+  readonly uri: string;
+  readonly name: string;
+  readonly type?: string | null;
+  readonly size?: number | null;
+}
+
+function attachmentExtension(name: string): string {
+  const dot = name.lastIndexOf('.');
+  return dot >= 0 ? name.slice(dot + 1).toLowerCase() : '';
+}
+
+/** AC2: client UX guard — backend remains authority (`mimes` + `max:8192`). */
+export function isAllowedAttachment(asset: ChatAttachmentAsset): boolean {
+  const mime = (asset.type ?? '').toLowerCase();
+  if (mime && ALLOWED_ATTACHMENT_MIME_TYPES.has(mime)) return true;
+  return ALLOWED_ATTACHMENT_EXTENSIONS.has(attachmentExtension(asset.name));
+}
+
+/** AC2: >8 MiB is rejected; unknown size is deferred to the backend. */
+export function isAllowedAttachmentSize(size: number | null | undefined): boolean {
+  if (typeof size !== 'number' || Number.isNaN(size)) return true;
+  return size <= CHAT_ATTACHMENT_MAX_BYTES;
+}
+
+/** AC2: inline error message, or `null` when the asset passes client validation. */
+export function validateChatAttachment(asset: ChatAttachmentAsset): string | null {
+  if (!isAllowedAttachment(asset)) return CHAT_ATTACHMENT_TYPE_ERROR;
+  if (!isAllowedAttachmentSize(asset.size)) return CHAT_ATTACHMENT_SIZE_ERROR;
+  return null;
+}
+
+/** Human size for the upload preview / attachment row (AC4). */
+export function formatAttachmentSize(bytes: number | null | undefined): string | null {
+  if (typeof bytes !== 'number' || Number.isNaN(bytes)) return null;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+/** AC3: the manual-proof option is offered only while payment is pending/rejected. */
+export const PAYMENT_PROOF_PENDING_STATUSES = ['pending', 'rejected'] as const;
+
+export function canSendPaymentProof(
+  paymentMethod: string | null | undefined,
+  paymentStatus: string | null | undefined,
+): boolean {
+  if (!paymentMethod || !paymentMethod.startsWith('supplier_')) return false;
+  return (PAYMENT_PROOF_PENDING_STATUSES as readonly string[]).includes(paymentStatus ?? '');
+}
+
 /** `OrderConversationService::getConversation` message entry after `toCamel`. */
 export interface ChatMessage {
   readonly id: number;
@@ -86,12 +155,17 @@ export interface SentChatMessage {
   readonly type: string;
   readonly metadata: Record<string, unknown> | null;
   readonly createdAt: ISODateString;
+  /** Present only on `storeAttachment` responses (M5.2). */
+  readonly attachment?: ChatAttachment;
 }
 
 export interface SendMessageResponse {
   readonly message: string;
   readonly data: SentChatMessage;
 }
+
+/** `POST /orders/{orderNumber}/messages/attachments` 201 `{ message, data }`. */
+export type SendAttachmentResponse = SendMessageResponse;
 
 /**
  * Client-side UX guard (AC4). The backend remains the authority
