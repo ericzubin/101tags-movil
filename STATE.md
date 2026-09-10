@@ -1,20 +1,29 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 en curso (M0.2 cerrado)
+IN PROGRESS — F0 en curso (M0.3 cerrado con ENMIENDA MAYOR)
 
 ## Adoption status
-Greenfield. `ionic start` aún no se ha ejecutado. M0.1 y M0.2 cerradas en sus respectivas ramas (pendiente de merge a `main`).
+Greenfield. `ionic start` aún no se ha ejecutado. M0.1, M0.2 y M0.3 cerradas en sus respectivas ramas (pendientes de merge a `main`).
 
 ## Current architecture
-Todavía no existe el workspace técnico. La arquitectura objetivo, alcance, backlog y spec del scaffold están documentados en `PLAN.md`, `TASKS.md` y `.spec/00-ionic-scaffold.md` (APPROVED).
+Todavía no existe el workspace técnico. La arquitectura objetivo, alcance, backlog y spec del scaffold están documentados en `PLAN.md`, `TASKS.md`, `.spec/00-ionic-scaffold.md` (APPROVED, enmendada por M0.3) y `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED).
 
-## Stack
-- Objetivo original: Ionic 7 + Angular 17 + Capacitor 6 + Tailwind + pnpm.
-- **Versiones exactas propuestas en `.spec/00-ionic-scaffold.md` §Versiones propuestas, pendientes de validación en M0.3 antes del scaffold.**
+## Stack (ENMENDADO por M0.3)
+- **Node.js 24.x LTS ("Krypton")** — Node 20 está EOL desde 2026-04-30.
+- **Angular 22.1.x** — Angular 17 está EOL.
+- **Ionic 9.0.x** — Ionic 7 está End of Support.
+- **Capacitor 8.5.x** — Capacitor 6 está EOL.
+- **Tailwind 4.3.x** (CSS-first config, sin `tailwind.config.js`).
+- **TypeScript 6.x**, **RxJS 7.8.x**, **zone.js 0.15+/0.16+**.
+- **ESLint 10.x** + flat config obligatorio.
+- **pnpm 10.x** (usuario ya tiene 10.32.1).
+- **Karma 6.4.x + Jasmine 5.x** (default Angular CLI 22).
 - API backend: Laravel 12 existente en `101tags.com-` (no modificar desde este repo sin spec + aprobación).
 - Auth: Sanctum bearer tokens.
 - Bearer token: requiere secure storage real respaldado por Keychain/Keystore; no usar `@capacitor/preferences` para el token (decisión M1.1).
+
+Pre-M0.4 (usuario): `nvm install 24 && nvm alias default 24` (nvm 0.40.3 ya está instalado).
 
 ## Important files
 
@@ -31,7 +40,9 @@ Todavía no existe el workspace técnico. La arquitectura objetivo, alcance, bac
 ├── .agent/WORKFLOW.md
 └── .spec/
     ├── README.md
-    └── 00-ionic-scaffold.md          (APPROVED en M0.2)
+    ├── 00-ionic-scaffold.md          (APPROVED — enmendada por M0.3)
+    ├── 2026-09-09-m0-1-auditar-contratos.md   (DONE)
+    └── 2026-09-09-m0-3-validar-versiones.md   (APPROVED)
 ```
 
 ## Planning baseline
@@ -51,13 +62,13 @@ Se confirmaron de forma puntual contratos clave en `101tags.com-` para:
 M0.1 amplió esto a una auditoría exhaustiva de 58 endpoints buyer-side en la rama `chore/m0-1-auditar-contratos` (pendiente de merge).
 
 ## Testing
-- Framework/runner: **decidido en M0.2** → Karma 6.4.x + Jasmine 5.x (default Angular CLI 17).
+- Framework/runner: **decidido en M0.2** → Karma 6.4.x + Jasmine 5.x (default Angular CLI 22).
 - Configuración final se crea en M0.4 al ejecutar `ionic start` y se valida en M0.6.
 - Baseline actual: ninguno porque no existe código.
 
 ## Verification commands
-- Tests: `pnpm test` (Karma headless) — pendiente de M0.4.
-- Lint: `pnpm lint` (ESLint 8 + angular-eslint) — pendiente de M0.4.
+- Tests: `pnpm test` (Karma 6.4 headless) — pendiente de M0.4.
+- Lint: `pnpm lint` (ESLint 10 flat config) — pendiente de M0.4.
 - Formatter: `pnpm format:check` (Prettier 3) — pendiente de M0.4.
 - Type check: `pnpm typecheck` (`tsc --noEmit`) — pendiente de M0.4.
 - Build: `pnpm build` (`ionic build`) — pendiente de M0.4.
@@ -72,61 +83,65 @@ Ninguno. Proyecto sin código.
 Ninguno conocido porque aún no existe baseline ejecutable.
 
 ## Active specification
-`.spec/00-ionic-scaffold.md` — **APPROVED** (status cerrado en M0.2)
+- `.spec/00-ionic-scaffold.md` — **APPROVED** (enmendada por M0.3, ENMIENDA MAYOR de versiones)
+- `.spec/2026-09-09-m0-3-validar-versiones.md` — **APPROVED**
 
 ## Current phase
-F0 / M0.2 DONE — esperando visto bueno del usuario para abrir M0.3 (validar matriz de versiones).
+F0 / M0.3 DONE — **esperando visto bueno explícito del usuario sobre la ENMIENDA MAYOR antes de abrir M0.4**.
 
 ## Last completed work
 
 ### M0.1 (Issue #1) — Auditar contratos backend / storefront — DONE
-- Rama: `chore/m0-1-auditar-contratos` (push `origin/chore/m0-1-auditar-contratos`).
-- 3 subagentes `explore` en paralelo: API contracts (58 endpoints), TS types (26 interfaces + 12 unions + 4 generics), 12 peculiaridades con `file:line`.
+- Rama: `chore/m0-1-auditar-contratos` (push OK, pendiente de merge).
+- 3 subagentes `explore` en paralelo: API contracts (58 endpoints), TS types, 12 peculiaridades con `file:line`.
 - Artefactos: `DISCOVERY.md` (versión con detalle de endpoints), `docs/audit/audit-1-api-contracts.md`, `docs/audit/audit-2-typescript-types.md`, `docs/audit/audit-3-peculiarities.md`, `.spec/2026-09-09-m0-1-auditar-contratos.md`.
-- 9 escenarios BDD de verificación del artefacto.
 - Commit: `9043306 chore(m0-1): auditar contratos backend / storefront (#1)`.
-- **Estado de merge**: NO mergeado a `main`. El usuario (Eric) agregó 11 commits directamente a `main` (TASKS.md, ISSUES.md, su propia versión de DISCOVERY.md, AGENTS.md actualizada, README.md, .spec/00-ionic-scaffold.md DRAFT) sin pasar por PR. La rama `chore/m0-1-auditar-contratos` queda como artefacto paralelo cuyo merge se gestionará en una futura tarea (no es alcance de M0.2).
 
 ### M0.2 (Issue #2) — Cerrar y aprobar spec del scaffold — DONE
-- Rama: `chore/m0-2-spec-scaffold` (basada en `origin/main`).
-- Decisiones cerradas con visto bueno explícito del usuario:
-  - `appId = mx.com.101tags.movil` (vs `com.101tags.comprador` que sugería PLAN.md).
-  - i18n: hardcoded `es-MX` en MVP; `@angular/localize` se agrega sólo si se pide multi-idioma.
-  - Tailwind: vanilla `tailwindcss@3.4.x` + tokens manuales (sin preset oficial Ionic).
-  - Husky + commitlint: NO en MVP.
-  - Coverage threshold: informativo, sin threshold de fallo en MVP.
-  - Test runner: Karma 6.4.x + Jasmine 5.x.
-  - Package manager: pnpm 9.x.
-  - Lint: ESLint 8.57.x + angular-eslint 17.5.x.
-  - Formatter: Prettier 3.x.
-- Decisiones deferidas a M0.3: versiones exactas de Node/Angular/Ionic/Capacitor (propuestas en spec, pendientes de validar contra SDK/store requirements vigentes).
-- Decisiones deferidas a specs posteriores (F1–F7): secure storage (M1.1), OpenPay nativo (M3.6), deep links reset (M1.4), pagination cache (F2), multi-house cart (M3.2), push notifications (NO en MVP).
-- Estructura de carpetas lockada: `src/app/{core/{guards,interceptors,models,services},shared/{components,directives,pipes},pages}/` + `src/{theme,environments,assets,main.ts,index.html,styles.scss}` + `ios/` + `android/`.
-- Scripts de `package.json` documentados como referencia.
-- 13 escenarios BDD (los 9 originales del draft + 4 nuevos para appId, structure, pnpm-only, theming).
-- Artefacto actualizado: `.spec/00-ionic-scaffold.md` status **DRAFT → APPROVED**.
-- Discrepancias menores registradas:
-  - `appId` con PLAN.md (`com.101tags.comprador` vs `mx.com.101tags.movil`).
-  - M0.1 audit (`docs/audit/*`) en rama paralela aún no mergeado.
-  - M0.3 gate de versiones preservado como pre-requisito antes de M0.4.
+- Rama: `chore/m0-2-spec-scaffold` (push OK, pendiente de merge).
+- Decisiones cerradas (todas siguen vigentes tras M0.3): pnpm, Karma+Jasmine, ESLint 8 (ahora 10), Prettier 3, es-MX hardcoded, vanilla Tailwind (ahora 4.3 CSS-first), no husky, no coverage threshold, `appId = mx.com.101tags.movil`.
+- 13 escenarios BDD originales.
+- Commit: `eca35e1 chore(m0-2): aprobar spec del scaffold (#2)`.
+
+### M0.3 (Issue #3) — Validar matriz de versiones y requisitos de tiendas — DONE (ENMIENDA MAYOR)
+- Rama: `chore/m0-3-validar-versiones` (push en este turno).
+- 6 subagentes `explore` en paralelo: Node.js LTS, Angular+ESLint, Ionic, Capacitor, iOS+Xcode+App Store, Android+Play Store.
+- 58 fetches totales (~12 por subagente). Una fuente (`developer.android.com` directo) bloqueada; mitigada con `web.archive.org`.
+- **Veredicto: ENMIENDA MAYOR**. Cada pieza del stack original está EOL/End-of-Support al 2026-09.
+- Stack enmendado: Node 24, Angular 22.1, Ionic 9, Capacitor 8.5, Tailwind 4.3, ESLint 10 flat, pnpm 10, TS 6, RxJS 7.8, zone 0.15+, Karma 6.4 + Jasmine 5, JDK 17, Xcode 26.6, iOS deployment ≥15.0, Android targetSdk 36 (bumpeado manualmente sobre Cap 8 default 35), AGP 8.7.2.
+- Artefactos producidos:
+  - `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED) con matriz + veredicto + 6 escenarios BDD + 8 riesgos con mitigación.
+  - `.spec/00-ionic-scaffold.md` (enmendada in-place, ahora con 14 BDD scenarios).
+- Pre-M0.4 (usuario): `nvm install 24 && nvm alias default 24` (nvm 0.40.3 ya está instalado; Node 25.0.0 Current activo).
+- **Requiere visto bueno explícito del usuario** sobre la ENMIENDA MAYOR antes de M0.4 (per `AGENTS.md §Dependencias y versiones`).
 
 ## Next action
-1. **M0.3 (Issue #3)**: validar matriz de versiones Node 20, Angular 17, Ionic 7, Capacitor 6 contra requisitos vigentes de Android SDK, Xcode, Google Play y App Store al 2026. Si hay incompatibilidad, enmendar `.spec/00-ionic-scaffold.md` en esa misma tarea y re-aprobar antes de M0.4.
-2. **M0.4 (Issue #4)**: ejecutar `ionic start` con pnpm, `ionic cap add ios android`.
-3. **M0.5 (Issue #5)**: configurar theme, Tailwind, environments y proxy dev.
-4. **M0.6 (Issue #6)**: baseline de calidad y estructura core.
+
+1. **Pre-M0.4 cumplido**: usuario ejecutó `nvm install 24 && nvm alias default 24`. Verificado en shell:
+   - `nvm alias default` → `default -> 24 (-> v24.21.0)` ✓
+   - `nvm current` → `v25.0.0` (sesión actual antes de `nvm use`)
+   - `nvm use 24` → activa `v24.21.0` (npm v11.19.0)
+   - pnpm 10.32.1 detectado vía `which pnpm` ✓
+2. **M0.4 (Issue #4)** en rama `chore/m0-4-workspace-ionic`: ejecutar `ionic start` con pnpm + `@ionic/cli 9`, agregar `ionic cap add ios android`. Bump manual de `targetSdk` Android a 36. Documentar Swift Package Manager como default en iOS.
+3. **M0.5 (Issue #5)**: Tailwind 4 CSS-first, theme, environments, proxy.
+4. **M0.6 (Issue #6)**: baseline de calidad — `.eslint.config.js` flat, scripts reales, smoke test.
 
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: F0 / M0.2 DONE
-- Spec activa: `.spec/00-ionic-scaffold.md` (APPROVED)
-- Rama activa: `chore/m0-2-spec-scaffold` (push pendiente en este turno)
+- Fase actual: F0 / M0.3 DONE — **bloqueado por visto bueno sobre ENMIENDA MAYOR**
+- Specs activas:
+  - `.spec/00-ionic-scaffold.md` (APPROVED, enmendada por M0.3)
+  - `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED)
+- Ramas en `origin` (todas pendientes de merge):
+  - `chore/m0-1-auditar-contratos` (9043306)
+  - `chore/m0-2-spec-scaffold` (eca35e1)
+  - `chore/m0-3-validar-versiones` (próximo push)
 - Componente actual: documentación/planning; sin código generado todavía
 - Tests: no existen aún (se crean en M0.4–M0.6)
-- Última acción: aprobar `.spec/00-ionic-scaffold.md` con decisiones de F0 cerradas
-- Problema actual: ninguno; proyecto en READY para M0.3
-- Próximo paso exacto: M0.3 — validar matriz de versiones contra SDK/store requirements y, si todo OK, ejecutar M0.4 (`ionic start` + `cap add ios android`)
-- Decisiones abiertas que NO bloquean M0.3: secure storage (M1.1), OpenPay nativo (M3.6), deep links reset (M1.4), pagination cache (F2), multi-house cart (M3.2)
-- Decisión bloqueada por M0.3: versiones exactas en `package.json`
-- Divergencia con `chore/m0-1-auditar-contratos`: NO resuelta en M0.2; queda como tarea futura (merge del audit a main y reconciliación con `DISCOVERY.md` del usuario)
+- Última acción: validar matriz de versiones → ENMIENDA MAYOR aplicada a `.spec/00-ionic-scaffold.md`
+- Problema actual: ninguno técnico; **esperando OK del usuario sobre ENMIENDA MAYOR**
+- Próximo paso exacto (post-aprobación): M0.4 — pre-M0.4 cumplido (nvm 24 + alias default 24 + Node v24.21.0 disponible vía `nvm use 24`), pendiente ejecutar `ionic start` con stack enmendado
+- Decisiones abiertas que NO bloquean M0.4: secure storage (M1.1), OpenPay nativo (M3.6), deep links reset (M1.4), pagination cache (F2), multi-house cart (M3.2)
+- Decisiones abiertas que SÍ requieren gate pre-M0.4: confirmación del usuario sobre el stack enmendado de M0.3
+- Divergencia con `chore/m0-1-auditar-contratos`: NO resuelta; queda como tarea futura (merge del audit a main y reconciliación con `DISCOVERY.md` del usuario)
