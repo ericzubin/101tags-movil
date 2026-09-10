@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import { Linking } from 'react-native';
 
@@ -19,7 +20,18 @@ jest.mock('expo-document-picker', () => ({
   getDocumentAsync: jest.fn(),
 }));
 
+jest.mock('expo-image-picker', () => ({
+  requestCameraPermissionsAsync: jest.fn(),
+  requestMediaLibraryPermissionsAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  launchImageLibraryAsync: jest.fn(),
+}));
+
 const mockedPicker = DocumentPicker as unknown as { getDocumentAsync: jest.Mock };
+const mockedImagePicker = ImagePicker as unknown as {
+  requestCameraPermissionsAsync: jest.Mock;
+  launchCameraAsync: jest.Mock;
+};
 
 let mockIsAuthenticated = true;
 let mockIsHydrated = true;
@@ -313,6 +325,29 @@ describe('ConversationScreen — adjuntos (M5.2)', () => {
     await waitFor(() => expect(mockSendAttachment).toHaveBeenCalled());
     expect(mockSendAttachment.mock.calls[0][0]).toEqual(expectedAsset);
     expect(mockSendAttachment.mock.calls[0][1]).toBeUndefined();
+  });
+
+  it('AC1 (#27): la cámara adjunta una foto al chat', async () => {
+    mockedImagePicker.requestCameraPermissionsAsync.mockResolvedValueOnce({ granted: true });
+    mockedImagePicker.launchCameraAsync.mockResolvedValueOnce({
+      canceled: false,
+      assets: [
+        {
+          uri: 'file:///tmp/foto.jpg',
+          fileName: 'foto.jpg',
+          mimeType: 'image/jpeg',
+          fileSize: 2048,
+          width: 10,
+          height: 10,
+        },
+      ],
+    });
+
+    render(<ConversationScreen />);
+    fireEvent.press(screen.getByTestId('chat-attach-camera'));
+
+    await waitFor(() => expect(screen.getByTestId('chat-attachment-name')).toBeTruthy());
+    expect(screen.getByTestId('chat-attachment-name').props.children).toBe('foto.jpg');
   });
 
   it('AC1: cancelar el picker no muestra preview', async () => {

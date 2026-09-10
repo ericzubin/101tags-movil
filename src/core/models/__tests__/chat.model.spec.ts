@@ -212,6 +212,13 @@ describe('chat.model — adjuntos (M5.2)', () => {
     expect(isAllowedAttachment(makeAsset({ name: 'script.exe', type: null }))).toBe(false);
   });
 
+  it('AC2 (#27): MIME presente pero inválido gana sobre una extensión válida', () => {
+    expect(isAllowedAttachment(makeAsset({ name: 'nota.pdf', type: 'text/plain' }))).toBe(false);
+    expect(isAllowedAttachment(makeAsset({ name: 'foto.jpg', type: 'application/zip' }))).toBe(
+      false,
+    );
+  });
+
   it('AC2: isAllowedAttachmentSize rechaza >8MB y tolera size desconocido', () => {
     expect(isAllowedAttachmentSize(CHAT_ATTACHMENT_MAX_BYTES)).toBe(true);
     expect(isAllowedAttachmentSize(CHAT_ATTACHMENT_MAX_BYTES + 1)).toBe(false);

@@ -1,4 +1,3 @@
-import * as DocumentPicker from 'expo-document-picker';
 import { Redirect, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Linking, Pressable, Text, TextInput, View } from 'react-native';
@@ -14,10 +13,12 @@ import {
   formatAttachmentSize,
 } from '@/core/models/chat.model';
 import { authGuard } from '@/core/navigation/guards';
+import { pickDocument, pickImageFromCamera } from '@/core/utils/media-picker';
 import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
 import { brandColors } from '@/theme/tokens';
 
 import type { ChatAttachment, ChatAttachmentAsset, ChatMessage } from '@/core/models/chat.model';
+import type { PickedFile } from '@/core/utils/media-picker';
 
 const PROOF_TYPE = 'proof_of_payment';
 
@@ -133,22 +134,26 @@ export default function ConversationScreen() {
     });
   }, [draft, isSending, sendMessage]);
 
-  const pickAttachment = useCallback(async (asProof: boolean) => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ['image/*', 'application/pdf'],
-      copyToCacheDirectory: true,
-    });
-    // Cancel is a no-op: keep the previous selection untouched.
-    if (result.canceled || !result.assets?.length) return;
-    const picked = result.assets[0];
-    setAsset({
-      uri: picked.uri,
-      name: picked.name,
-      type: picked.mimeType ?? null,
-      size: picked.size ?? null,
-    });
+  const applyAttachment = useCallback((picked: PickedFile | null, asProof: boolean) => {
+    // Cancel / denied permission is a no-op: keep the previous selection.
+    if (!picked) return;
+    setAsset({ uri: picked.uri, name: picked.name, type: picked.type, size: picked.size });
     setPendingProof(asProof);
   }, []);
+
+  const pickAttachment = useCallback(
+    async (asProof: boolean) => {
+      applyAttachment(await pickDocument(), asProof);
+    },
+    [applyAttachment],
+  );
+
+  const pickAttachmentFromCamera = useCallback(
+    async (asProof: boolean) => {
+      applyAttachment(await pickImageFromCamera(), asProof);
+    },
+    [applyAttachment],
+  );
 
   const clearAsset = useCallback(() => {
     setAsset(null);
@@ -266,24 +271,42 @@ export default function ConversationScreen() {
           </View>
         ) : null}
 
-        <View className="flex-row items-center border-t border-brand-dark/10 bg-brand-white px-brand-3 pt-brand-2">
+        <View className="flex-row flex-wrap items-center border-t border-brand-dark/10 bg-brand-white px-brand-3 pt-brand-2">
+          <Button
+            testID="chat-attach-camera"
+            label="Cámara"
+            variant="secondary"
+            disabled={isSending}
+            onPress={() => void pickAttachmentFromCamera(false)}
+            className="mr-brand-2 mb-brand-1 px-3 py-2"
+          />
           <Button
             testID="chat-attach"
             label="Adjuntar"
             variant="secondary"
             disabled={isSending}
             onPress={() => void pickAttachment(false)}
-            className="mr-brand-2 px-3 py-2"
+            className="mr-brand-2 mb-brand-1 px-3 py-2"
           />
           {proofEligible ? (
-            <Button
-              testID="chat-proof"
-              label="Enviar comprobante de pago"
-              variant="secondary"
-              disabled={isSending}
-              onPress={() => void pickAttachment(true)}
-              className="px-3 py-2"
-            />
+            <>
+              <Button
+                testID="chat-proof-camera"
+                label="Foto comprobante"
+                variant="secondary"
+                disabled={isSending}
+                onPress={() => void pickAttachmentFromCamera(true)}
+                className="mr-brand-2 mb-brand-1 px-3 py-2"
+              />
+              <Button
+                testID="chat-proof"
+                label="Enviar comprobante de pago"
+                variant="secondary"
+                disabled={isSending}
+                onPress={() => void pickAttachment(true)}
+                className="mb-brand-1 px-3 py-2"
+              />
+            </>
           ) : null}
         </View>
 

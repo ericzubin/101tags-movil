@@ -59,8 +59,11 @@ function attachmentExtension(name: string): string {
 
 /** AC2: client UX guard — backend remains authority (`mimes` + `max:8192`). */
 export function isAllowedAttachment(asset: ChatAttachmentAsset): boolean {
-  const mime = (asset.type ?? '').toLowerCase();
-  if (mime && ALLOWED_ATTACHMENT_MIME_TYPES.has(mime)) return true;
+  const mime = (asset.type ?? '').trim().toLowerCase();
+  // A present-but-invalid MIME must win over a coincidentally valid extension
+  // (`nota.pdf` + `text/plain`); the extension is the fallback only when the
+  // picker omits the MIME entirely.
+  if (mime) return ALLOWED_ATTACHMENT_MIME_TYPES.has(mime);
   return ALLOWED_ATTACHMENT_EXTENSIONS.has(attachmentExtension(asset.name));
 }
 
