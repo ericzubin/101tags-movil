@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { authService } from '@/core/services/auth-service';
@@ -37,7 +37,7 @@ export default function AccountTab() {
 
   return (
     <SafeAreaView className="flex-1 bg-brand-medium" edges={['top', 'left', 'right']}>
-      <View className="flex-1 p-brand-6">
+      <ScrollView className="flex-1" contentContainerClassName="flex-grow p-brand-6">
         <Text className="font-brand-bold text-2xl text-brand-dark mb-brand-4">Mi cuenta</Text>
         {user ? (
           <View className="bg-brand-white rounded-brand-lg p-brand-4 mb-brand-6">
@@ -168,7 +168,7 @@ export default function AccountTab() {
         <Text className="font-brand text-xs text-brand-dark/50 text-center mt-brand-4">
           Próximamente — ayuda y configuración avanzada
         </Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { registerSessionReset } from '@/core/session/reset';
 import { couponService } from '@/core/services/coupon-service';
 
 import type { CouponDefinition } from '@/core/models/coupon.model';
@@ -24,6 +25,13 @@ function toErrorMessage(err: unknown): string {
 function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
+
+/**
+ * Monotonic sequence guarding against stale responses. A slow in-flight
+ * `fetchCoupons` must not repopulate the wallet after `reset()` (logout), so
+ * its result is applied only when it is still the most recent request.
+ */
+let couponRequestSeq = 0;
 
 /**
  * Client-side search over the already-fetched cuponera (AC3). The backend also
@@ -63,16 +71,29 @@ export const useCouponStore = create<CouponState>((set) => ({
   error: null,
 
   fetchCoupons: async (email) => {
+    const seq = ++couponRequestSeq;
     set({ status: 'loading', error: null });
     try {
       const coupons = await couponService.getCoupons(email ? { email } : {});
+      if (seq !== couponRequestSeq) return;
       set({ coupons, status: 'ready', error: null });
     } catch (err) {
+      if (seq !== couponRequestSeq) return;
       set({ status: 'error', error: toErrorMessage(err) });
     }
   },
 
   setQuery: (query) => set({ query }),
 
-  reset: () => set({ coupons: [], query: '', status: 'idle', error: null }),
+  reset: () => {
+    couponRequestSeq += 1;
+    set({ coupons: [], query: '', status: 'idle', error: null });
+  },
 }));
+
+/**
+ * Session-scoped state must not leak between accounts: signing out wipes the
+ * cuponera and invalidates any in-flight fetch. Registered at import time;
+ * executed by `auth-store.clearSession`.
+ */
+registerSessionReset(() => useCouponStore.getState().reset());

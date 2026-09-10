@@ -13,6 +13,11 @@ export interface GetCouponsParams {
  * `httpClient` injects the bearer token and normalizes the response keys.
  *
  * @see .spec/2026-09-11-m6-2-coupons.md §Contratos
+ *
+ * TODO(backend): `GET /coupons?email=` lets any authenticated client query
+ * another user's coupon list. The mobile app only ever sends the session user's
+ * email, but the endpoint should reject arbitrary `email` values server-side.
+ * Tracked in `.spec/2026-09-11-m6-2-coupons.md` (T4); does not block mobile.
  */
 export const couponService = {
   async getCoupons(params: GetCouponsParams = {}): Promise<CouponDefinition[]> {

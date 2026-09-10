@@ -61,7 +61,9 @@ export function couponDiscountLabel(
     case 'fixed':
       return `$${formatCouponValue(coupon.value)} de descuento`;
     case 'shipping':
-      return 'Envío gratis';
+      return coupon.value >= 100
+        ? 'Envío gratis'
+        : `${formatCouponValue(coupon.value)}% de descuento en envío`;
     default:
       return 'Descuento';
   }

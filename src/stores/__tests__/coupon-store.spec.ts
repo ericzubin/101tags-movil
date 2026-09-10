@@ -1,3 +1,4 @@
+import { runSessionResets } from '@/core/session/reset';
 import { couponService } from '@/core/services/coupon-service';
 import { filterCoupons, useCouponStore } from '@/stores/coupon-store';
 
@@ -103,6 +104,33 @@ describe('coupon-store', () => {
     expect(s.query).toBe('');
     expect(s.status).toBe('idle');
     expect(s.error).toBeNull();
+  });
+
+  it('T1: una respuesta vieja que resuelve después de reset no repuebla la cuponera', async () => {
+    let resolveFetch: (value: CouponDefinition[]) => void = () => {};
+    mockedCouponService.getCoupons.mockImplementationOnce(
+      () =>
+        new Promise<CouponDefinition[]>((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+
+    const pending = useCouponStore.getState().fetchCoupons('ada@example.com');
+    useCouponStore.getState().reset();
+    resolveFetch([fifty, shipping]);
+    await pending;
+
+    const s = useCouponStore.getState();
+    expect(s.coupons).toEqual([]);
+    expect(s.status).toBe('idle');
+  });
+
+  it('T1: runSessionResets() deja la cuponera vacía', async () => {
+    useCouponStore.setState({ coupons: [fifty], query: 'x', status: 'ready', error: null });
+
+    await runSessionResets();
+
+    expect(useCouponStore.getState().coupons).toEqual([]);
   });
 
   describe('AC3: filterCoupons', () => {

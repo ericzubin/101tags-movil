@@ -67,6 +67,9 @@ describe('coupon.model', () => {
     expect(couponDiscountLabel({ discountType: 'percent', value: 15 })).toBe('15% de descuento');
     expect(couponDiscountLabel({ discountType: 'fixed', value: 50 })).toBe('$50 de descuento');
     expect(couponDiscountLabel({ discountType: 'shipping', value: 100 })).toBe('Envío gratis');
+    expect(couponDiscountLabel({ discountType: 'shipping', value: 50 })).toBe(
+      '50% de descuento en envío',
+    );
   });
 
   it('AC2: couponDiscountLabel usa un genérico si el tipo es desconocido', () => {
