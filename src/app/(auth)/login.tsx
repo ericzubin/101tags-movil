@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthError } from '@/core/models/auth';
 import { useAuthStore } from '@/stores/auth-store';
+import { brandColors } from '@/theme/tokens';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -30,11 +31,28 @@ export default function LoginScreen() {
         <Text className="text-[22px] font-bold text-brand-dark mb-brand-6">Inicia sesión</Text>
         <View className="mb-brand-4">
           <Text className="text-sm text-brand-dark mb-1.5">Correo electrónico</Text>
-          <TextInput className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark" placeholder="tu@correo.com" placeholderTextColor="#999" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" testID="login-email" />
+          <TextInput
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
+            placeholder="tu@correo.com"
+            placeholderTextColor={brandColors.dark}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            testID="login-email"
+          />
         </View>
         <View className="mb-brand-4">
           <Text className="text-sm text-brand-dark mb-1.5">Contraseña</Text>
-          <TextInput className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark" placeholder="••••••••" placeholderTextColor="#999" value={password} onChangeText={setPassword} secureTextEntry testID="login-password" />
+          <TextInput
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
+            placeholder="••••••••"
+            placeholderTextColor={brandColors.dark}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            testID="login-password"
+          />
         </View>
         {error ? <Text className="text-red-600 mb-3" accessibilityRole="alert">{error}</Text> : null}
         <Pressable className="bg-brand-primary py-3.5 rounded-brand-md items-center mt-2 active:opacity-85" onPress={onSubmit} testID="login-submit">

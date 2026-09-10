@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthError } from '@/core/models/auth';
 import { useAuthStore } from '@/stores/auth-store';
+import { brandColors } from '@/theme/tokens';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -31,19 +32,50 @@ export default function RegisterScreen() {
         <Text className="text-[22px] font-bold text-brand-dark mb-brand-6">Crear cuenta</Text>
         <View className="mb-brand-4">
           <Text className="text-sm text-brand-dark mb-1.5">Nombre</Text>
-          <TextInput className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark" value={name} onChangeText={setName} placeholder="Tu nombre" placeholderTextColor="#999" testID="register-name" />
+          <TextInput
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
+            value={name}
+            onChangeText={setName}
+            placeholder="Tu nombre"
+            placeholderTextColor={brandColors.dark}
+            testID="register-name"
+          />
         </View>
         <View className="mb-brand-4">
           <Text className="text-sm text-brand-dark mb-1.5">Correo electrónico</Text>
-          <TextInput className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark" value={email} onChangeText={setEmail} placeholder="tu@correo.com" placeholderTextColor="#999" autoCapitalize="none" keyboardType="email-address" testID="register-email" />
+          <TextInput
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="tu@correo.com"
+            placeholderTextColor={brandColors.dark}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            testID="register-email"
+          />
         </View>
         <View className="mb-brand-4">
           <Text className="text-sm text-brand-dark mb-1.5">Contraseña</Text>
-          <TextInput className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark" value={password} onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#999" secureTextEntry testID="register-password" />
+          <TextInput
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            placeholderTextColor={brandColors.dark}
+            secureTextEntry
+            testID="register-password"
+          />
         </View>
         <View className="mb-brand-4">
           <Text className="text-sm text-brand-dark mb-1.5">Confirmar contraseña</Text>
-          <TextInput className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark" value={passwordConfirmation} onChangeText={setPasswordConfirmation} secureTextEntry testID="register-password-confirmation" />
+          <TextInput
+            className="bg-brand-white border border-neutral-300 rounded-brand-md px-3 py-2.5 text-base text-brand-dark"
+            value={passwordConfirmation}
+            onChangeText={setPasswordConfirmation}
+            placeholderTextColor={brandColors.dark}
+            secureTextEntry
+            testID="register-password-confirmation"
+          />
         </View>
         {error ? <Text className="text-red-600 mb-3" accessibilityRole="alert">{error}</Text> : null}
         <Pressable className="bg-brand-primary py-3.5 rounded-brand-md items-center mt-2 active:opacity-85" onPress={onSubmit} testID="register-submit">

@@ -1,0 +1,270 @@
+#!/usr/bin/env node
+/* eslint-disable no-console */
+
+/**
+ * scripts/baseline.js — capture a lightweight snapshot of the 101tags mobile
+ * quality baseline and write it to docs/quality/baseline.md.
+ *
+ * Spec: .spec/2026-09-09-m0-6-pivot-quality-baseline.md
+ * Decision (locked): use plain JS (Node 24 LTS native) to avoid adding `tsx`.
+ *
+ * I/O discipline (AGENTS.md §Disciplina de I/O):
+ *   - The script is a METADATA snapshot: package.json, app.json, tool versions,
+ *     and the list of test files. It does NOT execute typecheck, lint,
+ *     `pnpm test:ci`, `pnpm exec expo prebuild --clean` or
+ *     `pnpm exec expo export`. Those commands must be run separately when
+ *     a fresh pass/fail snapshot is needed (the resulting numbers in
+ *     baseline.md are placeholders pointing the operator at the right
+ *     command).
+ *   - The only `spawnSync` invocations are for `--version` (sub-millisecond)
+ *     and `pnpm test --listTests --silent` (file enumeration only, no test
+ *     execution). Total I/O is well under a megabyte.
+ */
+
+const { spawnSync } = require('node:child_process');
+const { existsSync, mkdirSync, readFileSync, writeFileSync } = require('node:fs');
+const { dirname, resolve } = require('node:path');
+
+const ROOT = process.cwd();
+const OUT = resolve(ROOT, 'docs/quality/baseline.md');
+const PACKAGE_JSON = resolve(ROOT, 'package.json');
+const APP_JSON = resolve(ROOT, 'app.json');
+
+if (!existsSync(PACKAGE_JSON)) {
+  console.error(`[baseline] package.json not found at ${PACKAGE_JSON}`);
+  process.exit(1);
+}
+if (!existsSync(APP_JSON)) {
+  console.error(`[baseline] app.json not found at ${APP_JSON}`);
+  process.exit(1);
+}
+
+function safeRun(cmd, args) {
+  try {
+    const r = spawnSync(cmd, args, {
+      cwd: ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 10_000,
+    });
+    return {
+      ok: r.status === 0,
+      out: ((r.stdout || '') + (r.stderr || '')).trim(),
+      code: r.status ?? -1,
+    };
+  } catch (err) {
+    return { ok: false, out: String(err), code: -1 };
+  }
+}
+
+function captureTools() {
+  const tools = ['node', 'pnpm', 'npx', 'git'];
+  return tools.map((t) => {
+    const r = safeRun(t, ['--version']);
+    const version = r.out.split('\n')[0] || '(unknown)';
+    return `| ${t} | ${version} |`;
+  });
+}
+
+function captureStack() {
+  const pkg = JSON.parse(readFileSync(PACKAGE_JSON, 'utf8'));
+  const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+  const keys = [
+    'expo',
+    'react',
+    'react-native',
+    'react-dom',
+    'expo-router',
+    'expo-secure-store',
+    'nativewind',
+    'tailwindcss',
+    'zustand',
+    '@tanstack/react-query',
+    'typescript',
+    'typescript-eslint',
+    'jest',
+    'jest-expo',
+    'eslint',
+    'eslint-config-expo',
+    'prettier',
+  ];
+  return keys.map((k) => `| ${k} | ${deps[k] || '(missing)' } |`);
+}
+
+function captureNative() {
+  const expo = JSON.parse(readFileSync(APP_JSON, 'utf8')).expo || {};
+  const ios = expo.ios || {};
+  const android = expo.android || {};
+  let iosProps = {};
+  let androidProps = {};
+  for (const p of expo.plugins || []) {
+    if (Array.isArray(p) && p[0] === 'expo-build-properties' && p[1] && typeof p[1] === 'object' && !Array.isArray(p[1])) {
+      iosProps = p[1].ios || {};
+      androidProps = p[1].android || {};
+      break;
+    }
+  }
+  const newArch = expo.newArchEnabled ? 'ON' : 'OFF';
+  return [
+    `| iOS bundleIdentifier | ${ios.bundleIdentifier || '(missing)'} |`,
+    `| iOS deployment target | ${iosProps.deploymentTarget || '(missing)'} |`,
+    `| Android package | ${android.package || '(missing)'} |`,
+    `| Android compileSdkVersion | ${androidProps.compileSdkVersion || '(missing)'} |`,
+    `| Android targetSdkVersion | ${androidProps.targetSdkVersion || '(missing)'} |`,
+    `| Android minSdkVersion | ${androidProps.minSdkVersion || '(missing)'} |`,
+    `| Hermes (default in Expo SDK 57) | ON |`,
+    `| New Architecture | ${newArch} |`,
+    `| Splash backgroundColor | ${(expo.splash || {}).backgroundColor || '(missing)'} |`,
+  ];
+}
+
+function captureTestSuites() {
+  // `pnpm test --listTests` just enumerates files; no test code runs.
+  const r = safeRun('pnpm', ['test', '--listTests', '--silent']);
+  if (!r.ok && r.out.length === 0) {
+    return { count: 0, samples: [], raw: '(jest --listTests failed)' };
+  }
+  const files = r.out
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.endsWith('.spec.ts') || l.endsWith('.spec.tsx'));
+  return {
+    count: files.length,
+    samples: files.sort().slice(0, 20),
+    raw: `(${files.length} suites discovered)`,
+  };
+}
+
+function writeBaseline() {
+  const today = new Date().toISOString().slice(0, 10);
+  const toolsRows = captureTools().join('\n');
+  const stackRows = captureStack().join('\n');
+  const nativeRows = captureNative().join('\n');
+  const suites = captureTestSuites();
+
+  const md = [
+    '# Quality Baseline — 101tags Mobile',
+    '',
+    `> Captured: ${today} (auto-generated by \`pnpm baseline\`)`,
+    '',
+    'Snapshot de las versiones, baselines y métricas de calidad del workspace RN+Expo 57',
+    'tras el cierre de M0.6-PIVOT. El script es idempotente y **no destructivo**:',
+    'sólo lee `package.json`, `app.json` y enumera los archivos de tests con',
+    '`pnpm test --listTests`. No ejecuta typecheck, lint, `pnpm test:ci`,',
+    '`pnpm exec expo prebuild --clean` ni `pnpm exec expo export` para no',
+    'incurrir en I/O pesado (ver AGENTS.md §Disciplina de I/O).',
+    '',
+    'Para re-medir las métricas dinámicas (pass/fail de tests/lint/typecheck,',
+    'peso del bundle web, regeneración de `ios/`+`android/`), ejecutá manualmente',
+    'los comandos listados en cada sección.',
+    '',
+    '## Tools',
+    '',
+    '| Tool | Version |',
+    '|---|---|',
+    toolsRows,
+    '',
+    '## Stack',
+    '',
+    '| Dependency | Version |',
+    '|---|---|',
+    stackRows,
+    '',
+    '## Test baseline',
+    '',
+    `- Suites discovered: ${suites.count} (via \`pnpm test --listTests\`)`,
+    '- Total tests / pass-fail: ejecutar manualmente `pnpm test:ci` (ver AGENTS.md §I/O).',
+    '- Exit code esperado: 0.',
+    '',
+    'Suites muestreadas:',
+    '',
+    suites.samples.length > 0
+      ? suites.samples.map((s) => `- \`${s.replace(ROOT + '/', '')}\``).join('\n')
+      : '_(none)_',
+    '',
+    '## Lint baseline',
+    '',
+    '- Comando: `pnpm lint`',
+    '- Expected: 0 errors, 0 warnings.',
+    '- Custom rules activas en `eslint.config.js`:',
+    '  - `@typescript-eslint/no-explicit-any`: `error`',
+    '  - `@typescript-eslint/consistent-type-imports`: `error`',
+    '  - `no-restricted-syntax` con selector `Literal[value=/#[0-9A-Fa-f]{3,8}\\b/]` y mensaje brand-tokens (aplica a `src/**/*.{ts,tsx}`, excluye `**/__tests__/**` y `**/*.spec.{ts,tsx}`; permite hex en `src/theme/tokens.ts`, `tailwind.config.js`, `src/global.css`).',
+    '',
+    '## Typecheck baseline',
+    '',
+    '- Comando: `pnpm typecheck` (ejecuta `tsc --noEmit`).',
+    '- Expected: 0 errors.',
+    '',
+    '## Format baseline',
+    '',
+    '- Comando: `pnpm format:check` (Prettier).',
+    '- Expected: exit 0 (todos los archivos tracked respetan `.prettierrc`).',
+    '',
+    '## Bundle baseline (web export)',
+    '',
+    '- Comando: `pnpm exec expo export --platform web --output-dir /tmp/baseline-bundle`',
+    '- Expected tras M0.5-PIVOT: 9 static routes, entry JS ~1.2 MB.',
+    '- **No se ejecuta automáticamente** (alto I/O). Documentar manualmente tras correrlo.',
+    '',
+    '## Native baseline',
+    '',
+    'Origen: `app.json` (`expo.plugins[*] expo-build-properties` + `expo.ios/android`).',
+    '',
+    '| Field | Value |',
+    '|---|---|',
+    nativeRows,
+    '',
+    '## ESLint custom rules',
+    '',
+    'Tres reglas blindan el branding y la calidad:',
+    '',
+    '1. **Hex colors fuera de tokens** (`no-restricted-syntax` con regex `#[0-9A-Fa-f]{3,8}\\b`)',
+    '   en `src/**/*.{ts,tsx}` salvo `**/__tests__/**` y `**/*.spec.{ts,tsx}`.',
+    '   - Permitido: `src/theme/tokens.ts`, `tailwind.config.js`, `src/global.css`.',
+    '   - Mensaje: "No hex colors en componentes. Usá Nativewind (bg-brand-primary) o brandColors desde src/theme/tokens.ts."',
+    '2. **`@typescript-eslint/no-explicit-any` = `error`** (global, salvo specs).',
+    '3. **`@typescript-eslint/consistent-type-imports` = `error`** (global, salvo specs).',
+    '',
+    'Cubierto por tests en `src/__tests__/quality/`:',
+    '',
+    '- `hex-color-guard.spec.ts` — verifica disparo de la regla con fixture in-memory.',
+    '- `no-any.spec.ts` — verifica disparo de `@typescript-eslint/no-explicit-any`.',
+    '- `type-imports.spec.ts` — verifica disparo de `@typescript-eslint/consistent-type-imports`.',
+    '- `workspace.spec.ts` — smoke: workspace >= 54 tests verdes y config ESLint presente.',
+    '',
+    '## Definición de Done (verificación manual)',
+    '',
+    'Para regenerar este baseline con métricas dinámicas, ejecutar en orden (low-I/O, una tarea a la vez):',
+    '',
+    '```bash',
+    'cd /home/user/code/codeweb/101tags-movil-m06',
+    'source ~/.nvm/nvm.sh && nvm use 24',
+    'nice -n 10 ionice -c2 -n7 pnpm typecheck',
+    'nice -n 10 ionice -c2 -n7 pnpm lint',
+    'nice -n 10 ionice -c2 -n7 pnpm test:ci',
+    '```',
+    '',
+    'Comandos opcionales (alto I/O, requieren autorización explícita por incidente Sept 2026):',
+    '',
+    '- `pnpm exec expo prebuild --no-install --clean` (regenera `ios/`+`android/`).',
+    '- `pnpm exec expo export --platform web --output-dir /tmp/baseline-bundle` (bundle web).',
+    '- `pnpm validate` (`typecheck` + `lint` + `test:ci`).',
+    '',
+    '## Notas',
+    '',
+    '- Este baseline es de **M0.6-PIVOT**. Cualquier desviación posterior debe',
+    '  reflejarse en una entrada nueva de `STATE.md` y un commit que actualice',
+    '  tanto el script como este archivo.',
+    '- El script vive en `scripts/baseline.js` (decisión locked: JS nativo,',
+    '  sin dependencias adicionales).',
+    '',
+  ].join('\n');
+
+  mkdirSync(dirname(OUT), { recursive: true });
+  writeFileSync(OUT, md, 'utf8');
+  console.log(`[baseline] wrote ${OUT}`);
+  console.log(`[baseline] suites discovered: ${suites.count}`);
+}
+
+writeBaseline();
