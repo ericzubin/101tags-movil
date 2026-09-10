@@ -84,6 +84,16 @@ describe('AccountTab — placeholder + logout (M1.10 AC6, AC7)', () => {
     });
   });
 
+  it('M6.1: muestra "Mi perfil" y navega a /profile', () => {
+    render(<AccountTab />);
+
+    expect(screen.getByText('Mi perfil')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('account-profile'));
+
+    expect(mockPushRouter).toHaveBeenCalledWith('/profile');
+  });
+
   it('M4.1: muestra "Mis pedidos" y navega a /orders', () => {
     render(<AccountTab />);
 

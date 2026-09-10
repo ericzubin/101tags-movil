@@ -46,6 +46,17 @@ export default function AccountTab() {
           </View>
         ) : null}
         <Pressable
+          onPress={() => router.push('/profile')}
+          className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
+          testID="account-profile"
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="person-outline" size={20} color={brandColors.dark} />
+            <Text className="font-brand-bold text-base text-brand-dark ml-brand-3">Mi perfil</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
+        </Pressable>
+        <Pressable
           onPress={() => router.push('/orders')}
           className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
           testID="account-orders"

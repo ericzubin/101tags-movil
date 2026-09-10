@@ -17,6 +17,7 @@ export interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<boolean>;
 }
 
 /**
@@ -131,6 +132,26 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     await authService.logout();
     set({ user: null, token: null, isHydrated: true });
+  },
+
+  /**
+   * M6.1 — Refresca el `user` desde `GET /auth/customer/me`.
+   *
+   * No es bloqueante: si la red falla, conserva el `user` cacheado y el
+   * token intactos, y resuelve `false` para que la UI muestre un aviso sin
+   * desloguear al usuario. Nunca propaga el error ni renderiza el token.
+   *
+   * @returns true si el `user` se actualizó, false si se mantuvo el cache.
+   */
+  refreshUser: async (): Promise<boolean> => {
+    try {
+      const user = await authService.getMe();
+      set({ user });
+      return true;
+    } catch (err) {
+      if (__DEV__) console.warn('[auth-store] refreshUser failed (keeping cached user)', err);
+      return false;
+    }
   },
 }));
 

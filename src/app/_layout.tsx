@@ -121,6 +121,7 @@ export default function RootLayout() {
             <Stack.Screen name="chat/index" options={{ title: 'Mensajes' }} />
             <Stack.Screen name="chat/[orderNumber]" options={{ title: 'Conversación' }} />
             <Stack.Screen name="notifications" options={{ title: 'Notificaciones' }} />
+            <Stack.Screen name="profile" options={{ title: 'Mi perfil' }} />
           </Stack>
         </View>
       </QueryClientProvider>

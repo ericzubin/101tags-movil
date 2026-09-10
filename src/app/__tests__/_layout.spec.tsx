@@ -196,4 +196,8 @@ describe('RootLayout — rutas registradas (M3.4 / M3.5)', () => {
   it('M5.3: registra notifications en el root stack', () => {
     expect(layoutSource).toContain('name="notifications"');
   });
+
+  it('M6.1: registra profile en el root stack', () => {
+    expect(layoutSource).toContain('name="profile"');
+  });
 });
