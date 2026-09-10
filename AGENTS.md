@@ -155,6 +155,44 @@ La metodología importa más que la existencia física de subagentes.
 
 **Resumen de cuotas:** máximo 2 workers pesados simultáneos (tests/builds/installs), máximo 3 subagentes de análisis/edición simultáneos (sin tests/builds), builds completos siempre de uno en uno.
 
+### Workflow por issue (subagente)
+
+A partir de **F1/M1.2** el flujo de cada issue es:
+
+1. **Architect** (agente principal) escribe o actualiza la spec en `.spec/YYYY-MM-DD-mX-Y-...md` con BDD y DoD.
+2. **Developer subagente** (delegado por Task tool):
+   - Recibe la spec como contrato único.
+   - Crea worktree desde `origin/developer` (no desde `main`).
+   - Trabaja en su propia rama `feat/mX-Y-...` o `chore/mX-Y-...`.
+   - TDD Red → Green → Refactor dentro del worktree.
+   - Al terminar: commit limpio + push + crear PR contra `developer`.
+   - **No hace merge**: el merge queda para el agente principal.
+3. **Agente principal**:
+   - Revisa el PR, ejecuta verificación low-I/O (`pnpm typecheck`, `pnpm lint`, `pnpm test <archivo>`).
+   - Merge del PR a `developer` con `--squash --delete-branch`.
+   - Limpia el worktree.
+   - Avanza al siguiente issue.
+
+### Ramas y merges
+
+- **`main`** — releases / hitos terminados. Solo recibe merges de `developer` cuando una fase (F0, F1, F2, …) completa su Definition of Done completa, o cuando se aprueba un hotfix.
+- **`developer`** — rama de integración. Recibe todos los PRs de issues. Estable pero no necesariamente production-ready.
+- **`feat/mX-Y-...`** / **`chore/mX-Y-...`** — ramas de trabajo de cada issue. Se mergean a `developer` con `--squash --delete-branch`.
+
+### Antes de cada subagente
+
+- Confirmar que el worktree destino va a salir de `origin/developer` actualizado (no de `main`).
+- Confirmar que la spec está aprobada (auto-aprobada en F1 salvo objeción del usuario).
+- Pasar al subagente las **reglas de I/O en bloque** (no `pnpm test:ci`, no `pnpm install` salvo `node_modules` ausente, no `prebuild --clean`, etc.).
+- Pasar al subagente las **cuotas**: 1 subagente pesado a la vez; no iniciar otro hasta commit + push.
+
+### Después de cada subagente
+
+- `pnpm typecheck` y `pnpm lint` (low I/O, permitido sin preguntar).
+- `pnpm test <archivo>` por cada archivo de test nuevo o tocado (low I/O, un archivo).
+- Si todo verde → `gh pr merge --squash --delete-branch`.
+- Actualizar `STATE.md`, `TASKS.md` y la spec (DONE) en `main` vía PR de docs o sync posterior.
+
 ## ⚡ Disciplina de I/O — bajo consumo obligatorio
 
 Esta sección es **permanente y no negociable** para OpenCode, Hermes, Codex y cualquier otro agente (humano o IA) que trabaje sobre este repositorio. Es consecuencia directa de un incidente en el que el paralelismo de subagentes saturó el disco de WSL al 100% durante M0.6/M1.1.
