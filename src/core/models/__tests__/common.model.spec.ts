@@ -1,40 +1,48 @@
-import type { ApiError, LaravelErrorPayload, Paginated, PaginatedLinks, PaginatedMeta } from '@/core/models/common.model';
+import type { ApiError, LaravelErrorPayload, Paginated } from '@/core/models/common.model';
 
 describe('common.model', () => {
-  it('AC1: Paginated<T> tiene data, meta, links con campos exactos del backend', () => {
+  it('AC1: Paginated<T> tiene shape flat camelCase del LengthAwarePaginator', () => {
     const item = { id: 1 };
-    const meta: PaginatedMeta = {
-      current_page: 1,
-      from: 1,
-      last_page: 5,
-      per_page: 20,
-      to: 20,
-      total: 100,
-    };
-    const links: PaginatedLinks = {
-      first_page_url: 'https://api.test/api/catalog/products?page=1',
-      last_page_url: 'https://api.test/api/catalog/products?page=5',
-      next_page_url: 'https://api.test/api/catalog/products?page=2',
-      prev_page_url: null,
-      path: 'https://api.test/api/catalog/products',
-      links: [
-        { url: null, label: 'Previous', active: false },
-        { url: 'https://api.test/api/catalog/products?page=1', label: '1', active: true, page: 1 },
-      ],
-    };
     const paginated: Paginated<typeof item> = {
       data: [item],
-      meta,
-      links,
+      currentPage: 1,
+      lastPage: 5,
+      perPage: 12,
+      total: 60,
+      from: 1,
+      to: 12,
+      nextPageUrl: 'https://api.test/api/catalog/products?page=2',
+      prevPageUrl: null,
     };
 
     expect(paginated.data).toHaveLength(1);
-    expect(paginated.meta.current_page).toBe(1);
-    expect(paginated.meta.last_page).toBe(5);
-    expect(paginated.meta.per_page).toBe(20);
-    expect(paginated.meta.total).toBe(100);
-    expect(paginated.links.first_page_url).toContain('page=1');
-    expect(paginated.links.links[1].page).toBe(1);
+    expect(paginated.currentPage).toBe(1);
+    expect(paginated.lastPage).toBe(5);
+    expect(paginated.perPage).toBe(12);
+    expect(paginated.total).toBe(60);
+    expect(paginated.from).toBe(1);
+    expect(paginated.to).toBe(12);
+    expect(paginated.nextPageUrl).toContain('page=2');
+    expect(paginated.prevPageUrl).toBeNull();
+  });
+
+  it('Paginated<T> admite from/to null en página vacía', () => {
+    const paginated: Paginated<{ id: number }> = {
+      data: [],
+      currentPage: 1,
+      lastPage: 1,
+      perPage: 12,
+      total: 0,
+      from: null,
+      to: null,
+      nextPageUrl: null,
+      prevPageUrl: null,
+    };
+
+    expect(paginated.data).toHaveLength(0);
+    expect(paginated.from).toBeNull();
+    expect(paginated.to).toBeNull();
+    expect(paginated.nextPageUrl).toBeNull();
   });
 
   it('LaravelErrorPayload soporta message + errors opcionales', () => {

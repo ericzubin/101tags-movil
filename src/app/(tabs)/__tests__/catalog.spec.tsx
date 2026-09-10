@@ -1,16 +1,22 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
+import { FlatList } from 'react-native';
 
 import CatalogTab, { DEFAULT_SEGMENT } from '../catalog';
 import type { Category, ProductSummary } from '@/core/models/catalog.model';
+import type { Paginated } from '@/core/models/common.model';
 import { catalogKeys } from '@/core/query/keys';
 
 const mockPush = jest.fn();
 const mockUseQuery = jest.fn();
+const mockUseInfiniteQuery = jest.fn();
 const mockGetCategories = jest.fn();
 const mockGetProducts = jest.fn();
+const mockGetFilters = jest.fn();
 const mockCategoriesRefetch = jest.fn();
+const mockFiltersRefetch = jest.fn();
 const mockProductsRefetch = jest.fn();
+const mockFetchNextPage = jest.fn();
 let mockParams: Record<string, string> = {};
 
 jest.mock('expo-router', () => ({
@@ -20,12 +26,14 @@ jest.mock('expo-router', () => ({
 
 jest.mock('@tanstack/react-query', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
 }));
 
 jest.mock('@/core/services/catalog-service', () => ({
   catalogService: {
     getCategories: (...args: unknown[]) => mockGetCategories(...args),
     getProducts: (...args: unknown[]) => mockGetProducts(...args),
+    getFilters: (...args: unknown[]) => mockGetFilters(...args),
   },
 }));
 
@@ -35,21 +43,67 @@ interface QueryState {
   isError?: boolean;
 }
 
-const QUERY_DEFAULTS: QueryState = { data: undefined, isLoading: false, isError: false };
+interface InfiniteState {
+  data?: { pages: Paginated<ProductSummary>[] };
+  isLoading?: boolean;
+  isError?: boolean;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+}
 
-function setupQueries(categories: QueryState = {}, products: QueryState = {}) {
+const QUERY_DEFAULTS: QueryState = { data: undefined, isLoading: false, isError: false };
+const INFINITE_DEFAULTS: InfiniteState = {
+  data: undefined,
+  isLoading: false,
+  isError: false,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+};
+
+function setupQueries(
+  categories: QueryState = {},
+  infinite: InfiniteState = {},
+  filters: QueryState = {},
+) {
   mockUseQuery.mockImplementation(
     (options: { queryKey: readonly unknown[]; queryFn?: () => unknown; enabled?: boolean }) => {
       const isCategories = options.queryKey[1] === 'categories';
+      const isFilters = options.queryKey[1] === 'filters';
       const state = isCategories
         ? { ...QUERY_DEFAULTS, ...categories }
-        : { ...QUERY_DEFAULTS, ...products };
+        : isFilters
+          ? { ...QUERY_DEFAULTS, ...filters }
+          : { ...QUERY_DEFAULTS };
       if (options.enabled !== false && options.queryFn) {
         void options.queryFn();
       }
       return {
         ...state,
-        refetch: isCategories ? mockCategoriesRefetch : mockProductsRefetch,
+        isFetching: false,
+        refetch: isCategories
+          ? mockCategoriesRefetch
+          : isFilters
+            ? mockFiltersRefetch
+            : jest.fn(),
+      };
+    },
+  );
+
+  mockUseInfiniteQuery.mockImplementation(
+    (options: {
+      queryKey: readonly unknown[];
+      queryFn?: (ctx: { pageParam: unknown; signal?: AbortSignal }) => unknown;
+      initialPageParam?: unknown;
+      enabled?: boolean;
+    }) => {
+      const state = { ...INFINITE_DEFAULTS, ...infinite };
+      if (options.enabled !== false && options.queryFn) {
+        void options.queryFn({ pageParam: options.initialPageParam, signal: undefined });
+      }
+      return {
+        ...state,
+        fetchNextPage: mockFetchNextPage,
+        refetch: mockProductsRefetch,
       };
     },
   );
@@ -90,6 +144,24 @@ function makeProduct(overrides: Partial<ProductSummary> = {}): ProductSummary {
   };
 }
 
+function makePage(
+  products: ProductSummary[],
+  currentPage: number,
+  lastPage: number,
+): Paginated<ProductSummary> {
+  return {
+    data: products,
+    currentPage,
+    lastPage,
+    perPage: 12,
+    total: products.length,
+    from: products.length > 0 ? 1 : null,
+    to: products.length > 0 ? products.length : null,
+    nextPageUrl: null,
+    prevPageUrl: null,
+  };
+}
+
 const ROPA = makeCategory({
   id: 1,
   name: 'Ropa',
@@ -110,155 +182,461 @@ const ACCESORIOS = makeCategory({
 
 const CATEGORIES = [ROPA, ACCESORIOS];
 
-describe('CatalogTab (M2.2 AC1-AC10)', () => {
+const FILTER_OPTIONS = {
+  sizes: ['S', 'M', 'L'],
+  colors: ['Rojo', 'Azul'],
+  priceMin: 100,
+  priceMax: 300,
+  categories: [],
+  subcategories: [],
+};
+
+function listTrigger() {
+  return screen.UNSAFE_getByType(FlatList).props.onEndReached;
+}
+
+describe('CatalogTab (M2.2 regresión árbol + M2.3 lista)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseQuery.mockReset();
+    mockUseInfiniteQuery.mockReset();
     mockCategoriesRefetch.mockReset();
+    mockFiltersRefetch.mockReset();
     mockProductsRefetch.mockReset();
+    mockFetchNextPage.mockReset();
     mockParams = {};
   });
 
-  it('AC1: renderiza el árbol con las raíces y chevron en las que tienen hijos', () => {
-    setupQueries({ data: { data: CATEGORIES } });
+  describe('M2.2 — modo árbol (regresión)', () => {
+    it('AC1: renderiza el árbol con las raíces y chevron en las que tienen hijos', () => {
+      setupQueries({ data: { data: CATEGORIES } });
 
-    render(<CatalogTab />);
+      render(<CatalogTab />);
 
-    expect(screen.getByTestId('category-tree')).toBeTruthy();
-    expect(screen.getByText('Ropa')).toBeTruthy();
-    expect(screen.getByText('Accesorios')).toBeTruthy();
-    expect(screen.getByText('chevron-forward')).toBeTruthy();
+      expect(screen.getByTestId('category-tree')).toBeTruthy();
+      expect(screen.getByText('Ropa')).toBeTruthy();
+      expect(screen.getByText('Accesorios')).toBeTruthy();
+      expect(screen.getByText('chevron-forward')).toBeTruthy();
+    });
+
+    it('AC2: expande y colapsa los hijos de una raíz', () => {
+      setupQueries({ data: { data: CATEGORIES } });
+
+      render(<CatalogTab />);
+      fireEvent.press(screen.getByTestId('category-ropa'));
+
+      expect(screen.getByText('Playeras')).toBeTruthy();
+      expect(screen.getByText('Pantalones')).toBeTruthy();
+
+      fireEvent.press(screen.getByTestId('category-ropa'));
+
+      expect(screen.queryByText('Playeras')).toBeNull();
+    });
+
+    it('AC3: tap en raíz sin hijos abre la lista con category', () => {
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'gafas', name: 'Gafas' })], 1, 1)] } },
+      );
+
+      render(<CatalogTab />);
+
+      expect(mockGetProducts).not.toHaveBeenCalled();
+
+      fireEvent.press(screen.getByTestId('category-accesorios'));
+
+      expect(mockGetProducts).toHaveBeenCalledWith(
+        expect.objectContaining({ category: ['accesorios'], page: 1 }),
+        expect.anything(),
+      );
+      expect(screen.getByText('Gafas')).toBeTruthy();
+    });
+
+    it('AC4: tap en subcategoría abre la lista con subcategory', () => {
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([], 1, 1)] } },
+      );
+
+      render(<CatalogTab />);
+      fireEvent.press(screen.getByTestId('category-ropa'));
+      fireEvent.press(screen.getByTestId('subcategory-playeras'));
+
+      expect(mockGetProducts).toHaveBeenCalledWith(
+        expect.objectContaining({ subcategory: ['playeras'] }),
+        expect.anything(),
+      );
+    });
+
+    it('AC5: param ?category= abre la lista directo sin árbol y con nombre resuelto', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x', name: 'Camisa X' })], 1, 1)] } },
+      );
+
+      render(<CatalogTab />);
+
+      expect(screen.queryByTestId('category-tree')).toBeNull();
+      expect(mockGetProducts).toHaveBeenCalledWith(
+        expect.objectContaining({ category: ['ropa'], page: 1 }),
+        expect.anything(),
+      );
+      expect(screen.getByText('Camisa X')).toBeTruthy();
+      expect(screen.getByText('Ropa')).toBeTruthy();
+    });
+
+    it('AC6: en loading de categorías muestra el skeleton del árbol', () => {
+      setupQueries({ isLoading: true });
+
+      render(<CatalogTab />);
+
+      expect(screen.getByTestId('catalog-tree-skeleton')).toBeTruthy();
+      expect(screen.queryByTestId('category-tree')).toBeNull();
+    });
+
+    it('AC7: error de categorías muestra ErrorState y el retry refetchea', () => {
+      setupQueries({ isError: true });
+
+      render(<CatalogTab />);
+      fireEvent.press(screen.getByTestId('catalog-tree-error-retry'));
+
+      expect(mockCategoriesRefetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('AC13: sin params muestra el árbol y NO llama getProducts', () => {
+      setupQueries({ data: { data: CATEGORIES } });
+
+      render(<CatalogTab />);
+
+      expect(screen.getByTestId('category-tree')).toBeTruthy();
+      expect(mockGetProducts).not.toHaveBeenCalled();
+    });
+
+    it('AC8: desde la lista, "Categorías" vuelve al árbol', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x', name: 'Camisa X' })], 1, 1)] } },
+      );
+
+      render(<CatalogTab />);
+      expect(screen.queryByTestId('category-tree')).toBeNull();
+
+      fireEvent.press(screen.getByTestId('catalog-back-to-tree'));
+
+      expect(screen.getByTestId('category-tree')).toBeTruthy();
+    });
+
+    it('AC9: tap en producto navega a /product/<slug>', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x', name: 'Camisa X' })], 1, 1)] } },
+      );
+
+      render(<CatalogTab />);
+      fireEvent.press(screen.getByTestId('product-card-camisa-x'));
+
+      expect(mockPush).toHaveBeenCalledWith('/product/camisa-x');
+    });
+
+    it('AC10: lista vacía muestra "Sin productos"', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([], 1, 1)] } },
+      );
+
+      render(<CatalogTab />);
+
+      expect(screen.getByText('Sin productos')).toBeTruthy();
+    });
   });
 
-  it('AC2: expande y colapsa los hijos de una raíz', () => {
-    setupQueries({ data: { data: CATEGORIES } });
+  describe('M2.3 — lista infinita, búsqueda, sort y filtros', () => {
+    it('AC1: primera página llama getProducts con category/sort/page y muestra las cards', () => {
+      mockParams = { category: 'ropa' };
+      const products = Array.from({ length: 12 }, (_, i) =>
+        makeProduct({ id: i + 1, slug: `producto-${i + 1}`, name: `Producto ${i + 1}` }),
+      );
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage(products, 1, 3)] }, hasNextPage: true },
+      );
 
-    render(<CatalogTab />);
-    fireEvent.press(screen.getByTestId('category-ropa'));
+      render(<CatalogTab />);
 
-    expect(screen.getByText('Playeras')).toBeTruthy();
-    expect(screen.getByText('Pantalones')).toBeTruthy();
-    expect(screen.getByText('chevron-down')).toBeTruthy();
+      expect(mockGetProducts).toHaveBeenCalledWith(
+        { category: ['ropa'], sort: 'newest', page: 1 },
+        expect.anything(),
+      );
+      expect(screen.getByTestId('catalog-product-list')).toBeTruthy();
+      expect(screen.getAllByTestId(/^catalog-list-item-/)).toHaveLength(12);
+    });
 
-    fireEvent.press(screen.getByTestId('category-ropa'));
+    it('AC2: onEndReached llama fetchNextPage cuando hay página siguiente', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        {
+          data: { pages: [makePage([makeProduct({ slug: 'p-1' })], 1, 3)] },
+          hasNextPage: true,
+        },
+      );
 
-    expect(screen.queryByText('Playeras')).toBeNull();
-  });
+      render(<CatalogTab />);
+      listTrigger()();
 
-  it('AC3: tap en raíz sin hijos dispara getProducts con category y muestra el grid', () => {
-    setupQueries(
-      { data: { data: CATEGORIES } },
-      { data: { data: [makeProduct({ slug: 'gafas', name: 'Gafas' })] } },
-    );
+      expect(mockFetchNextPage).toHaveBeenCalledTimes(1);
+    });
 
-    render(<CatalogTab />);
+    it('AC2b: no llama fetchNextPage si no hay página siguiente', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        {
+          data: { pages: [makePage([makeProduct({ slug: 'p-1' })], 3, 3)] },
+          hasNextPage: false,
+        },
+      );
 
-    expect(mockGetProducts).not.toHaveBeenCalled();
+      render(<CatalogTab />);
+      listTrigger()();
 
-    fireEvent.press(screen.getByTestId('category-accesorios'));
+      expect(mockFetchNextPage).not.toHaveBeenCalled();
+    });
 
-    expect(mockGetProducts).toHaveBeenCalledWith({ category: ['accesorios'] });
-    expect(screen.getByTestId('product-grid')).toBeTruthy();
-    expect(screen.getByText('Gafas')).toBeTruthy();
-  });
+    it('AC3: dedupe por slug entre páginas deja una sola card', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        {
+          data: {
+            pages: [
+              makePage(
+                [
+                  makeProduct({ id: 1, slug: 'camisa-x', name: 'Camisa X' }),
+                  makeProduct({ id: 2, slug: 'pantalon-y', name: 'Pantalón Y' }),
+                ],
+                1,
+                2,
+              ),
+              makePage(
+                [
+                  makeProduct({ id: 3, slug: 'camisa-x', name: 'Camisa X repetida' }),
+                  makeProduct({ id: 4, slug: 'gorra-z', name: 'Gorra Z' }),
+                ],
+                2,
+                2,
+              ),
+            ],
+          },
+        },
+      );
 
-  it('AC4: tap en subcategoría dispara getProducts con subcategory', () => {
-    setupQueries({ data: { data: CATEGORIES } }, { data: { data: [] } });
+      render(<CatalogTab />);
 
-    render(<CatalogTab />);
-    fireEvent.press(screen.getByTestId('category-ropa'));
-    fireEvent.press(screen.getByTestId('subcategory-playeras'));
+      expect(screen.getAllByTestId('catalog-list-item-camisa-x')).toHaveLength(1);
+      expect(screen.getByTestId('catalog-list-item-gorra-z')).toBeTruthy();
+    });
 
-    expect(mockGetProducts).toHaveBeenCalledWith({ subcategory: ['playeras'] });
-  });
+    it('AC4: sort chips cambian el sort de la query', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x' })], 1, 1)] } },
+      );
 
-  it('AC5: param ?category= abre la lista directo sin árbol y con nombre resuelto', () => {
-    mockParams = { category: 'ropa' };
-    setupQueries(
-      { data: { data: CATEGORIES } },
-      { data: { data: [makeProduct({ slug: 'camisa-x', name: 'Camisa X' })] } },
-    );
+      render(<CatalogTab />);
+      fireEvent.press(screen.getByTestId('sort-price_asc'));
 
-    render(<CatalogTab />);
+      expect(mockGetProducts).toHaveBeenLastCalledWith(
+        expect.objectContaining({ sort: 'price_asc', page: 1 }),
+        expect.anything(),
+      );
+      expect(screen.getByTestId('sort-price_asc').props.accessibilityState.selected).toBe(true);
+    });
 
-    expect(screen.queryByTestId('category-tree')).toBeNull();
-    expect(mockGetProducts).toHaveBeenCalledWith({ category: ['ropa'] });
-    expect(screen.getByText('Camisa X')).toBeTruthy();
-    expect(screen.getByText('Ropa')).toBeTruthy();
-  });
+    it('AC5: búsqueda se debounce 350ms antes de llamar con q', () => {
+      jest.useFakeTimers();
+      try {
+        mockParams = { category: 'ropa' };
+        setupQueries(
+          { data: { data: CATEGORIES } },
+          { data: { pages: [makePage([makeProduct({ slug: 'camisa-x' })], 1, 1)] } },
+        );
 
-  it('AC6: en loading de categorías muestra el skeleton del árbol', () => {
-    setupQueries({ isLoading: true });
+        render(<CatalogTab />);
 
-    render(<CatalogTab />);
+        fireEvent.changeText(screen.getByTestId('catalog-search-input'), 'camisa');
 
-    expect(screen.getByTestId('catalog-tree-skeleton')).toBeTruthy();
-    expect(screen.queryByTestId('category-tree')).toBeNull();
-  });
+        const before = mockGetProducts.mock.calls.map((call) => call[0] as { q?: string });
+        expect(before.some((f) => f.q === 'camisa')).toBe(false);
 
-  it('AC7: error de categorías muestra ErrorState y el retry refetchea', () => {
-    setupQueries({ isError: true });
+        act(() => {
+          jest.advanceTimersByTime(350);
+        });
 
-    render(<CatalogTab />);
+        expect(mockGetProducts).toHaveBeenLastCalledWith(
+          expect.objectContaining({ q: 'camisa', page: 1 }),
+          expect.anything(),
+        );
+      } finally {
+        jest.useRealTimers();
+      }
+    });
 
-    expect(screen.getByText('Reintentar')).toBeTruthy();
+    it('AC6: abrir el sheet carga las opciones con getFilters', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x' })], 1, 1)] } },
+        { data: FILTER_OPTIONS },
+      );
 
-    fireEvent.press(screen.getByTestId('catalog-tree-error-retry'));
+      render(<CatalogTab />);
+      expect(mockGetFilters).not.toHaveBeenCalled();
 
-    expect(mockCategoriesRefetch).toHaveBeenCalledTimes(1);
-  });
+      fireEvent.press(screen.getByTestId('catalog-open-filters'));
 
-  it('AC8: desde la lista, "Categorías" vuelve al árbol', () => {
-    mockParams = { category: 'ropa' };
-    setupQueries(
-      { data: { data: CATEGORIES } },
-      { data: { data: [makeProduct({ slug: 'camisa-x', name: 'Camisa X' })] } },
-    );
+      expect(mockGetFilters).toHaveBeenCalledWith(DEFAULT_SEGMENT, 'ropa');
+      expect(screen.getByTestId('filters-sheet-apply')).toBeTruthy();
+    });
 
-    render(<CatalogTab />);
+    it('AC7: aplicar filtros cierra el sheet y actualiza la query', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x' })], 1, 1)] } },
+        { data: FILTER_OPTIONS },
+      );
 
-    expect(screen.queryByTestId('category-tree')).toBeNull();
+      render(<CatalogTab />);
+      fireEvent.press(screen.getByTestId('catalog-open-filters'));
+      fireEvent.press(screen.getByTestId('filter-size-M'));
+      fireEvent.press(screen.getByTestId('filter-color-Rojo'));
+      fireEvent(screen.getByTestId('filter-in-stock'), 'valueChange', true);
+      fireEvent.press(screen.getByTestId('filters-sheet-apply'));
 
-    fireEvent.press(screen.getByTestId('catalog-back-to-tree'));
+      expect(mockGetProducts).toHaveBeenLastCalledWith(
+        expect.objectContaining({ sizes: ['M'], colors: ['Rojo'], inStock: true, page: 1 }),
+        expect.anything(),
+      );
+      expect(screen.queryByTestId('filters-sheet-apply')).toBeNull();
+    });
 
-    expect(screen.getByTestId('category-tree')).toBeTruthy();
-  });
+    it('AC8: Limpiar quita filtros pero conserva category', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x' })], 1, 1)] } },
+        { data: FILTER_OPTIONS },
+      );
 
-  it('AC9: tap en producto navega a /product/<slug>', () => {
-    mockParams = { category: 'ropa' };
-    setupQueries(
-      { data: { data: CATEGORIES } },
-      { data: { data: [makeProduct({ slug: 'camisa-x', name: 'Camisa X' })] } },
-    );
+      render(<CatalogTab />);
+      fireEvent.press(screen.getByTestId('catalog-open-filters'));
+      fireEvent.press(screen.getByTestId('filter-size-M'));
+      fireEvent.press(screen.getByTestId('filters-sheet-apply'));
+      fireEvent.press(screen.getByTestId('catalog-open-filters'));
+      fireEvent.press(screen.getByTestId('filters-sheet-clear'));
 
-    render(<CatalogTab />);
-    fireEvent.press(screen.getByTestId('product-card-camisa-x'));
+      const last = mockGetProducts.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+      expect(last.category).toEqual(['ropa']);
+      expect(last.sizes).toBeUndefined();
+      expect(last.colors).toBeUndefined();
+      expect(last.priceMin).toBeUndefined();
+      expect(last.priceMax).toBeUndefined();
+      expect(last.inStock).toBeUndefined();
+      expect(last.onSale).toBeUndefined();
+    });
 
-    expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith('/product/camisa-x');
-  });
+    it('AC9: cerrar el sheet sin aplicar conserva los filtros previos', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x' })], 1, 1)] } },
+        { data: FILTER_OPTIONS },
+      );
 
-  it('AC10: lista vacía muestra "Sin productos"', () => {
-    mockParams = { category: 'ropa' };
-    setupQueries({ data: { data: CATEGORIES } }, { data: { data: [] } });
+      render(<CatalogTab />);
+      fireEvent.press(screen.getByTestId('catalog-open-filters'));
+      fireEvent.press(screen.getByTestId('filter-size-M'));
+      fireEvent.press(screen.getByTestId('filters-sheet-apply'));
+      fireEvent.press(screen.getByTestId('catalog-open-filters'));
+      fireEvent.press(screen.getByTestId('filter-size-L'));
+      fireEvent.press(screen.getByTestId('filters-sheet-close'));
 
-    render(<CatalogTab />);
+      const last = mockGetProducts.mock.calls.at(-1)?.[0] as { sizes?: string[] };
+      expect(last.sizes).toEqual(['M']);
+      expect(screen.queryByTestId('filters-sheet-apply')).toBeNull();
+    });
 
-    expect(screen.getByText('Sin productos')).toBeTruthy();
-  });
+    it('AC11: error de primera página muestra ErrorState y retry refetchea', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { isError: true },
+      );
 
-  it('configura las queries con catalogKeys y no dispara productos en modo árbol', () => {
-    mockParams = { subcategory: 'playeras' };
-    setupQueries({ data: { data: CATEGORIES } }, { data: { data: [] } });
+      render(<CatalogTab />);
 
-    render(<CatalogTab />);
+      expect(screen.getByTestId('catalog-list-error')).toBeTruthy();
 
-    const keys = mockUseQuery.mock.calls.map(
-      (call) => (call[0] as { queryKey: readonly unknown[] }).queryKey,
-    );
-    expect(keys).toEqual([
-      catalogKeys.categories(DEFAULT_SEGMENT),
-      catalogKeys.products({ subcategory: ['playeras'] }),
-    ]);
+      fireEvent.press(screen.getByTestId('catalog-list-error-retry'));
+
+      expect(mockProductsRefetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('AC12: combinaciones de sort usan queryKeys distintas', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        { data: { pages: [makePage([makeProduct({ slug: 'camisa-x' })], 1, 1)] } },
+      );
+
+      render(<CatalogTab />);
+
+      const keys = mockUseInfiniteQuery.mock.calls.map(
+        (call) => (call[0] as { queryKey: readonly unknown[] }).queryKey,
+      );
+
+      expect(keys).toContainEqual(catalogKeys.products({ category: ['ropa'], sort: 'newest' }));
+
+      fireEvent.press(screen.getByTestId('sort-price_asc'));
+      const afterAsc = mockUseInfiniteQuery.mock.calls.at(-1)?.[0].queryKey;
+      expect(afterAsc).toEqual(catalogKeys.products({ category: ['ropa'], sort: 'price_asc' }));
+      expect(afterAsc).not.toEqual(keys[0]);
+
+      fireEvent.press(screen.getByTestId('sort-price_desc'));
+
+      const lastKey = mockUseInfiniteQuery.mock.calls.at(-1)?.[0].queryKey;
+      expect(lastKey).toEqual(catalogKeys.products({ category: ['ropa'], sort: 'price_desc' }));
+    });
+
+    it('primer loading de la lista muestra el skeleton', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries({ data: { data: CATEGORIES } }, { isLoading: true });
+
+      render(<CatalogTab />);
+
+      expect(screen.getByTestId('catalog-list-skeleton')).toBeTruthy();
+    });
+
+    it('isFetchingNextPage muestra el spinner de footer', () => {
+      mockParams = { category: 'ropa' };
+      setupQueries(
+        { data: { data: CATEGORIES } },
+        {
+          data: { pages: [makePage([makeProduct({ slug: 'p-1' })], 1, 3)] },
+          hasNextPage: true,
+          isFetchingNextPage: true,
+        },
+      );
+
+      render(<CatalogTab />);
+
+      expect(screen.getByTestId('catalog-list-loading-more')).toBeTruthy();
+    });
   });
 });
