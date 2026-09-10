@@ -1,0 +1,12 @@
+// 101tags brand palette — shared with src/theme/tokens.ts and tailwind.config.js
+:root {
+  --color-brand-primary: #E31E24;
+  --color-brand-primary-shade: #c81a20;
+  --color-brand-primary-tint: #e6353a;
+  --color-brand-dark: #0a0a0a;
+  --color-brand-medium: #F5F5F5;
+  --color-brand-success: #2dd36f;
+  --color-brand-warning: #ffc409;
+  --color-brand-danger: #eb445a;
+  --font-brand: 'Montserrat', system-ui, sans-serif;
+}

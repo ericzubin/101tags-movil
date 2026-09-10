@@ -1,0 +1,20 @@
+/**
+ * TanStack Query client.
+ * Singleton con defaults para mobile: retry 1, sin refetchOnWindowFocus, gcTime conservador.
+ */
+
+import { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});

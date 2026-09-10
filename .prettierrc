@@ -2,6 +2,11 @@
   "printWidth": 100,
   "singleQuote": true,
   "trailingComma": "all",
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "endOfLine": "lf",
   "arrowParens": "always",
-  "endOfLine": "lf"
+  "bracketSpacing": true,
+  "plugins": ["prettier-plugin-tailwindcss"]
 }

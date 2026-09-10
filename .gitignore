@@ -1,99 +1,110 @@
-# Specifies intentionally untracked files to ignore when using Git
-# http://git-scm.com/docs/gitignore
+# OSX
+#
+.DS_Store
 
-*~
-*.sw[mnpcod]
-.tmp
-*.tmp
-*.tmp.*
-UserInterfaceState.xcuserstate
-$RECYCLE.BIN/
+# XDE
+.tmp/
 
-*.log
-log.txt
+# VSCode
+.vscode/
+jsconfig.json
 
+# Xcode
+#
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+ios/.xcode.env.local
 
-/.sourcemaps
-/.versions
-/coverage
+# Android/IntelliJ
+#
+build/
+.idea
+.gradle
+local.properties
+*.iml
+*.hprof
+.cxx/
+*.keystore
+!debug.keystore
 
-# Ionic
-/.ionic
-/www
-/platforms
-/plugins
-
-# Compiled output
-/dist
-/tmp
-/out-tsc
-/bazel-out
-
-# Node
-/node_modules
+# node.js
+#
+node_modules/
 npm-debug.log
 yarn-error.log
 
-# IDEs and editors
-.idea/
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-project
-*.sublime-workspace
+# fastlane
+#
+# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
+# screenshots whenever they are needed.
+# For more information about the recommended setup visit:
+# https://docs.fastlane.tools/best-practices/source-control/
 
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-.history/*
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
 
+# Bundle artifact
+*.jsbundle
 
-# Miscellaneous
-/.angular
-/.angular/cache
-.sass-cache/
-/.nx
-/.nx/cache
-/connect.lock
+# Ruby / CocoaPods
+/ios/Pods/
+/vendor/bundle/
+
+# Temporary files created by Metro to check the health of the file watcher
+.metro-health-check*
+
+# testing
 /coverage
-/libpeerconnection.log
-testem.log
-/typings
 
-# System files
-.DS_Store
-Thumbs.db
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
-# Capacitor / Native builds (added by M0.4)
-ios/App/Pods/
-ios/App/build/
-ios/App/Pods.xcodeproj/
-android/.gradle/
-android/app/build/
+# Expo
+.expo/
+dist/
+web-build/
+
+# Expo OTA updates
+.expo-update-cache/
+
+# Native build artifacts (regenerados con `expo prebuild`)
+ios/
+android/
+ios/build/
+ios/Pods/
 android/build/
+android/app/build/
+android/.gradle/
 android/local.properties
-android/.idea/
-android/captures/
-android/app/release/
-.capacitor/
-*.keystore
-*.jks
-*.cer
-*.mobileprovision
 
-# Env (added by M0.4)
+# Local env files (NUNCA commitear secretos)
 .env
 .env.local
 .env.*.local
 
-# Build artifacts
-dist/
-*.tsbuildinfo
+# EAS
+eas-build-logs/
 
-# pnpm (added by M0.4)
-pnpm-debug.log
+# Generated
+*.tsbuildinfo

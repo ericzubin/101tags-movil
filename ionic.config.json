@@ -1,7 +1,0 @@
-{
-  "name": "101tags",
-  "integrations": {
-    "capacitor": {}
-  },
-  "type": "angular-standalone"
-}

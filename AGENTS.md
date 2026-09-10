@@ -56,8 +56,9 @@ Si dos documentos se contradicen, **detener implementación**, registrar la disc
 ## Dependencias y versiones
 
 - No agregar ni actualizar dependencias sin justificación técnica clara documentada en la spec.
-- Stack objetivo original: Ionic 7, Angular 17, Capacitor 6, Tailwind, pnpm.
-- Antes del scaffold, la spec F0 debe validar compatibilidad de esas versiones con requisitos vigentes de Android/iOS.
+- Stack objetivo **actual** (post-pivote Sept 2026): **React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind 4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS**.
+- El stack objetivo **original** (pre-pivote) era Ionic 7 + Angular 17 + Capacitor 6 + Tailwind + pnpm. Fue sustituido en M0.2-PIVOT / M0.3-PIVOT por decisión explícita del usuario. Ver `DISCOVERY.md §PIVOTE`.
+- Antes del scaffold, la spec F0 debe validar compatibilidad vigente con requisitos de Android/iOS (Play Store targetSdk ≥ 35, App Store iOS ≥ 15) y de Expo/RN ecosystem.
 - Si hace falta una versión distinta, documentar impacto y obtener aprobación antes del cambio.
 - No mezclar npm/yarn/pnpm ni generar múltiples lockfiles.
 
@@ -90,10 +91,10 @@ Nunca:
 
 ### Token Sanctum
 
-- **No usar `@capacitor/preferences` como si fuera almacenamiento cifrado del bearer token.** Preferences es apropiado para datos ligeros/no sensibles.
-- Antes de implementar Auth, la spec debe seleccionar una solución de secure storage respaldada por **Keychain en iOS / Keystore o equivalente seguro en Android**.
-- La dependencia elegida debe quedar justificada y aprobada conforme a las reglas del proyecto.
-- El logout debe borrar credenciales persistidas.
+- **No usar `@react-native-async-storage/async-storage` ni `localStorage` ni `expo-file-system` como almacenamiento cifrado del bearer token.** AsyncStorage es almacenamiento plano sin cifrado.
+- La solución obligatoria es **`expo-secure-store`** (built-in Expo SDK 57): Keychain en iOS, Android Keystore AES-GCM en Android.
+- Antes de implementar Auth, la spec debe confirmar el wrapper sobre `expo-secure-store` con fallback explícito para web (donde `isAvailableAsync()` retorna `false`).
+- El logout debe borrar credenciales persistidas (`SecureStore.deleteItemAsync('auth.token')` + `SecureStore.deleteItemAsync('auth.user')`).
 
 ### Builds nativos
 
@@ -121,13 +122,19 @@ Los escenarios BDD de la spec son la fuente del set mínimo de tests de la tarea
 
 ## Stack funcional esperado
 
-- Ionic + Angular standalone components, signals e `inject()`.
-- Capacitor para iOS + Android.
-- Tailwind CSS.
-- Sanctum bearer tokens contra la API Laravel.
+- **React Native 0.86** + **Expo SDK 57** (Sept 2026) + Expo Router 6 (file-based).
+- **TypeScript 5.7.x** (TS 6 NO soportado por RN 0.86 todavía).
+- **Hermes + New Architecture** habilitados por default.
+- **Nativewind v4** + Tailwind 3.4 para styling (Nativewind v5/Tailwind 4 aún pre-release).
+- **Zustand 5** para estado local + **TanStack Query v5** para data fetching.
+- **expo-secure-store 15** para tokens (built-in; Keychain/Keystore).
+- **EAS Build 16** para builds cloud iOS/Android.
+- Sanctum bearer tokens contra la API Laravel (`Authorization: Bearer …`).
 - Idioma: `es-MX`.
 - Branding: rojo `#E31E24`, negro `#0a0a0a`, gris `#F5F5F5`, fuente Montserrat.
-- Versiones exactas: se congelan en F0 después de validación, no por suposición.
+- App ID: `mx.com.tags.movil` (iOS bundleIdentifier + Android package).
+- Versiones exactas: congeladas en M0.3-PIVOT (ver `.spec/2026-09-09-m0-3-validar-versiones.md`).
+- Antes del M0.4 se ejecutó el pivote desde Ionic+Angular+Cap (M0.1-M0.4-Ionic) a este stack. Historial en git; ver `DISCOVERY.md §PIVOTE`.
 
 ---
 

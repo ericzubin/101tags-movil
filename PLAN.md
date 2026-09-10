@@ -92,18 +92,23 @@ El MVP está centrado en el segmento **Básicos** e incluye:
 
 ## 3. Stack objetivo y gate de versiones
 
-Intención original:
+**PIVOTE Sept 2026**: stack lockeado en `.spec/2026-09-09-m0-3-validar-versiones.md` (RN+Expo 57).
 
-- Ionic 7.
-- Angular 17 standalone components.
-- Capacitor 6.
-- TypeScript.
-- Tailwind CSS.
-- pnpm.
-- Angular signals + `inject()`.
-- `HttpClient` con interceptor Bearer.
+- **React Native 0.86.3** + **Expo SDK 57.0.21**.
+- **React 19.2.3**.
+- **TypeScript 5.9.3** (TS 6 también soporta RN 0.86; opted 5.9.x por estabilidad).
+- **expo-router 6** (file-based routing).
+- **expo-secure-store 15** (built-in; Keychain iOS + Android Keystore AES-GCM).
+- **Nativewind 4** + Tailwind 3.4 (Nativewind v5/Tailwind 4 pre-release).
+- **Zustand 5** + **TanStack Query 5**.
+- **Jest 29 + jest-expo** (Vitest experimental con expo-router).
+- **ESLint 9 + eslint-config-expo** (FlatCompat).
+- **pnpm 10**, Node 24 LTS.
+- **EAS Build cloud** (sin Xcode/Android SDK local).
 
-**Estas versiones todavía no están congeladas.** La tarea `M0.3` debe validar compatibilidad con Node, Android SDK/Gradle, Xcode/iOS y requisitos vigentes de las tiendas antes de ejecutar el scaffold. Cualquier cambio de versión se justifica en `.spec/00-ionic-scaffold.md` y requiere aprobación.
+Versiones se validaron en M0.3-PIVOT contra requisitos Sept 2026 (Play Store targetSdk 36, App Store iOS 15+).
+
+**Historia** (preservada en git): stack original era Ionic 7 + Angular 17 + Capacitor 6 → actualizado por M0.3 a Ionic 9 + Angular 22 + Cap 8 (ENMIENDA MAYOR) → pivoteado a RN+Expo 57 en M0.4-PIVOT por decisión del usuario.
 
 ---
 
@@ -111,19 +116,21 @@ Intención original:
 
 ### Bearer token
 
-La definición anterior que asumía `Capacitor Preferences` con una opción `secure: true` se corrige:
+Decisión tras pivote a RN+Expo SDK 57:
 
-- `@capacitor/preferences` se considera almacenamiento para datos ligeros/no sensibles.
-- El token Sanctum debe persistirse mediante una solución respaldada por **Keychain en iOS y Keystore/equivalente seguro en Android**.
-- La dependencia concreta se selecciona en la spec de Auth, con justificación y aprobación.
+- `expo-secure-store` (built-in Expo) es la solución obligatoria. iOS = Keychain (`kSecClassGenericPassword`); Android = AES-256-GCM via Android Keystore + SharedPreferences. Web/jsdom = `isAvailableAsync()===false` → wrapper retorna `null` + warning.
+- `AsyncStorage` queda SOLO para datos no sensibles (carrito local, preferencias UI).
+- El token Sanctum NUNCA se guarda en AsyncStorage, localStorage, ni en texto plano.
 - El token nunca se loggea.
-- Logout elimina credenciales locales.
+- Logout elimina credenciales locales vía `secureClearAuth()` (borra token + user en storage cifrado).
+- Justificación documentada en `DISCOVERY.md §5`.
 
 ### Otras reglas
 
 - Producción usa HTTPS.
-- No almacenar datos de tarjeta.
+- No almacenar datos de tarjeta (OpenPay M3.6).
 - No commitear keystores, certificados, provisioning profiles ni `.env` con secretos.
+- `ios/` y `android/` regenerados con `expo prebuild` — NO commitear (igual que el approach de Capacitor).
 - El cliente puede validar UX, pero autorización/ownership siguen siendo autoridad del backend.
 - Errores 401/403/404/409/422/429/5xx deben distinguirse cuando el contrato lo permita.
 - Dependencias nuevas sólo con justificación en spec.
@@ -132,61 +139,66 @@ La definición anterior que asumía `Capacitor Preferences` con una opción `sec
 
 ## 5. Branding y UX base
 
-- Idioma: `es-MX`.
+- Idioma: `es-MX` hardcoded.
 - Primary: `#E31E24`.
 - Dark: `#0a0a0a`.
 - Gray surface: `#F5F5F5`.
 - Fuente: Montserrat.
+- Extras (alineados con palette Ionic/Nativewind): success `#2dd36f`, warning `#ffc409`, danger `#eb445a`.
 - Modo oscuro: alineado con comportamiento acordado del storefront / `prefers-color-scheme` si la spec lo confirma.
 - Loading, empty, offline y error states son parte del comportamiento, no trabajo opcional al final.
 - Controles críticos deben tener labels, foco usable, contraste y target táctil razonable.
+- Branding tokens centralizados en `src/theme/tokens.ts` (TS) + `tailwind.config.js` (Nativewind utilities).
 
 ---
 
 ## 6. Arquitectura objetivo
 
-La estructura definitiva se congela durante F0; el objetivo es mantener separación clara entre infraestructura, servicios, shared UI y páginas:
+La estructura definitiva se congela durante F0 (M0.4-PIVOT); el objetivo es mantener separación clara entre infraestructura, servicios, shared UI y rutas:
 
 ```text
+app/                                  ← expo-router file-based
+├── _layout.tsx                       (root Stack + Providers + hydration)
+├── index.tsx                         (redirect según auth)
+├── (tabs)/                           (Bottom tabs)
+│   ├── _layout.tsx
+│   ├── index.tsx                     (home)
+│   ├── catalog.tsx                   (F2)
+│   ├── cart.tsx                      (F3)
+│   └── account.tsx                   (F6)
+└── (auth)/                           (Auth group)
+    ├── _layout.tsx
+    ├── login.tsx                     (M1.3)
+    ├── register.tsx                  (M1.3)
+    └── forgot-password.tsx           (M1.4)
+
 src/
-├── app/
-│   ├── app.component.ts
-│   ├── app.config.ts
-│   ├── app.routes.ts
-│   ├── core/
-│   │   ├── guards/
-│   │   ├── interceptors/
-│   │   ├── models/
-│   │   └── services/
-│   ├── shared/
-│   │   ├── components/
-│   │   ├── directives/
-│   │   └── pipes/
-│   └── pages/
-│       ├── auth/
-│       ├── home/
-│       ├── catalog/
-│       ├── cart/
-│       ├── checkout/
-│       ├── account/
-│       ├── order-chat/
-│       └── static/
-├── environments/
-└── theme/
-ios/
-android/
+├── core/
+│   ├── api/                          (HTTP client wrapper — F1)
+│   ├── models/                       (TS interfaces — Auth en M1.1; resto F2+)
+│   ├── services/                     (auth, storage, etc.)
+│   ├── storage/                      (expo-secure-store wrapper — M1.1)
+│   └── query/                        (TanStack QueryClient)
+├── stores/                           (Zustand: auth, cart)
+├── theme/                            (tokens 101tags + tests)
+├── constants/                        (env config + tests)
+└── components/                       (UI shared)
+
+ios/                                  (regenerable con `expo prebuild`)
+android/                              (regenerable con `expo prebuild`)
 ```
 
-### Servicios previstos
+### Servicios / Stores previstos
 
-- `api.service` o wrapper equivalente.
-- `auth.service`.
-- `catalog.service`.
-- `cart.service`.
-- `checkout.service`.
-- `orders.service`.
-- `returns.service`.
-- `coupons.service`.
+- `auth-store` (Zustand) + `AuthService` (login/register/me/logout/refresh).
+- `cart-store` (Zustand) + `CartService` (sync con backend).
+- `catalog-service` (TanStack Query).
+- `checkout-service`.
+- `orders-service`.
+- `chat-service` (polling).
+- `notifications-service`.
+- `secure-store` wrapper sobre `expo-secure-store`.
+- `api-client` (fetch wrapper con bearer + timeout + 401 handling).
 - `notifications.service`.
 - `messages.service`.
 - storage no sensible + secure credential storage claramente separados.
