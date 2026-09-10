@@ -1,7 +1,7 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 cerrado + F1 entero cerrado + P0 parchado ✅ + **F2 COMPLETO E INTEGRADO en `developer`** (95c8f24, PR #73). M2.0-setup (PR #70) + M2.1-home (PR #71) + M2.4-detail (PR #72) + M2.2-categories (PR #74) + M2.3-list (PR #75) + M2.5-ux (PR #76). Issues #12, #13, #14, #15, #16 cerradas. Próximo: arrancar **F3 (#17)**; el merge **`developer` → `main` (PR #67) lo hará el usuario**. Housekeeping: issues stale F1 #7/#8/#9 cerradas.
+IN PROGRESS — F0 cerrado + F1 entero cerrado + P0 parchado ✅ + **F2 COMPLETO E INTEGRADO en `developer`** (95c8f24, PR #73) + **F3 IMPLEMENTADO (M3.1–M3.5) en PR abierto #78, sin merge**. M2.0-setup (PR #70) + M2.1-home (PR #71) + M2.4-detail (PR #72) + M2.2-categories (PR #74) + M2.3-list (PR #75) + M2.5-ux (PR #76). Issues #12, #13, #14, #15, #16 cerradas. Próximo: **F4 (post-compra)**, sobre `feat/f3` (stacked). El merge **`developer` → `main` (PR #67) lo hará el usuario**. Housekeeping: issues stale F1 #7/#8/#9 cerradas.
 
 ## Adoption status
 **App funcional con auth wired**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerables con `expo prebuild`. Compilación nativa cloud via EAS Build.
@@ -228,3 +228,4 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 > Política vigente: el agente **no mergea a `developer`** ni cierra issues; deja PRs abiertos y el usuario los revisa/mergea después.
 
 - `fix/m2-review-p1` → PR **abierto** contra `developer`. Cierra 4 hallazgos P1 de revisión: test de paginator en `httpClient`, precio efectivo `variant.price`, selector con combinaciones disjuntas (Opción B: chips cruzados accionables + auto-limpieza del eje contrario), y `expo-image ~57.0.4`. Spec `.spec/2026-09-11-m2-review-p1-fixes.md`.
+- `feat/f3` → PR **abierto** (#78) contra `fix/m2-review-p1` (stacked). Implementa **F3 M3.1–M3.5** (#17 cart + badge, #18 checkout config/dirección, #19 request-orders con idempotencia + guest, #20 OXXO/SPEI, #21 comprobante). Deps aprobadas: `expo-document-picker`, `expo-clipboard`. **#22 OpenPay excluido** (pendiente). Specs `.spec/2026-09-11-m3-*.md`. **No merge.**
