@@ -3,6 +3,7 @@ import {
   AuthError,
   type AuthSession,
   type CustomerUser,
+  type ForgotPasswordResponse,
   type LoginRequest,
   type RegisterRequest,
 } from '@/core/models/auth';
@@ -14,6 +15,7 @@ const ENDPOINTS = {
   register: '/auth/customer/register',
   logout: '/auth/customer/logout',
   me: '/auth/customer/me',
+  forgotPassword: '/auth/customer/forgot-password',
 } as const;
 
 class AuthService {
@@ -54,6 +56,10 @@ class AuthService {
   async me(): Promise<CustomerUser> {
     const response = await httpClient.get<{ user: CustomerUser }>(ENDPOINTS.me);
     return response.user;
+  }
+
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    return this.post<ForgotPasswordResponse>(ENDPOINTS.forgotPassword, { email });
   }
 
   /**

@@ -20,6 +20,14 @@ export type RegisterRequest = {
   phone?: string;
 };
 
+export type ForgotPasswordRequest = {
+  email: string;
+};
+
+export type ForgotPasswordResponse = {
+  message: string;
+};
+
 export type AuthSession = {
   accessToken: string;
   user: CustomerUser;
