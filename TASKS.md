@@ -228,12 +228,13 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M3.1 — Cart service, sync API y badge
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** F2
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — ver `.spec/2026-09-11-m3-1-cart.md`
 
 **Aceptación**
-- [ ] Signal de carrito refleja GET/PUT/DELETE reales.
-- [ ] Actualización optimista, si existe, revierte correctamente en error.
-- [ ] Badge se actualiza sin recargar tabs.
-- [ ] Cantidad inválida/stock insuficiente se maneja sin corrupción de estado.
+- [x] Signal de carrito refleja GET/PUT/DELETE reales.
+- [x] Actualización optimista, si existe, revierte correctamente en error.
+- [x] Badge se actualiza sin recargar tabs.
+- [x] Cantidad inválida/stock insuficiente se maneja sin corrupción de estado.
 
 ## M3.2 — Checkout config, dirección y envío
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.1
