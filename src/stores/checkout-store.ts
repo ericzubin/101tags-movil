@@ -66,8 +66,11 @@ export function paymentProofAssetError(asset: PaymentProofAsset): string | null 
     extension,
   );
 
-  if (!mimeAllowed && !extensionAllowed) return PAYMENT_PROOF_TYPE_ERROR;
-  return null;
+  // A present-but-invalid MIME must win over a coincidentally valid extension
+  // (`nota.pdf` + `text/plain`); the extension is only a fallback when the
+  // picker omits the MIME entirely (backend remains the authority).
+  if (mime) return mimeAllowed ? null : PAYMENT_PROOF_TYPE_ERROR;
+  return extensionAllowed ? null : PAYMENT_PROOF_TYPE_ERROR;
 }
 
 /** Customer data captured on the review screen (prefilled for auth, editable for guest). */
@@ -123,13 +126,30 @@ export interface CheckoutState {
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{8,100}$/;
 
 /**
- * Local, dependency-free key generator. Matches the backend regex
- * `^[A-Za-z0-9._:-]{8,100}$` (e.g. `ck_<epoch>_<rand36>`).
+ * RFC 4122 v4 UUID. Prefers the platform `crypto.randomUUID()` and falls back
+ * to a `Math.random` v4 when the runtime has no WebCrypto (Hermes). The
+ * idempotency key is not a secret, so the fallback is acceptable; the backend
+ * only requires a stable, unique, regex-compatible value (#19).
+ */
+function uuidV4(): string {
+  const webCrypto = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (webCrypto && typeof webCrypto.randomUUID === 'function') {
+    return webCrypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = (Math.random() * 16) | 0;
+    const value = char === 'x' ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+/**
+ * Stable UUID for `Idempotency-Key` (#19). The backend regex
+ * `^[A-Za-z0-9._:-]{8,100}$` accepts a v4 UUID as-is.
  */
 export function generateIdempotencyKey(): string {
-  const random = Math.random().toString(36).slice(2, 12);
-  const key = `ck_${Date.now()}_${random}`;
-  return IDEMPOTENCY_KEY_PATTERN.test(key) ? key : `ck_${Date.now()}_fallback`;
+  const key = uuidV4();
+  return IDEMPOTENCY_KEY_PATTERN.test(key) ? key : uuidV4();
 }
 
 /**

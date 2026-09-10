@@ -1,4 +1,3 @@
-import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -6,9 +5,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import {
+  pickDocument,
+  pickImageFromCamera,
+  pickImageFromLibrary,
+} from '@/core/utils/media-picker';
 import { useCheckoutStore } from '@/stores/checkout-store';
 
 import type { PaymentProofAsset } from '@/core/models/checkout.model';
+import type { PickedFile } from '@/core/utils/media-picker';
 
 function formatSize(bytes: number | null | undefined): string | null {
   if (typeof bytes !== 'number' || Number.isNaN(bytes)) return null;
@@ -30,22 +35,15 @@ export default function PaymentProofScreen() {
   const orderNumber = params.orderNumber ?? storeOrderNumber ?? null;
   const email = params.email ?? storeEmail ?? null;
 
-  const pick = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ['image/*', 'application/pdf'],
-      copyToCacheDirectory: true,
-    });
-    // AC5 — cancel is a no-op: keep the previous selection untouched.
-    if (result.canceled || !result.assets?.length) return;
-
-    const picked = result.assets[0];
-    setAsset({
-      uri: picked.uri,
-      name: picked.name,
-      type: picked.mimeType ?? null,
-      size: picked.size ?? null,
-    });
+  const applyPicked = (picked: PickedFile | null) => {
+    // Cancel / denied permission is a no-op: keep the previous selection (AC5).
+    if (!picked) return;
+    setAsset({ uri: picked.uri, name: picked.name, type: picked.type, size: picked.size });
   };
+
+  const takePhoto = async () => applyPicked(await pickImageFromCamera());
+  const chooseFromGallery = async () => applyPicked(await pickImageFromLibrary());
+  const pickFile = async () => applyPicked(await pickDocument());
 
   const submit = () => {
     if (!asset || !orderNumber || !email) return;
@@ -114,10 +112,24 @@ export default function PaymentProofScreen() {
           </Text>
 
           <Button
-            testID="payment-proof-pick"
-            label="Seleccionar archivo"
+            testID="payment-proof-camera"
+            label="Tomar foto"
             variant="secondary"
-            onPress={() => void pick()}
+            onPress={() => void takePhoto()}
+          />
+          <Button
+            testID="payment-proof-gallery"
+            label="Elegir de galería"
+            variant="secondary"
+            className="mt-brand-2"
+            onPress={() => void chooseFromGallery()}
+          />
+          <Button
+            testID="payment-proof-pick"
+            label="Elegir archivo (PDF)"
+            variant="secondary"
+            className="mt-brand-2"
+            onPress={() => void pickFile()}
           />
 
           {asset ? (

@@ -12,7 +12,7 @@ import type {
 } from '@/core/models/checkout.model';
 import { checkoutService } from '@/core/services/checkout-service';
 import { useCartStore } from '@/stores/cart-store';
-import { useCheckoutStore } from '@/stores/checkout-store';
+import { paymentProofAssetError, useCheckoutStore } from '@/stores/checkout-store';
 
 jest.mock('@/core/services/checkout-service', () => ({
   checkoutService: {
@@ -319,6 +319,7 @@ describe('checkout-store', () => {
       expect(mockedCheckoutService.requestOrders).toHaveBeenCalledTimes(1);
       const [payload, key] = mockedCheckoutService.requestOrders.mock.calls[0];
       expect(key).toMatch(/^[A-Za-z0-9._:-]{8,100}$/);
+      expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
       expect(payload.segment).toBe('basicos');
       expect(payload.items).toEqual([{ variant_id: 5, quantity: 2 }]);
       expect(payload.customer_name).toBe('Ada Lovelace');
@@ -801,3 +802,43 @@ describe('checkout-store', () => {
     });
   });
 });
+
+describe('paymentProofAssetError — validación MIME/extensión (#21)', () => {
+  it('acepta cuando el MIME es permitido', () => {
+    expect(
+      paymentProofAssetError({ uri: 'file:///a', name: 'a.bin', type: 'image/jpeg', size: 1 }),
+    ).toBeNull();
+  });
+
+  it('rechaza cuando el MIME está presente pero no permitido, aunque la extensión lo parezca', () => {
+    expect(
+      paymentProofAssetError({
+        uri: 'file:///a',
+        name: 'nota.pdf',
+        type: 'text/plain',
+        size: 1,
+      }),
+    ).toBe('Solo aceptamos imágenes JPG, PNG, WEBP o PDF.');
+  });
+
+  it('cae a la extensión solo cuando el picker omite el MIME', () => {
+    expect(
+      paymentProofAssetError({ uri: 'file:///a', name: 'nota.pdf', type: null, size: 1 }),
+    ).toBeNull();
+    expect(
+      paymentProofAssetError({ uri: 'file:///a', name: 'nota.exe', type: null, size: 1 }),
+    ).toBe('Solo aceptamos imágenes JPG, PNG, WEBP o PDF.');
+  });
+
+  it('rechaza archivos mayores a 8 MB', () => {
+    expect(
+      paymentProofAssetError({
+        uri: 'file:///a',
+        name: 'a.jpg',
+        type: 'image/jpeg',
+        size: 8 * 1024 * 1024 + 1,
+      }),
+    ).toBe('El archivo supera el máximo de 8 MB.');
+  });
+});
+
