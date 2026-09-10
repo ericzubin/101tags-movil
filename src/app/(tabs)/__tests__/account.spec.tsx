@@ -8,11 +8,19 @@ const mockClearSession = jest.fn().mockResolvedValue(undefined);
 const mockReplaceRouter = jest.fn();
 const mockPushRouter = jest.fn();
 const mockBackRouter = jest.fn();
+const mockFetchNotifications = jest.fn().mockResolvedValue(undefined);
+let mockUnreadCount = 0;
 
 jest.mock('@/core/services/auth-service', () => ({
   authService: {
     logout: () => mockLogout(),
   },
+}));
+
+jest.mock('@/stores/notification-store', () => ({
+  useNotificationStore: (
+    selector: (s: { unreadCount: number; fetchNotifications: jest.Mock }) => unknown,
+  ) => selector({ unreadCount: mockUnreadCount, fetchNotifications: mockFetchNotifications }),
 }));
 
 jest.mock('@/stores/auth-store', () => ({
@@ -47,6 +55,7 @@ describe('AccountTab — placeholder + logout (M1.10 AC6, AC7)', () => {
     mockReplaceRouter.mockReset();
     mockLogout.mockResolvedValue({ message: 'Logged out' });
     mockClearSession.mockResolvedValue(undefined);
+    mockUnreadCount = 0;
   });
 
   it('AC6: renders "Mi cuenta" title and user name when session present', () => {
@@ -103,5 +112,27 @@ describe('AccountTab — placeholder + logout (M1.10 AC6, AC7)', () => {
     fireEvent.press(screen.getByTestId('account-chat'));
 
     expect(mockPushRouter).toHaveBeenCalledWith('/chat');
+  });
+
+  it('M5.3: muestra "Notificaciones", navega a /notifications y dispara fetch', () => {
+    render(<AccountTab />);
+
+    expect(screen.getByText('Notificaciones')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('account-notifications'));
+
+    expect(mockPushRouter).toHaveBeenCalledWith('/notifications');
+    expect(mockFetchNotifications).toHaveBeenCalledTimes(1);
+  });
+
+  it('M5.3: muestra badge con unreadCount > 0 y lo oculta en 0', () => {
+    mockUnreadCount = 2;
+    const { rerender } = render(<AccountTab />);
+    expect(screen.getByTestId('account-notifications-badge')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
+
+    mockUnreadCount = 0;
+    rerender(<AccountTab />);
+    expect(screen.queryByTestId('account-notifications-badge')).toBeNull();
   });
 });

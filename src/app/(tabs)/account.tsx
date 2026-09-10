@@ -1,17 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { authService } from '@/core/services/auth-service';
 import { useAuthStore } from '@/stores/auth-store';
+import { useNotificationStore } from '@/stores/notification-store';
 import { brandColors } from '@/theme/tokens';
 
 export default function AccountTab() {
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    void fetchNotifications();
+  }, [fetchNotifications]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -74,6 +81,29 @@ export default function AccountTab() {
             <Text className="font-brand-bold text-base text-brand-dark ml-brand-3">Mensajes</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/notifications')}
+          className="flex-row items-center justify-between rounded-brand-lg bg-brand-white p-brand-4 mb-brand-4 active:opacity-80"
+          testID="account-notifications"
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="notifications-outline" size={20} color={brandColors.dark} />
+            <Text className="font-brand-bold text-base text-brand-dark ml-brand-3">
+              Notificaciones
+            </Text>
+          </View>
+          <View className="flex-row items-center">
+            {unreadCount > 0 ? (
+              <View
+                testID="account-notifications-badge"
+                className="bg-brand-primary rounded-full min-w-6 h-6 px-brand-2 items-center justify-center mr-brand-2"
+              >
+                <Text className="font-brand-bold text-xs text-white">{unreadCount}</Text>
+              </View>
+            ) : null}
+            <Ionicons name="chevron-forward" size={18} color={brandColors.dark} />
+          </View>
         </Pressable>
         <Pressable
           onPress={handleLogout}

@@ -192,4 +192,8 @@ describe('RootLayout — rutas registradas (M3.4 / M3.5)', () => {
   it('M5.1: registra chat/[orderNumber] en el root stack', () => {
     expect(layoutSource).toContain('name="chat/[orderNumber]"');
   });
+
+  it('M5.3: registra notifications en el root stack', () => {
+    expect(layoutSource).toContain('name="notifications"');
+  });
 });

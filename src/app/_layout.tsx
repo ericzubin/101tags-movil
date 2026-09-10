@@ -120,6 +120,7 @@ export default function RootLayout() {
             <Stack.Screen name="returns/index" options={{ title: 'Mis devoluciones' }} />
             <Stack.Screen name="chat/index" options={{ title: 'Mensajes' }} />
             <Stack.Screen name="chat/[orderNumber]" options={{ title: 'Conversación' }} />
+            <Stack.Screen name="notifications" options={{ title: 'Notificaciones' }} />
           </Stack>
         </View>
       </QueryClientProvider>
