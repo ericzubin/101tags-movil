@@ -192,14 +192,14 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 - [x] Estados vacíos/no encontrados están cubiertos.
 
 ## M2.3 — Product list, paginación y FilterSheet
-**Status:** 🚧 IN PROGRESS (Wave 2; issue #14) — ver `.spec/2026-09-11-m2-3-list.md`
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M2.2
+**Status:** ✅ DONE (PR #75; issue #14) — ver `.spec/2026-09-11-m2-3-list.md`
 
 **Aceptación**
-- [ ] Lista paginada no duplica productos.
-- [ ] Filtros se serializan igual que el storefront/API.
-- [ ] Modal móvil permite aplicar/limpiar/cancelar.
-- [ ] Se evita disparar requests obsoletos al cambiar filtros rápidamente.
+- [x] Lista paginada no duplica productos.
+- [x] Filtros se serializan igual que el storefront/API.
+- [x] Modal móvil permite aplicar/limpiar/cancelar.
+- [x] Se evita disparar requests obsoletos al cambiar filtros rápidamente.
 
 ## M2.4 — Product detail, galería, variantes y stock
 **Prioridad:** 🔥 Alta · **Estimación:** 6 h · **Dependencias:** M2.3
