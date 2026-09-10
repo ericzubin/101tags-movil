@@ -1,8 +1,9 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, router } from 'expo-router';
+import { loadAsync as loadFontsAsync } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -18,6 +19,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +41,19 @@ export default function RootLayout() {
         await authService.handleUnauthorized();
         router.replace('/(auth)/login');
       });
+      // M1.8 AC4 — bundle Montserrat Regular+Bold so brand font is real
+      // on device, not system-ui fallback. Failures must NOT block the
+      // app: we log and continue so the UI keeps working with fallback.
+      try {
+        await loadFontsAsync({
+          'Montserrat-Regular': require('../../assets/fonts/Montserrat-Regular.ttf'),
+          'Montserrat-Bold': require('../../assets/fonts/Montserrat-Bold.ttf'),
+        });
+      } catch (err) {
+        if (__DEV__) console.warn('[font] loadAsync failed', err);
+      }
       if (cancelled) return;
+      setFontsLoaded(true);
       await useAuthStore.getState().hydrate();
     })();
     return () => {
@@ -51,7 +65,7 @@ export default function RootLayout() {
     if (isHydrated) SplashScreen.hideAsync().catch(() => undefined);
   }, [isHydrated]);
 
-  if (!isHydrated) {
+  if (!isHydrated || !fontsLoaded) {
     return (
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
@@ -76,18 +90,20 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: brandColors.primary },
-            headerTintColor: brandColors.white,
-            headerTitleStyle: { fontWeight: '700' },
-            contentStyle: { backgroundColor: brandColors.medium },
-          }}
-        >
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        </Stack>
+        <View testID="root-stack" style={{ flex: 1 }}>
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: brandColors.primary },
+              headerTintColor: brandColors.white,
+              headerTitleStyle: { fontWeight: '700' },
+              contentStyle: { backgroundColor: brandColors.medium },
+            }}
+          >
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          </Stack>
+        </View>
       </QueryClientProvider>
     </SafeAreaProvider>
   );
