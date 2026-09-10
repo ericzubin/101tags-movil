@@ -12,6 +12,12 @@
  * - Success:                 #2dd36f
  * - Warning:                 #ffc409
  * - Danger:                  #eb445a
+ *
+ * Esta capa es la **fuente de verdad** de tokens. `tailwind.config.js` los
+ * espeja (con tests de sincronía en `src/theme/__tests__/nativewind-tokens.spec.ts`),
+ * y `src/global.css` los publica como CSS custom props en tripletas RGB.
+ *
+ * @see .spec/2026-09-09-m0-5-pivot-theme-nativewind-env.md
  */
 
 export const brandColors = {
@@ -41,6 +47,33 @@ export const fontFamily = [
   brandFonts.fallback,
 ].join(', ');
 
+export const fontWeights = {
+  regular: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+  black: '800',
+} as const;
+
+export type FontWeightToken = keyof typeof fontWeights;
+
+export const radii = {
+  sm: 4,
+  md: 8,
+  lg: 12,
+  pill: 999,
+} as const;
+
+export type RadiusToken = keyof typeof radii;
+
+/**
+ * Escala de spacing 101tags.
+ *
+ * - Aliases legacy (`xs/sm/md/lg/xl/xxl`) se conservan para no romper
+ *   componentes que ya los usan.
+ * - `brand-1..brand-8` es la escala numérica explícita que se espeja en
+ *   `tailwind.config.js` para utilidades como `p-brand-4` / `mt-brand-6`.
+ */
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -48,4 +81,14 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
+  'brand-1': 4,
+  'brand-2': 8,
+  'brand-3': 12,
+  'brand-4': 16,
+  'brand-5': 20,
+  'brand-6': 24,
+  'brand-7': 32,
+  'brand-8': 48,
 } as const;
+
+export type SpacingToken = keyof typeof spacing;

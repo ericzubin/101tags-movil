@@ -5,7 +5,7 @@
  * NO loggear tokens, passwords, ni datos sensibles. Ver AGENTS.md §Seguridad.
  */
 
-import { environment } from '@/constants/env';
+import { getApiBaseUrl, getApiTimeoutMs } from '@/constants/env';
 import type { AuthTokenProvider } from '@/stores/auth-store';
 
 export class HttpError extends Error {
@@ -41,7 +41,7 @@ export function createHttpClient(getToken: AuthTokenProvider): HttpClient {
   async function request<T>(path: string, options: HttpRequestOptions = {}): Promise<T> {
     const { method = 'GET', body, query, headers = {}, signal } = options;
     const token = getToken();
-    const url = new URL(path.startsWith('http') ? path : `${environment.apiBaseUrl}${path}`);
+    const url = new URL(path.startsWith('http') ? path : `${getApiBaseUrl()}${path}`);
 
     if (query) {
       for (const [k, v] of Object.entries(query)) {
@@ -51,7 +51,7 @@ export function createHttpClient(getToken: AuthTokenProvider): HttpClient {
 
     const controller = signal ? null : new AbortController();
     const timeoutId = controller
-      ? setTimeout(() => controller.abort(), environment.apiTimeoutMs)
+      ? setTimeout(() => controller.abort(), getApiTimeoutMs())
       : null;
 
     const finalHeaders: Record<string, string> = {

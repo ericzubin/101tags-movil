@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * 101tags brand tokens (RGB triplets).
+ *
+ * Las tripletas (R G B sin comas) permiten que Tailwind aplique
+ * utilities de opacity como `bg-brand-primary/50` sin perder la
+ * coherencia con `tokens.ts`.
+ *
+ * Sincronía con `src/theme/tokens.ts brandColors` validada por
+ * `src/theme/__tests__/nativewind-tokens.spec.ts`.
+ */
+@layer base {
+  :root {
+    --color-brand-primary: 227 30 36;
+    --color-brand-primary-shade: 200 26 32;
+    --color-brand-primary-tint: 230 53 58;
+    --color-brand-dark: 10 10 10;
+    --color-brand-medium: 245 245 245;
+    --color-brand-success: 45 211 111;
+    --color-brand-warning: 255 196 9;
+    --color-brand-danger: 235 68 90;
+    --color-brand-white: 255 255 255;
+    --color-brand-black: 0 0 0;
+    --font-brand: Montserrat, system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-brand-medium text-brand-dark font-brand;
+  }
+}
