@@ -175,21 +175,24 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M2.1 — Home: hero, banners, categorías y destacados
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** F1 navegación
+**Status:** ✅ DONE (PR #71; issue #12) — ver `.spec/2026-09-11-m2-1-home.md`
 
 **Aceptación**
-- [ ] Home consume contenido existente para segmento `basicos`.
-- [ ] Skeleton/loading/error/empty state definidos.
-- [ ] Banners y cards navegan al destino correcto.
+- [x] Home consume contenido existente para segmento `basicos`.
+- [x] Skeleton/loading/error/empty state definidos.
+- [x] Banners y cards navegan al destino correcto.
 
 ## M2.2 — Árbol de categorías
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M2.1
+**Status:** ✅ DONE (PR #74; issue #13) — ver `.spec/2026-09-11-m2-2-categories.md`
 
 **Aceptación**
-- [ ] Categorías padre/hijo respetan `segment=basicos`.
-- [ ] Navegación conserva contexto y filtros aplicables.
-- [ ] Estados vacíos/no encontrados están cubiertos.
+- [x] Categorías padre/hijo respetan `segment=basicos`.
+- [x] Navegación conserva contexto y filtros aplicables.
+- [x] Estados vacíos/no encontrados están cubiertos.
 
 ## M2.3 — Product list, paginación y FilterSheet
+**Status:** 🚧 IN PROGRESS (Wave 2; issue #14) — ver `.spec/2026-09-11-m2-3-list.md`
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M2.2
 
 **Aceptación**
@@ -200,13 +203,14 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M2.4 — Product detail, galería, variantes y stock
 **Prioridad:** 🔥 Alta · **Estimación:** 6 h · **Dependencias:** M2.3
+**Status:** ✅ DONE (PR #72; issue #15) — ver `.spec/2026-09-11-m2-4-detail.md`
 
 **Aceptación**
-- [ ] Galería swipe y fallback de imagen.
-- [ ] Selección color/talla solo permite combinaciones válidas.
-- [ ] Sin stock deshabilita compra.
-- [ ] Cantidad se limita por stock disponible.
-- [ ] Agregar al carrito usa el `variant_id` correcto.
+- [x] Galería swipe y fallback de imagen.
+- [x] Selección color/talla solo permite combinaciones válidas.
+- [x] Sin stock deshabilita compra.
+- [x] Cantidad se limita por stock disponible.
+- [x] Agregar al carrito usa el `variant_id` correcto.
 
 ## M2.5 — UX transversal del catálogo
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** M2.1–M2.4
