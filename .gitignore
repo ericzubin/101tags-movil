@@ -108,3 +108,9 @@ eas-build-logs/
 
 # Generated
 *.tsbuildinfo
+
+# Residual de pivote / runtime / tooling cache (NO commitear)
+.angular/             # Angular CLI cache (residual pivote Ionic)
+.playwright-mcp/      # Playwright logs (navegador local)
+www/                  # Build output residual (Ionic Capacitor copy)
+node_modules/.cache/  # Build caches genéricos
