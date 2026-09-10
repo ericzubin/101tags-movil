@@ -1,7 +1,7 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 cerrado (M0.5 + M0.6) + F1/M1.1 cerrado (Auth models + SecureStorageService + AuthService + interceptor 401). Próximo: **M1.2 — Auth service, interceptor y restauración de sesión**.
+IN PROGRESS — F0 cerrado (M0.5 + M0.6) + F1/M1.1 cerrado (Auth models + SecureStorageService + AuthService + interceptor 401) + **F1/M1.2 cerrado (hidratación al boot + guards auth/guest + bearer selectivo en endpoints públicos, PR #50)** + **F1/M1.3 cerrado (UX polish login/register — validación cliente + loading + errores por campo + auto-focus + a11y, PR #TBD)**. Próximo: **M1.4 — Forgot/reset password + deep links**.
 
 ## Adoption status
 **App funcional con auth wired**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerables con `expo prebuild`. Compilación nativa cloud via EAS Build.
@@ -148,7 +148,7 @@ Workspace completo en repo root con auth wired:
 - `src/app/__tests__/splash-theme.spec.ts` (8)
 - `src/__tests__/quality/{hex-color-guard,no-any,type-imports,workspace}.spec.ts` (~12)
 
-Delta acumulado: 28 (M0.4) → 49 (M0.5, +21) → 78 (M1.1, +29) → 90 (M0.6 + tests quality, +12).
+Delta acumulado: 28 (M0.4) → 49 (M0.5, +21) → 78 (M1.1, +29) → 90 (M0.6 + tests quality, +12) → ~130 (M1.3, +40: errors.spec.ts 8 + auth.spec.ts 15 + login.spec.tsx 10 + register.spec.tsx 7).
 
 ## Verification commands (ejecutadas)
 - `node -v` → v24.21.0
@@ -184,28 +184,28 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 - `.spec/2026-09-09-m0-5-pivot-theme-nativewind-env.md` — **DONE** (PR #45)
 - `.spec/2026-09-09-m0-6-pivot-quality-baseline.md` — **DONE** (PR #49)
 - `.spec/2026-09-09-m1-1-auth-models-service.md` — **DONE** (PR #47)
+- `.spec/2026-09-09-m1-2-session-restore-guards.md` — **DONE** (PR #50)
+- `.spec/2026-09-09-m1-3-login-register-ux.md` — **DONE** (PR #TBD, awaiting merge)
 
 ## Current phase
-**F1 / M1.2 — Auth service, interceptor y restauración de sesión**.
+**F1 / M1.3 — UX polish login/register (post-merge en developer pendiente de PR review)**.
 
 ## Next actions (roadmap)
-1. **M1.2** — sesión restore al boot + guards navegación + 401 redirect (inmediato).
-2. **M1.3** — Login/registro UX polish (validaciones, loading states, error UX).
-3. **M1.4** — Forgot/reset password + deep links.
-4. **M1.5** — Splash animado + tabs base (Inicio/Catálogo/Carrito/Cuenta).
-5. **F2.x** — Home + catálogo + producto.
-6. **F3.x** — Cart + checkout + pagos (OXXO/SPEI/OpenPay condicional).
-7. **F4.x** — Pedidos + cancelaciones + rating.
-8. **F5.x** — Chat + notificaciones in-app.
-9. **F6.x** — Perfil + cupones + contenido estático.
-10. **F7.x** — Plugins nativos + Android/iOS signing + QA + release.
+1. **M1.4** — Forgot/reset password + deep links (inmediato).
+2. **M1.5** — Splash animado + tabs base (Inicio/Catálogo/Carrito/Cuenta).
+3. **F2.x** — Home + catálogo + producto.
+4. **F3.x** — Cart + checkout + pagos (OXXO/SPEI/OpenPay condicional).
+5. **F4.x** — Pedidos + cancelaciones + rating.
+6. **F5.x** — Chat + notificaciones in-app.
+7. **F6.x** — Perfil + cupones + contenido estático.
+8. **F7.x** — Plugins nativos + Android/iOS signing + QA + release.
 
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: F1 / M1.2 — siguiente issue del backlog.
-- Componente actual: app + auth wiring + 90 tests verdes.
+- Fase actual: F1 / M1.3 cerrado — PR abierto contra `developer` esperando merge.
+- Componente actual: app + auth wiring + login/register con UX polish + 130 tests verdes (90 baseline + 40 nuevos en i18n/errors + validation/auth + login + register).
 - Stack: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6 + Zustand 5 + TanStack Query 5.
 - Decisiones pendientes: OpenPay nativo (M3.6), deep links reset (M1.4), EAS Update (F7), TS 6 upgrade (opcional).
 - Pre-F7: compilación nativa cloud via EAS Build (sin Xcode/Android SDK local; primera compilación EAS debe hacerse con `eas login` + `eas build`).
-- Próximo paso exacto: arrancar M1.2.
+- Próximo paso exacto: arrancar M1.4 (forgot/reset password + deep links) tras merge del PR #TBD de M1.3.

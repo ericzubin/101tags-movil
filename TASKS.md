@@ -144,10 +144,12 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M1.2
 
 **Aceptación**
-- [ ] Formularios y validaciones replican contratos backend.
-- [ ] Se manejan 401/422/429/5xx y error de red.
-- [ ] Loading evita doble submit.
-- [ ] Login válido entra al shell principal.
+- [x] Formularios y validaciones replican contratos backend. — `validateLogin`/`validateRegister` (es-MX) en `src/core/validation/auth.ts` (15 tests).
+- [x] Se manejan 401/422/429/5xx y error de red. — `formatAuthError` en `src/core/i18n/errors.ts` (8 tests) + mapping 429→RATE_LIMITED, 5xx→SERVER_ERROR en `auth-service.ts` (mínimo cambio documentado).
+- [x] Loading evita doble submit. — `isSubmitting` + `disabled`/`accessibilityState.busy` en `login.tsx`/`register.tsx`.
+- [x] Login válido entra al shell principal. — `router.replace('/(tabs)')` con happy path cubierta por `login.spec.tsx`/`register.spec.tsx` (10+7 tests).
+
+**Entregable**: PR #TBD contra `developer` — rama `chore/m1-3-login-register-ux`. Spec: `.spec/2026-09-09-m1-3-login-register-ux.md`.
 
 ## M1.4 — Forgot/reset password + deep links
 **Prioridad:** 🔥 Alta · **Estimación:** 3 h · **Dependencias:** M1.2

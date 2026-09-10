@@ -31,25 +31,31 @@ export type AuthSession = {
 export type AuthErrorCode =
   | 'INVALID_CREDENTIALS'
   | 'VALIDATION_ERROR'
+  | 'RATE_LIMITED'
+  | 'SERVER_ERROR'
   | 'NETWORK_ERROR'
   | 'TOKEN_EXPIRED'
   | 'UNKNOWN';
 
+export type AuthErrorFields = Record<string, string[]>;
+
 export class AuthError extends Error {
   readonly code: AuthErrorCode;
   readonly status: number;
-  readonly details?: Record<string, string[]>;
+  readonly details?: AuthErrorFields;
+  readonly fields?: AuthErrorFields;
 
   constructor(
     code: AuthErrorCode,
     message: string,
     status: number,
-    details?: Record<string, string[]>,
+    details?: AuthErrorFields,
   ) {
     super(message);
     this.name = 'AuthError';
     this.code = code;
     this.status = status;
     this.details = details;
+    this.fields = details;
   }
 }
