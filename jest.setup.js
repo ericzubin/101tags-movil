@@ -46,3 +46,18 @@ jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(() => Promise.resolve()),
   hideAsync: jest.fn(() => Promise.resolve()),
 }));
+
+jest.mock('expo-image', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const ReactLib = require('react');
+  const { Text, View } = require('react-native');
+  const MockImage = (props) => {
+    const testID = props.testID ?? 'expo-image';
+    const uri = props.source?.uri ?? 'image';
+    return ReactLib.createElement(View, { ...props, testID }, ReactLib.createElement(Text, null, uri));
+  };
+  return {
+    Image: MockImage,
+    ImageBackground: MockImage,
+  };
+});
