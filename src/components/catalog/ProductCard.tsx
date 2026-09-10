@@ -8,16 +8,17 @@ export interface ProductCardProps {
   product: ProductSummary;
   onPress?: (product: ProductSummary) => void;
   testID?: string;
+  className?: string;
 }
 
-export function ProductCard({ product, onPress, testID }: ProductCardProps) {
+export function ProductCard({ product, onPress, testID, className }: ProductCardProps) {
   return (
     <Pressable
       onPress={() => onPress?.(product)}
       testID={testID ?? `product-card-${product.slug}`}
       accessibilityRole="button"
       accessibilityLabel={`${product.name}, ${formatMXN(product.minPrice)}`}
-      className="mr-3 w-40 overflow-hidden rounded-lg bg-white active:opacity-80"
+      className={`${className ?? 'mr-3 w-40'} overflow-hidden rounded-lg bg-white active:opacity-80`}
     >
       <Image
         source={product.image}
@@ -34,7 +35,7 @@ export function ProductCard({ product, onPress, testID }: ProductCardProps) {
           {formatMXN(product.minPrice)}
         </Text>
         {!product.inStock ? (
-          <Text className="font-brand mt-1 text-xs text-red-600">Sin stock</Text>
+          <Text className="mt-1 font-brand text-xs text-red-600">Sin stock</Text>
         ) : null}
       </View>
     </Pressable>
