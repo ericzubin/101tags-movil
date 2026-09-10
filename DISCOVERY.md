@@ -273,3 +273,17 @@ Decisiones de diseño:
 - Zustand store para estado local de UI (compatible con persistencia).
 - TanStack Query para fetching server-side.
 - La API sigue siendo autoridad.
+
+---
+
+## §12. M1.3 — cambios mínimos inevitables documentados
+
+Para M1.3 (UX polish login/register) la spec `.spec/2026-09-09-m1-3-login-register-ux.md` declara como "no tocar" `src/core/services/*`, pero con la salvedad `sauf cambio mínimo inevitable documentado`. Para que la i18n map (`RATE_LIMITED`, `SERVER_ERROR`) sea alcanzable end-to-end, se documentan los siguientes cambios mínimos en `src/core/services/auth-service.ts`:
+
+- `if (err.status === 429) return new AuthError('RATE_LIMITED', ...)` — antes caía a `UNKNOWN`.
+- `if (err.status >= 500 && err.status <= 599) return new AuthError('SERVER_ERROR', ...)` — antes caía a `UNKNOWN`.
+
+Ningún otro método o flujo de `auth-service.ts` fue alterado. `auth-service.spec.ts` (21 tests) sigue verde sin cambios. Adicionalmente:
+
+- `src/core/models/auth.ts`: añadido `fields?: Record<string, string[]>` (alias junto a `details: Record<string, string[]>` para no romper M1.1) y los nuevos códigos `RATE_LIMITED` y `SERVER_ERROR` requeridos por el contrato del spec. `TOKEN_EXPIRED` se mantiene para no romper el consumidor 401. `auth.spec.ts` (7 tests) sigue verde sin cambios.
+- `src/app/(auth)/login.tsx`, `src/app/(auth)/register.tsx`: reescritos con validación cliente, loading, error mapping, auto-focus y a11y. Aceptados por el spec como "Modificar".

@@ -1,6 +1,6 @@
 # Spec: M1.3 — Login y registro funcionales (UX polish + validaciones)
 
-**Status**: APPROVED (auto-aprobado)
+**Status**: DONE (PR #TBD contra `developer`, pendiente de merge)
 **Spec ID**: 2026-09-09-m1-3-login-register-ux
 **Author**: Agente (issue M1.3)
 **Date**: 2026-09-09
