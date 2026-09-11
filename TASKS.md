@@ -387,51 +387,56 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M7.1 — Configurar plugins nativos y privacidad
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** F1–F6
+**Status:** 🚧 IMPLEMENTADO en PR de fase F7 (abierto, sin merge) — `.spec/2026-09-11-m7-1-native-privacy.md`
 
 **Aceptación**
-- [ ] Camera/App/Share/StatusBar/SplashScreen y storage elegido están sincronizados.
-- [ ] Permisos Android/iOS son mínimos y justificados.
-- [ ] Privacy manifests/usage descriptions requeridos quedan presentes.
-- [ ] No se solicitan permisos antes de necesitarlos.
+- [x] Storage elegido (SecureStore), splash/status-bar/system-ui sincronizados; sin módulos no usados (no cámara/share).
+- [x] Permisos Android/iOS son mínimos y justificados.
+- [x] Privacy manifest iOS (`ios.privacyManifests`) presente con `NSPrivacyTracking:false` y solo datos reales.
+- [x] No se solicitan permisos antes de necesitarlos.
 
 ## M7.2 — Android: signing, deep links y QA en dispositivo
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M7.1
+**Status:** 🟡 PARCIAL/BLOQUEADO en PR de fase F7 — `.spec/2026-09-11-m7-2-android.md` (requiere cuenta Google/EAS + keystore + dispositivo)
 
 **Aceptación**
-- [ ] Build release reproducible.
-- [ ] Keystore nunca se commitea.
-- [ ] Deep link de reset funciona instalado.
-- [ ] Flujos críticos pasan en al menos un dispositivo/emulador objetivo.
+- [ ] Build release reproducible. **(BLOQUEADO: cuenta/EAS)**
+- [x] Keystore nunca se commitea (`.gitignore` + auditoría `git ls-files`).
+- [ ] Deep link de reset funciona instalado. **(BLOQUEADO: build firmado)**
+- [ ] Flujos críticos pasan en al menos un dispositivo/emulador objetivo. **(BLOQUEADO: dispositivo)**
 
 ## M7.3 — iOS: signing, universal/deep links y QA en dispositivo
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M7.1
+**Status:** 🟡 PARCIAL/BLOQUEADO en PR de fase F7 — `.spec/2026-09-11-m7-3-ios.md` (requiere cuenta Apple + certificados + dispositivo)
 
 **Aceptación**
-- [ ] Build/archive reproducible en Xcode.
-- [ ] Certificados/profiles no se exponen en repo.
-- [ ] Reset/deep link funciona instalado.
-- [ ] Flujos críticos pasan en simulador y/o dispositivo según disponibilidad.
+- [ ] Build/archive reproducible en Xcode. **(BLOQUEADO: cuenta Apple)**
+- [x] Certificados/profiles no se exponen en repo (`.gitignore` + auditoría).
+- [ ] Reset/deep link funciona instalado. **(BLOQUEADO: build firmado)**
+- [ ] Flujos críticos pasan en simulador y/o dispositivo según disponibilidad. **(BLOQUEADO: entorno Apple)**
 
 ## M7.4 — Regresión E2E, red, accesibilidad y estados límite
 **Prioridad:** 🔥 Alta · **Estimación:** 6 h · **Dependencias:** M7.2, M7.3
+**Status:** 🟡 PARCIAL (automatizado) en PR de fase F7 — `.spec/2026-09-11-m7-4-qa-regression.md`; E2E en dispositivo BLOQUEADO
 
 **Aceptación**
-- [ ] Flujo login → catálogo → carrito → checkout → pedido es verificable.
-- [ ] Guest checkout, OXXO/SPEI y comprobante cubiertos cuando config los habilita.
-- [ ] 401/403/404/422/429/5xx y offline tienen comportamiento definido.
-- [ ] No hay timers/listeners huérfanos al navegar.
-- [ ] Smoke de accesibilidad: labels, foco, contraste y tamaños táctiles críticos.
+- [x] Flujo login → catálogo → carrito → checkout → pedido es verificable (test integración con mocks).
+- [x] Guest checkout, OXXO/SPEI y comprobante cubiertos cuando config los habilita.
+- [x] 401/403/404/422/429/5xx y offline tienen comportamiento definido (automatizado).
+- [x] No hay timers/listeners huérfanos al navegar (test de polling).
+- [x] Smoke de accesibilidad: labels/roles y tamaños táctiles críticos (automatizado). **(contraste/táctil real BLOQUEADO: dispositivo)**
 
 ## M7.5 — Release checklist y paquete para tiendas
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M7.4
+**Status:** 🟡 PARCIAL en PR de fase F7 — `.spec/2026-09-11-m7-5-release-checklist.md`; subida/aprobación a tiendas BLOQUEADA
 
 **Aceptación**
-- [ ] Version/build numbers definidos.
-- [ ] Bundle/app IDs definitivos validados.
-- [ ] Iconos/splash/assets, política de privacidad y metadata técnica inventariados.
-- [ ] Artefactos release se generan sin secretos.
-- [ ] Se documentan pasos de App Store Connect/Google Play y CI/CD futuro.
-- [ ] La aprobación/revisión externa de las tiendas no se cuenta como trabajo “DONE” controlable por código.
+- [x] Version/build numbers definidos (`1.0.0`, versionCode 1, buildNumber 1).
+- [x] Bundle/app IDs definitivos validados (`mx.com.tags.movil`).
+- [x] Iconos/splash/assets, política de privacidad y metadata técnica inventariados.
+- [x] Artefactos release se generan sin secretos (config `eas.json`; auditoría `git ls-files`).
+- [x] Se documentan pasos de App Store Connect/Google Play y CI/CD futuro.
+- [x] La aprobación/revisión externa de las tiendas no se cuenta como trabajo “DONE” controlable por código.
 
 ---
 

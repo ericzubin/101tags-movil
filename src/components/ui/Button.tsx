@@ -44,6 +44,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
+      style={{ minHeight: 44 }}
       className={`${VARIANT_CLASSES[variant]} rounded-lg px-6 py-3 active:opacity-80 flex-row justify-center items-center ${className} ${isDisabled ? 'opacity-50' : ''}`}
     >
       {loading ? (

@@ -145,8 +145,12 @@ export default function ProfileScreen() {
 
         <Pressable
           testID="profile-logout"
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar sesión"
+          accessibilityState={{ disabled: loggingOut, busy: loggingOut }}
           onPress={handleLogout}
           disabled={loggingOut}
+          style={{ minHeight: 44 }}
           className="bg-brand-primary rounded-brand-lg px-brand-6 py-3 active:opacity-80 flex-row justify-center items-center"
         >
           {loggingOut ? (
