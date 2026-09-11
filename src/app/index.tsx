@@ -1,10 +1,12 @@
 import { Redirect } from 'expo-router';
 
-import { useAuthStore } from '@/stores/auth-store';
+import { isAuthenticated, useAuthStore } from '@/stores/auth-store';
 
 export default function Index() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
-  const isAuth = useAuthStore((s) => s.token !== null);
+  const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
+  const isAuth = isAuthenticated({ token, user });
 
   if (!isHydrated) {
     return null;

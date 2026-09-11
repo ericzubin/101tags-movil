@@ -13,13 +13,15 @@ jest.mock('@/core/services/auth-service', () => ({
     getStoredUser: jest.fn(),
     handleUnauthorized: jest.fn(),
     setUnauthorizedHandler: jest.fn(),
+    hydrate: jest.fn(),
+    getMe: jest.fn(),
   },
 }));
 
 const mockedAuthService = authService as jest.Mocked<typeof authService>;
 
-const baseUser = { id: 1, name: 'Ana', email: 'a@x.com', phone: null };
-const baseSession: AuthSession = { access_token: 'tok-abc', user: baseUser };
+const baseUser = { id: 1, name: 'Ana', email: 'a@x.com', phone: null, role: 'customer' as const };
+const baseSession: AuthSession = { accessToken: 'tok-abc', user: baseUser };
 
 describe('auth-store', () => {
   beforeEach(() => {
@@ -35,7 +37,7 @@ describe('auth-store', () => {
     expect(s.isLoading).toBe(false);
   });
 
-  it('setSession delegates to authService.persistSession and updates memory', async () => {
+  it('setSession delegates to authService.persistSession and reads session.accessToken', async () => {
     await useAuthStore.getState().setSession(baseSession);
 
     expect(mockedAuthService.persistSession).toHaveBeenCalledWith(baseSession);
@@ -55,36 +57,57 @@ describe('auth-store', () => {
     expect(s.user).toBeNull();
   });
 
-  it('hydrate reads token + user in parallel and toggles isLoading', async () => {
-    mockedAuthService.getStoredToken.mockResolvedValueOnce('restored-tok');
-    mockedAuthService.getStoredUser.mockResolvedValueOnce(baseUser);
+  it('clearSession still wipes in-memory state when clearPersistedSession rejects (AC12)', async () => {
+    useAuthStore.setState({ user: baseUser, token: 'tok-abc', isHydrated: true });
+    mockedAuthService.clearPersistedSession.mockRejectedValueOnce(new Error('keystore locked'));
 
-    const promise = useAuthStore.getState().hydrate();
-    expect(useAuthStore.getState().isLoading).toBe(true);
-
-    await promise;
-    const s = useAuthStore.getState();
-    expect(s.token).toBe('restored-tok');
-    expect(s.user).toEqual(baseUser);
-    expect(s.isHydrated).toBe(true);
-    expect(s.isLoading).toBe(false);
-    expect(mockedAuthService.getStoredToken).toHaveBeenCalledTimes(1);
-    expect(mockedAuthService.getStoredUser).toHaveBeenCalledTimes(1);
-  });
-
-  it('hydrate handles no stored credentials', async () => {
-    mockedAuthService.getStoredToken.mockResolvedValueOnce(null);
-    mockedAuthService.getStoredUser.mockResolvedValueOnce(null);
-
-    await useAuthStore.getState().hydrate();
-
+    await expect(useAuthStore.getState().clearSession()).resolves.toBeUndefined();
     const s = useAuthStore.getState();
     expect(s.token).toBeNull();
     expect(s.user).toBeNull();
     expect(s.isHydrated).toBe(true);
   });
 
-  it('login delegates to authService.login and updates memory on success', async () => {
+  it('clearSession does not reject even when authService.clearPersistedSession throws (AC12)', async () => {
+    useAuthStore.setState({ user: baseUser, token: 'tok-abc', isHydrated: true });
+    mockedAuthService.clearPersistedSession.mockRejectedValueOnce(new Error('boom'));
+
+    const promise = useAuthStore.getState().clearSession();
+    await expect(promise).resolves.not.toThrow();
+  });
+
+  it('hydrate delegates to authService.hydrate and toggles isLoading while in flight', async () => {
+    mockedAuthService.hydrate.mockResolvedValueOnce(true);
+    mockedAuthService.getStoredToken.mockResolvedValue('restored-tok');
+    mockedAuthService.getStoredUser.mockResolvedValue(baseUser);
+
+    const promise = useAuthStore.getState().hydrate();
+    expect(useAuthStore.getState().isLoading).toBe(true);
+
+    const restored = await promise;
+    expect(restored).toBe(true);
+    expect(mockedAuthService.hydrate).toHaveBeenCalledTimes(1);
+    const s = useAuthStore.getState();
+    expect(s.token).toBe('restored-tok');
+    expect(s.user).toEqual(baseUser);
+    expect(s.isHydrated).toBe(true);
+    expect(s.isLoading).toBe(false);
+  });
+
+  it('hydrate handles no stored credentials', async () => {
+    mockedAuthService.hydrate.mockResolvedValueOnce(false);
+
+    const restored = await useAuthStore.getState().hydrate();
+
+    expect(restored).toBe(false);
+    const s = useAuthStore.getState();
+    expect(s.token).toBeNull();
+    expect(s.user).toBeNull();
+    expect(s.isHydrated).toBe(true);
+    expect(s.isLoading).toBe(false);
+  });
+
+  it('login delegates to authService.login and reads session.accessToken', async () => {
     mockedAuthService.login.mockResolvedValueOnce(baseSession);
 
     await useAuthStore.getState().login('a@x.com', 'pwd');
@@ -106,7 +129,7 @@ describe('auth-store', () => {
     expect(s.token).toBeNull();
   });
 
-  it('register delegates to authService.register and updates memory', async () => {
+  it('register delegates to authService.register and reads session.accessToken', async () => {
     mockedAuthService.register.mockResolvedValueOnce(baseSession);
 
     await useAuthStore
@@ -134,6 +157,36 @@ describe('auth-store', () => {
     const s = useAuthStore.getState();
     expect(s.token).toBeNull();
     expect(s.user).toBeNull();
+    expect(s.isHydrated).toBe(true);
+  });
+
+  it('refreshUser calls authService.getMe and updates user (M6.1 AC1)', async () => {
+    useAuthStore.setState({ user: baseUser, token: 'tok-abc', isHydrated: true });
+    const freshUser = { ...baseUser, name: 'Ana María', phone: '+5255...' };
+    mockedAuthService.getMe.mockResolvedValueOnce(freshUser);
+
+    const refreshed = await useAuthStore.getState().refreshUser();
+
+    expect(refreshed).toBe(true);
+    expect(mockedAuthService.getMe).toHaveBeenCalledTimes(1);
+    const s = useAuthStore.getState();
+    expect(s.user).toEqual(freshUser);
+    expect(s.token).toBe('tok-abc');
+    expect(s.isHydrated).toBe(true);
+  });
+
+  it('refreshUser keeps cached user and resolves false when getMe fails (M6.1 AC2)', async () => {
+    useAuthStore.setState({ user: baseUser, token: 'tok-abc', isHydrated: true });
+    mockedAuthService.getMe.mockRejectedValueOnce(
+      new AuthError('NETWORK_ERROR', 'No se pudo conectar con el servidor', 0),
+    );
+
+    const refreshed = await useAuthStore.getState().refreshUser();
+
+    expect(refreshed).toBe(false);
+    const s = useAuthStore.getState();
+    expect(s.user).toEqual(baseUser);
+    expect(s.token).toBe('tok-abc');
     expect(s.isHydrated).toBe(true);
   });
 });

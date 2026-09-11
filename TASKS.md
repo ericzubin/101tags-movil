@@ -144,10 +144,12 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M1.2
 
 **Aceptación**
-- [ ] Formularios y validaciones replican contratos backend.
-- [ ] Se manejan 401/422/429/5xx y error de red.
-- [ ] Loading evita doble submit.
-- [ ] Login válido entra al shell principal.
+- [x] Formularios y validaciones replican contratos backend. — `validateLogin`/`validateRegister` (es-MX) en `src/core/validation/auth.ts` (15 tests).
+- [x] Se manejan 401/422/429/5xx y error de red. — `formatAuthError` en `src/core/i18n/errors.ts` (8 tests) + mapping 429→RATE_LIMITED, 5xx→SERVER_ERROR en `auth-service.ts` (mínimo cambio documentado).
+- [x] Loading evita doble submit. — `isSubmitting` + `disabled`/`accessibilityState.busy` en `login.tsx`/`register.tsx`.
+- [x] Login válido entra al shell principal. — `router.replace('/(tabs)')` con happy path cubierta por `login.spec.tsx`/`register.spec.tsx` (10+7 tests).
+
+**Entregable**: PR #TBD contra `developer` — rama `chore/m1-3-login-register-ux`. Spec: `.spec/2026-09-09-m1-3-login-register-ux.md`.
 
 ## M1.4 — Forgot/reset password + deep links
 **Prioridad:** 🔥 Alta · **Estimación:** 3 h · **Dependencias:** M1.2
@@ -173,47 +175,52 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M2.1 — Home: hero, banners, categorías y destacados
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** F1 navegación
+**Status:** ✅ DONE (PR #71; issue #12) — ver `.spec/2026-09-11-m2-1-home.md`
 
 **Aceptación**
-- [ ] Home consume contenido existente para segmento `basicos`.
-- [ ] Skeleton/loading/error/empty state definidos.
-- [ ] Banners y cards navegan al destino correcto.
+- [x] Home consume contenido existente para segmento `basicos`.
+- [x] Skeleton/loading/error/empty state definidos.
+- [x] Banners y cards navegan al destino correcto.
 
 ## M2.2 — Árbol de categorías
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M2.1
+**Status:** ✅ DONE (PR #74; issue #13) — ver `.spec/2026-09-11-m2-2-categories.md`
 
 **Aceptación**
-- [ ] Categorías padre/hijo respetan `segment=basicos`.
-- [ ] Navegación conserva contexto y filtros aplicables.
-- [ ] Estados vacíos/no encontrados están cubiertos.
+- [x] Categorías padre/hijo respetan `segment=basicos`.
+- [x] Navegación conserva contexto y filtros aplicables.
+- [x] Estados vacíos/no encontrados están cubiertos.
 
 ## M2.3 — Product list, paginación y FilterSheet
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M2.2
+**Status:** ✅ DONE (PR #75; issue #14) — ver `.spec/2026-09-11-m2-3-list.md`
 
 **Aceptación**
-- [ ] Lista paginada no duplica productos.
-- [ ] Filtros se serializan igual que el storefront/API.
-- [ ] Modal móvil permite aplicar/limpiar/cancelar.
-- [ ] Se evita disparar requests obsoletos al cambiar filtros rápidamente.
+- [x] Lista paginada no duplica productos.
+- [x] Filtros se serializan igual que el storefront/API.
+- [x] Modal móvil permite aplicar/limpiar/cancelar.
+- [x] Se evita disparar requests obsoletos al cambiar filtros rápidamente.
 
 ## M2.4 — Product detail, galería, variantes y stock
 **Prioridad:** 🔥 Alta · **Estimación:** 6 h · **Dependencias:** M2.3
+**Status:** ✅ DONE (PR #72; issue #15) — ver `.spec/2026-09-11-m2-4-detail.md`
 
 **Aceptación**
-- [ ] Galería swipe y fallback de imagen.
-- [ ] Selección color/talla solo permite combinaciones válidas.
-- [ ] Sin stock deshabilita compra.
-- [ ] Cantidad se limita por stock disponible.
-- [ ] Agregar al carrito usa el `variant_id` correcto.
+- [x] Galería swipe y fallback de imagen.
+- [x] Selección color/talla solo permite combinaciones válidas.
+- [x] Sin stock deshabilita compra.
+- [x] Cantidad se limita por stock disponible.
+- [x] Agregar al carrito usa el `variant_id` correcto.
 
 ## M2.5 — UX transversal del catálogo
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** M2.1–M2.4
+**Status:** ✅ DONE (PR #76; issue #16) — ver `.spec/2026-09-11-m2-5-ux.md`
 
 **Aceptación**
-- [ ] Estados loading/error/offline/empty son coherentes.
-- [ ] Imágenes usan resolver centralizado de media URL.
-- [ ] Controles críticos tienen labels/roles accesibles.
-- [ ] No hay errores visibles de layout en tamaños móviles objetivo.
+- [x] Estados loading/error/offline/empty son coherentes.
+- [x] Imágenes usan resolver centralizado de media URL.
+- [x] Controles críticos tienen labels/roles accesibles.
+- [x] No hay errores visibles de layout en tamaños móviles objetivo.
 
 ---
 
@@ -221,47 +228,52 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M3.1 — Cart service, sync API y badge
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** F2
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — ver `.spec/2026-09-11-m3-1-cart.md`
 
 **Aceptación**
-- [ ] Signal de carrito refleja GET/PUT/DELETE reales.
-- [ ] Actualización optimista, si existe, revierte correctamente en error.
-- [ ] Badge se actualiza sin recargar tabs.
-- [ ] Cantidad inválida/stock insuficiente se maneja sin corrupción de estado.
+- [x] Signal de carrito refleja GET/PUT/DELETE reales.
+- [x] Actualización optimista, si existe, revierte correctamente en error.
+- [x] Badge se actualiza sin recargar tabs.
+- [x] Cantidad inválida/stock insuficiente se maneja sin corrupción de estado.
 
 ## M3.2 — Checkout config, dirección y envío
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-2-checkout-address.md`
 
 **Aceptación**
-- [ ] Se consulta `/checkout/config` antes de ofrecer métodos.
-- [ ] Dirección valida campos requeridos y datos esperados por API.
-- [ ] Resumen conserva precios/cantidades del servidor.
-- [ ] No se confía en totales calculados solo por cliente.
+- [x] Se consulta `/checkout/config` antes de ofrecer métodos.
+- [x] Dirección valida campos requeridos y datos esperados por API.
+- [x] Resumen conserva precios/cantidades del servidor.
+- [x] No se confía en totales calculados solo por cliente.
 
 ## M3.3 — Request orders, idempotencia y guest checkout
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.2
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-3-request-orders.md`
 
 **Aceptación**
-- [ ] Cada intento lógico usa UUID estable en `Idempotency-Key`.
-- [ ] Reintento por timeout no crea pedidos duplicados.
-- [ ] Auth y guest siguen contratos distintos cuando aplique.
-- [ ] 422/429/5xx presentan acción de recuperación segura.
+- [x] Cada intento lógico usa clave estable en `Idempotency-Key`.
+- [x] Reintento por timeout no crea pedidos duplicados.
+- [x] Auth y guest siguen contratos distintos cuando aplique.
+- [x] 422/409/429/5xx presentan acción de recuperación segura.
 
 ## M3.4 — Pago pendiente OXXO/SPEI
 **Prioridad:** 🔥 Alta · **Estimación:** 3 h · **Dependencias:** M3.3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-4-payment-instructions.md`
 
 **Aceptación**
-- [ ] Se muestran instrucciones exactamente desde API.
-- [ ] Barcode/CLABE/referencia se renderizan con copy action cuando aplique.
-- [ ] Expiración/ausencia de instrucciones tiene estado explícito.
+- [x] Se muestran instrucciones exactamente desde API.
+- [x] Barcode/CLABE/referencia se renderizan con copy action cuando aplique.
+- [x] Expiración/ausencia de instrucciones tiene estado explícito.
 
 ## M3.5 — Subir comprobante de pago
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M3.4
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-5-payment-proof.md`
 
 **Aceptación**
-- [ ] Cámara/selector respetan tipos y tamaños aceptados por backend.
-- [ ] Multipart usa endpoint correcto.
-- [ ] Progress/loading y reintento no provocan dobles uploads involuntarios.
-- [ ] Errores del archivo se muestran antes o después del request según corresponda.
+- [x] Selector respeta tipos y tamaños aceptados por backend.
+- [x] Multipart usa endpoint correcto.
+- [x] Progress/loading y reintento no provocan dobles uploads involuntarios.
+- [x] Errores del archivo se muestran antes o después del request según corresponda.
 
 ## M3.6 — OpenPay tarjeta condicionado por config
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.2, M3.3
@@ -278,29 +290,32 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M4.1 — Mis pedidos + detalle + tracking
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** F3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-1-orders.md`
 
 **Aceptación**
-- [ ] Lista paginada/ordenada según API.
-- [ ] Detalle muestra items, total, estado y timeline.
-- [ ] Carrier/tracking se muestra solo cuando existe.
-- [ ] Pedido ajeno/no encontrado se maneja correctamente.
+- [x] Lista paginada/ordenada según API.
+- [x] Detalle muestra items, total, estado y timeline.
+- [x] Carrier/tracking se muestra solo cuando existe.
+- [x] Pedido ajeno/no encontrado se maneja correctamente.
 
 ## M4.2 — Cancelaciones y devoluciones
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-2-returns.md`
 
 **Aceptación**
-- [ ] Acciones solo aparecen en estados permitidos.
-- [ ] Solicitud valida motivo/datos requeridos.
-- [ ] Listado de devoluciones refleja status backend.
-- [ ] 403/409/422 no se presentan como éxito.
+- [x] Acciones solo aparecen en estados permitidos.
+- [x] Solicitud valida motivo/datos requeridos.
+- [x] Listado de devoluciones refleja status backend.
+- [x] 403/409/422 no se presentan como éxito.
 
 ## M4.3 — Calificación de proveedor
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-3-rating.md`
 
 **Aceptación**
-- [ ] Rating respeta rango y reglas backend.
-- [ ] No permite doble submit accidental.
-- [ ] Estado ya-calificado se representa correctamente.
+- [x] Rating respeta rango y reglas backend.
+- [x] No permite doble submit accidental.
+- [x] Estado ya-calificado se representa correctamente.
 
 ---
 
@@ -308,29 +323,32 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M5.1 — Conversaciones y chat de orden con polling
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-1-chat.md`
 
 **Aceptación**
-- [ ] Lista/conversación usa contratos reales.
-- [ ] Polling se inicia al entrar y se cancela al salir/destroy.
-- [ ] No acumula timers ni requests en background.
-- [ ] Mensajes mantienen orden y no se duplican.
+- [x] Lista/conversación usa contratos reales.
+- [x] Polling se inicia al entrar y se cancela al salir/destroy.
+- [x] No acumula timers ni requests en background.
+- [x] Mensajes mantienen orden y no se duplican.
 
 ## M5.2 — Adjuntos del chat
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** M5.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-2-chat-attachments.md`
 
 **Aceptación**
-- [ ] Multipart respeta tipos/tamaños backend.
-- [ ] Adjuntos descargables usan acceso autorizado/signed URL cuando corresponda.
-- [ ] `proof_of_payment` se trata según contrato sin duplicar lógica insegura.
+- [x] Multipart respeta tipos/tamaños backend.
+- [x] Adjuntos descargables usan acceso autorizado/signed URL cuando corresponda.
+- [x] `proof_of_payment` se trata según contrato sin duplicar lógica insegura.
 
 ## M5.3 — Notificaciones in-app
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-3-notifications.md`
 
 **Aceptación**
-- [ ] GET lista notificaciones.
-- [ ] PATCH marca individual leída.
-- [ ] POST read-all actualiza servidor y UI.
-- [ ] Push remoto queda explícitamente fuera del MVP salvo nueva spec.
+- [x] GET lista notificaciones.
+- [x] PATCH marca individual leída.
+- [x] POST read-all actualiza servidor y UI.
+- [x] Push remoto queda explícitamente fuera del MVP salvo nueva spec.
 
 ---
 
@@ -338,27 +356,30 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M6.1 — Perfil, settings y logout
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-1-profile.md`
 
 **Aceptación**
-- [ ] Perfil usa `/auth/customer/me`.
-- [ ] Logout invalida backend cuando aplique y limpia storage local.
-- [ ] Settings no expone secretos ni datos técnicos innecesarios.
+- [x] Perfil usa `/auth/customer/me`.
+- [x] Logout invalida backend cuando aplique y limpia storage local.
+- [x] Settings no expone secretos ni datos técnicos innecesarios.
 
 ## M6.2 — Cupones wallet/validación
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-2-coupons.md`
 
 **Aceptación**
-- [ ] Cupones del usuario se listan con estado/validez.
-- [ ] Validación usa endpoint real y contexto de checkout.
-- [ ] Cupón inválido/expirado muestra razón utilizable cuando API la entregue.
+- [x] Cupones del usuario se listan con estado/validez.
+- [x] Validación usa endpoint real y contexto de checkout.
+- [x] Cupón inválido/expirado muestra razón utilizable cuando API la entregue.
 
 ## M6.3 — Términos, privacidad y ayuda
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** F0
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-3-legal-help.md`
 
 **Aceptación**
-- [ ] Rutas accesibles desde cuenta/checkout donde aplique.
-- [ ] Contenido y enlaces no quedan hardcodeados si backend/config ya ofrece una fuente.
-- [ ] Texto legal pendiente se marca como dependencia de negocio, no se inventa.
+- [x] Rutas accesibles desde cuenta/checkout donde aplique.
+- [x] Contenido y enlaces no quedan hardcodeados si backend/config ya ofrece una fuente.
+- [x] Texto legal pendiente se marca como dependencia de negocio, no se inventa.
 
 ---
 
@@ -366,51 +387,56 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M7.1 — Configurar plugins nativos y privacidad
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** F1–F6
+**Status:** 🚧 IMPLEMENTADO en PR de fase F7 (abierto, sin merge) — `.spec/2026-09-11-m7-1-native-privacy.md`
 
 **Aceptación**
-- [ ] Camera/App/Share/StatusBar/SplashScreen y storage elegido están sincronizados.
-- [ ] Permisos Android/iOS son mínimos y justificados.
-- [ ] Privacy manifests/usage descriptions requeridos quedan presentes.
-- [ ] No se solicitan permisos antes de necesitarlos.
+- [x] Storage elegido (SecureStore), splash/status-bar/system-ui sincronizados; sin módulos no usados (no cámara/share).
+- [x] Permisos Android/iOS son mínimos y justificados.
+- [x] Privacy manifest iOS (`ios.privacyManifests`) presente con `NSPrivacyTracking:false` y solo datos reales.
+- [x] No se solicitan permisos antes de necesitarlos.
 
 ## M7.2 — Android: signing, deep links y QA en dispositivo
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M7.1
+**Status:** 🟡 PARCIAL/BLOQUEADO en PR de fase F7 — `.spec/2026-09-11-m7-2-android.md` (requiere cuenta Google/EAS + keystore + dispositivo)
 
 **Aceptación**
-- [ ] Build release reproducible.
-- [ ] Keystore nunca se commitea.
-- [ ] Deep link de reset funciona instalado.
-- [ ] Flujos críticos pasan en al menos un dispositivo/emulador objetivo.
+- [ ] Build release reproducible. **(BLOQUEADO: cuenta/EAS)**
+- [x] Keystore nunca se commitea (`.gitignore` + auditoría `git ls-files`).
+- [ ] Deep link de reset funciona instalado. **(BLOQUEADO: build firmado)**
+- [ ] Flujos críticos pasan en al menos un dispositivo/emulador objetivo. **(BLOQUEADO: dispositivo)**
 
 ## M7.3 — iOS: signing, universal/deep links y QA en dispositivo
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M7.1
+**Status:** 🟡 PARCIAL/BLOQUEADO en PR de fase F7 — `.spec/2026-09-11-m7-3-ios.md` (requiere cuenta Apple + certificados + dispositivo)
 
 **Aceptación**
-- [ ] Build/archive reproducible en Xcode.
-- [ ] Certificados/profiles no se exponen en repo.
-- [ ] Reset/deep link funciona instalado.
-- [ ] Flujos críticos pasan en simulador y/o dispositivo según disponibilidad.
+- [ ] Build/archive reproducible en Xcode. **(BLOQUEADO: cuenta Apple)**
+- [x] Certificados/profiles no se exponen en repo (`.gitignore` + auditoría).
+- [ ] Reset/deep link funciona instalado. **(BLOQUEADO: build firmado)**
+- [ ] Flujos críticos pasan en simulador y/o dispositivo según disponibilidad. **(BLOQUEADO: entorno Apple)**
 
 ## M7.4 — Regresión E2E, red, accesibilidad y estados límite
 **Prioridad:** 🔥 Alta · **Estimación:** 6 h · **Dependencias:** M7.2, M7.3
+**Status:** 🟡 PARCIAL (automatizado) en PR de fase F7 — `.spec/2026-09-11-m7-4-qa-regression.md`; E2E en dispositivo BLOQUEADO
 
 **Aceptación**
-- [ ] Flujo login → catálogo → carrito → checkout → pedido es verificable.
-- [ ] Guest checkout, OXXO/SPEI y comprobante cubiertos cuando config los habilita.
-- [ ] 401/403/404/422/429/5xx y offline tienen comportamiento definido.
-- [ ] No hay timers/listeners huérfanos al navegar.
-- [ ] Smoke de accesibilidad: labels, foco, contraste y tamaños táctiles críticos.
+- [x] Flujo login → catálogo → carrito → checkout → pedido es verificable (test integración con mocks).
+- [x] Guest checkout, OXXO/SPEI y comprobante cubiertos cuando config los habilita.
+- [x] 401/403/404/422/429/5xx y offline tienen comportamiento definido (automatizado).
+- [x] No hay timers/listeners huérfanos al navegar (test de polling).
+- [x] Smoke de accesibilidad: labels/roles y tamaños táctiles críticos (automatizado). **(contraste/táctil real BLOQUEADO: dispositivo)**
 
 ## M7.5 — Release checklist y paquete para tiendas
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M7.4
+**Status:** 🟡 PARCIAL en PR de fase F7 — `.spec/2026-09-11-m7-5-release-checklist.md`; subida/aprobación a tiendas BLOQUEADA
 
 **Aceptación**
-- [ ] Version/build numbers definidos.
-- [ ] Bundle/app IDs definitivos validados.
-- [ ] Iconos/splash/assets, política de privacidad y metadata técnica inventariados.
-- [ ] Artefactos release se generan sin secretos.
-- [ ] Se documentan pasos de App Store Connect/Google Play y CI/CD futuro.
-- [ ] La aprobación/revisión externa de las tiendas no se cuenta como trabajo “DONE” controlable por código.
+- [x] Version/build numbers definidos (`1.0.0`, versionCode 1, buildNumber 1).
+- [x] Bundle/app IDs definitivos validados (`mx.com.tags.movil`).
+- [x] Iconos/splash/assets, política de privacidad y metadata técnica inventariados.
+- [x] Artefactos release se generan sin secretos (config `eas.json`; auditoría `git ls-files`).
+- [x] Se documentan pasos de App Store Connect/Google Play y CI/CD futuro.
+- [x] La aprobación/revisión externa de las tiendas no se cuenta como trabajo “DONE” controlable por código.
 
 ---
 

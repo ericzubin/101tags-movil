@@ -1,14 +1,42 @@
 import { getApiBaseUrl, getApiTimeoutMs } from '@/constants/env';
+import { toCamel } from '@/core/utils/snake-camel';
+
+/**
+ * Endpoints that must NOT carry an `Authorization` header.
+ *
+ * Sanctum rejects `Authorization` on public auth endpoints when the token
+ * is invalid/expired. Sending it anyway wastes a round-trip and produces
+ * confusing 401s for credentials the server never asked for.
+ *
+ * Patterns match the path string exactly as the caller passes it to the
+ * http client (relative — `getApiBaseUrl()` already terminates in `/api`,
+ * so we do NOT include the `/api` prefix here).
+ *
+ * @see .spec/2026-09-10-m1-4-hardening.md §Bearer injection scope
+ */
+export const PUBLIC_PATH_PATTERNS: readonly RegExp[] = [
+  /^\/auth\/customer\/(login|register)$/,
+];
+
+export function isPublicPath(path: string): boolean {
+  return PUBLIC_PATH_PATTERNS.some((re) => re.test(path));
+}
+
+export type HttpErrorCause = 'timeout' | 'canceled' | 'unknown';
 
 export class HttpError extends Error {
+  readonly cause?: HttpErrorCause;
+
   constructor(
     public readonly status: number,
     public readonly statusText: string,
     public readonly body: unknown,
     message: string,
+    cause?: HttpErrorCause,
   ) {
     super(message);
     this.name = 'HttpError';
+    this.cause = cause;
   }
 }
 
@@ -45,7 +73,8 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
   async function request<T>(path: string, options: HttpRequestOptions = {}): Promise<T> {
     const { method = 'GET', body, query, headers = {}, signal } = options;
     const token = await authTokenProvider();
-    const url = new URL(path.startsWith('http') ? path : `${getApiBaseUrl()}${path}`);
+    const resolvedBaseUrl = getApiBaseUrl();
+    const url = new URL(path.startsWith('http') ? path : `${resolvedBaseUrl}${path}`);
 
     if (query) {
       for (const [key, value] of Object.entries(query)) {
@@ -53,19 +82,37 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
       }
     }
 
-    const controller = signal ? null : new AbortController();
-    const timeoutId = controller ? setTimeout(() => controller.abort(), getApiTimeoutMs()) : null;
+    const internalController = new AbortController();
+    let abortReason: 'timeout' | 'canceled' | undefined;
+    const timeoutId = setTimeout(() => {
+      abortReason = 'timeout';
+      internalController.abort();
+    }, getApiTimeoutMs());
+
+    const onExternalAbort = () => {
+      abortReason = 'canceled';
+      internalController.abort();
+    };
+    if (signal) {
+      if (signal.aborted) {
+        clearTimeout(timeoutId);
+        throw new HttpError(0, 'Canceled', null, 'Request canceled', 'canceled');
+      }
+      signal.addEventListener('abort', onExternalAbort);
+    }
+
     const finalHeaders: Record<string, string> = { Accept: 'application/json', ...headers };
 
     if (body !== undefined && !(body instanceof FormData)) finalHeaders['Content-Type'] = 'application/json';
-    if (token) finalHeaders.Authorization = `Bearer ${token}`;
+    const authHeader = getAuthHeader(path, token, resolvedBaseUrl);
+    if (authHeader) finalHeaders.Authorization = authHeader;
 
     try {
       const response = await fetch(url.toString(), {
         method,
         headers: finalHeaders,
         body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-        signal: signal ?? controller?.signal,
+        signal: internalController.signal,
       });
 
       const text = await response.text();
@@ -75,14 +122,22 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
         if (response.status === 401 && onUnauthorized) await onUnauthorized();
         throw error;
       }
-      return parsed as T;
+      return toCamel(parsed) as T;
     } catch (err) {
-      if (timeoutId) clearTimeout(timeoutId);
       if (err instanceof HttpError) throw err;
-      if (err instanceof Error && err.name === 'AbortError') throw new HttpError(0, 'Timeout', null, 'Request timeout');
+      if (abortReason === 'timeout') {
+        throw new HttpError(0, 'Timeout', null, 'Request timeout', 'timeout');
+      }
+      if (abortReason === 'canceled') {
+        throw new HttpError(0, 'Canceled', null, 'Request canceled', 'canceled');
+      }
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new HttpError(0, 'Canceled', null, 'Request canceled', 'canceled');
+      }
       throw err;
     } finally {
-      if (timeoutId) clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
+      if (signal) signal.removeEventListener('abort', onExternalAbort);
     }
   }
 
@@ -103,6 +158,23 @@ export function createHttpClient(getToken: TokenProvider = () => null, config: C
 }
 
 export const httpClient = createHttpClient();
+
+function getAuthHeader(path: string, token: string | null, baseUrl: string): string | null {
+  if (!token) return null;
+
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    try {
+      const requestUrl = new URL(path);
+      const baseHost = new URL(baseUrl).host;
+      if (requestUrl.host !== baseHost) return null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (isPublicPath(path)) return null;
+  return `Bearer ${token}`;
+}
 
 function safeJsonParse(text: string): unknown {
   try {

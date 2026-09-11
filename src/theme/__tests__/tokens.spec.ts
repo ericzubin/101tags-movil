@@ -1,3 +1,6 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
 import {
   brandColors,
   brandFonts,
@@ -6,6 +9,8 @@ import {
   radii,
   spacing,
 } from '@/theme/tokens';
+
+const FONTS_DIR = path.resolve(__dirname, '../../../assets/fonts');
 
 describe('brand tokens', () => {
   it('declares 101tags primary red as #E31E24', () => {
@@ -41,6 +46,30 @@ describe('brand tokens', () => {
     expect(fontWeights.semibold).toBe('600');
     expect(fontWeights.bold).toBe('700');
     expect(fontWeights.black).toBe('800');
+  });
+
+  it('M1.8 AC1: Montserrat-Regular.ttf bundled and >50KB', () => {
+    const file = path.join(FONTS_DIR, 'Montserrat-Regular.ttf');
+    expect(fs.existsSync(file)).toBe(true);
+    const size = fs.statSync(file).size;
+    expect(size).toBeGreaterThan(50 * 1024);
+  });
+
+  it('M1.8 AC1: Montserrat-Bold.ttf bundled and >50KB', () => {
+    const file = path.join(FONTS_DIR, 'Montserrat-Bold.ttf');
+    expect(fs.existsSync(file)).toBe(true);
+    const size = fs.statSync(file).size;
+    expect(size).toBeGreaterThan(50 * 1024);
+  });
+
+  it('M1.8 AC9: token weights map 400→Regular and 700→Bold (matching bundled assets)', () => {
+    expect(fontWeights.regular).toBe('400');
+    expect(fontWeights.bold).toBe('700');
+    // The asset files exist (verified in AC1) and share the same family
+    // name so weight-based selection resolves correctly across web (@font-face)
+    // and native (Font.loadAsync with explicit names).
+    expect(fs.existsSync(path.join(FONTS_DIR, 'Montserrat-Regular.ttf'))).toBe(true);
+    expect(fs.existsSync(path.join(FONTS_DIR, 'Montserrat-Bold.ttf'))).toBe(true);
   });
 
   it('declares radii tokens aligned with brand-md default', () => {

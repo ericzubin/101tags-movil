@@ -3,6 +3,7 @@ import {
   AuthError,
   type AuthSession,
   type CustomerUser,
+  type ForgotPasswordResponse,
   type LoginRequest,
   type RegisterRequest,
 } from '@/core/models/auth';
@@ -10,14 +11,12 @@ import {
 import { secureStorageService } from './secure-storage-service';
 
 const ENDPOINTS = {
-  login: '/auth/login',
-  register: '/auth/register',
-  logout: '/auth/logout',
-  me: '/auth/me',
-  refresh: '/auth/refresh',
+  login: '/auth/customer/login',
+  register: '/auth/customer/register',
+  logout: '/auth/customer/logout',
+  me: '/auth/customer/me',
+  forgotPassword: '/auth/customer/forgot-password',
 } as const;
-
-type RefreshResponse = { access_token: string; expires_at?: string };
 
 class AuthService {
   private unauthorizedHandler: (() => void | Promise<void>) | null = null;
@@ -50,24 +49,55 @@ class AuthService {
     } catch (err) {
       if (__DEV__) console.warn('[AuthService] logout network error (continuing to clear local)', err);
     } finally {
-      await this.clearPersistedSession();
+      await this.clearPersistedSessionSafe();
     }
+  }
+
+  async getMe(): Promise<CustomerUser> {
+    const response = await httpClient.get<{ user: CustomerUser }>(ENDPOINTS.me);
+    return response.user;
   }
 
   async me(): Promise<CustomerUser> {
-    return httpClient.get<CustomerUser>(ENDPOINTS.me);
+    return this.getMe();
   }
 
-  async refresh(): Promise<RefreshResponse> {
-    const response = await httpClient.post<RefreshResponse>(ENDPOINTS.refresh);
-    const tokenKey = secureStorageService.getKeys().authToken;
-    await secureStorageService.setItem(tokenKey, response.access_token);
-    const user = await this.getStoredUser();
-    if (user) {
-      const userKey = secureStorageService.getKeys().authUser;
-      await secureStorageService.setItem(userKey, JSON.stringify(user));
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    return this.post<ForgotPasswordResponse>(ENDPOINTS.forgotPassword, { email });
+  }
+
+  /**
+   * Restores a session from secure storage on app boot.
+   *
+   * Flow (per spec M1.5 §hydrate error discrimination):
+   *   1. Read stored token. If absent → return `false` (guest boot).
+   *   2. Call `GET /auth/customer/me`. On 200 we have a valid user; persist
+   *      the session back into storage and return `true`.
+   *   3. On `HttpError(401)` or `HttpError(422)` (token definitively
+   *      invalid) → clear stored credentials and return `false`.
+   *   4. On any other error (network status 0, 5xx, timeout, non-HttpError)
+   *      → keep stored token intact (transient failure) and return `false`.
+   */
+  async hydrate(): Promise<boolean> {
+    const token = await this.getStoredToken();
+    if (!token) return false;
+    try {
+      const wrapped = await httpClient.get<{ user: CustomerUser }>(ENDPOINTS.me);
+      const user = wrapped.user;
+      await this.persistSession({ accessToken: token, user });
+      return true;
+    } catch (err) {
+      if (err instanceof HttpError && (err.status === 401 || err.status === 422)) {
+        try {
+          await this.clearPersistedSession();
+        } catch (clearErr) {
+          if (__DEV__) console.warn('[AuthService] clearPersistedSession failed during hydrate 401/422', clearErr);
+        }
+        return false;
+      }
+      if (__DEV__) console.warn('[AuthService] hydrate transient error (keeping token)', err);
+      return false;
     }
-    return response;
   }
 
   async getStoredToken(): Promise<string | null> {
@@ -87,7 +117,7 @@ class AuthService {
   async persistSession(session: AuthSession): Promise<void> {
     const keys = secureStorageService.getKeys();
     await Promise.all([
-      secureStorageService.setItem(keys.authToken, session.access_token),
+      secureStorageService.setItem(keys.authToken, session.accessToken),
       secureStorageService.setItem(keys.authUser, JSON.stringify(session.user)),
     ]);
   }
@@ -96,9 +126,33 @@ class AuthService {
     await secureStorageService.clear();
   }
 
+  async clearPersistedSessionSafe(): Promise<void> {
+    await secureStorageService.clearSafe();
+  }
+
+  /**
+   * Atomic 401 sequence (spec M1.5 §handleUnauthorized):
+   *   1. Clear SecureStore (throwing variant — surfaces Keystore errors).
+   *   2. Invoke the registered Zustand handler so the in-memory store is
+   *      wiped in the same logical transaction.
+   *
+   * Both steps are best-effort: a failure in either is logged in dev but
+   * NEVER propagated, so the httpClient can complete its `await onUnauthorized`
+   * and the UI can navigate to login regardless of underlying storage state.
+   */
   async handleUnauthorized(): Promise<void> {
-    await this.clearPersistedSession();
-    if (this.unauthorizedHandler) await this.unauthorizedHandler();
+    try {
+      await this.clearPersistedSession();
+    } catch (err) {
+      if (__DEV__) console.warn('[AuthService] clearPersistedSession failed during 401', err);
+    }
+    if (this.unauthorizedHandler) {
+      try {
+        await this.unauthorizedHandler();
+      } catch (err) {
+        if (__DEV__) console.warn('[AuthService] unauthorizedHandler failed', err);
+      }
+    }
   }
 
   private async post<T>(path: string, body?: unknown): Promise<T> {
@@ -115,7 +169,12 @@ class AuthService {
       const body = err.body as { message?: string; errors?: Record<string, string[]> } | null;
       if (err.status === 401) return new AuthError('INVALID_CREDENTIALS', body?.message ?? 'Credenciales inválidas', err.status, body?.errors);
       if (err.status === 422) return new AuthError('VALIDATION_ERROR', body?.message ?? 'Revisa los datos enviados', err.status, body?.errors);
-      if (err.status === 0) return new AuthError('NETWORK_ERROR', 'No se pudo conectar con el servidor', err.status);
+      if (err.status === 429) return new AuthError('RATE_LIMITED', body?.message ?? 'Demasiados intentos', err.status, body?.errors);
+      if (err.status >= 500 && err.status <= 599) return new AuthError('SERVER_ERROR', body?.message ?? 'Error del servidor', err.status, body?.errors);
+      if (err.status === 0) {
+        if (err.cause === 'canceled') return new AuthError('CANCELED', 'Operación cancelada', err.status);
+        return new AuthError('NETWORK_ERROR', 'No se pudo conectar con el servidor', err.status);
+      }
       return new AuthError('UNKNOWN', body?.message ?? 'Ocurrió un error inesperado', err.status, body?.errors);
     }
     return new AuthError('NETWORK_ERROR', 'No se pudo conectar con el servidor', 0);

@@ -110,7 +110,19 @@ eas-build-logs/
 *.tsbuildinfo
 
 # Residual de pivote / runtime / tooling cache (NO commitear)
-.angular/             # Angular CLI cache (residual pivote Ionic)
-.playwright-mcp/      # Playwright logs (navegador local)
-www/                  # Build output residual (Ionic Capacitor copy)
-node_modules/.cache/  # Build caches genéricos
+.angular/
+.playwright-mcp/
+www/
+node_modules/.cache/
+
+# Credenciales de build / signing (M7.1 — NO commitear)
+# `*.keystore` + `!debug.keystore` ya están definidos arriba.
+*.jks
+*.p12
+*.mobileprovision
+*.cer
+*.p8
+keystore.properties
+credentials.json
+.env*
+!.env.example

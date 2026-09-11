@@ -1,25 +1,27 @@
 # PROJECT STATE — 101tags mobile
 
 ## Status
-IN PROGRESS — F0 / M0.5-PIVOT cerrado (Nativewind theme tokens en componentes + environments ajustados)
+IN PROGRESS — F0 cerrado + F1 entero cerrado + P0 parchado ✅ + **F2 COMPLETO E INTEGRADO en `developer`** (95c8f24, PR #73) + **F3 IMPLEMENTADO (M3.1–M3.5) en PR abierto #78** + **F4 IMPLEMENTADO (M4.1–M4.3) en PR abierto #79** + **F5 IMPLEMENTADO (M5.1–M5.3) en PR abierto #80** + **F6 IMPLEMENTADO (M6.1–M6.3) en PR abierto #81** + **F7 PARCIAL (M7.1–M7.5) en PR abierto #82** (stacked, sin merge; builds/QA en dispositivo bloqueados). M2.0-setup (PR #70) + M2.1-home (PR #71) + M2.4-detail (PR #72) + M2.2-categories (PR #74) + M2.3-list (PR #75) + M2.5-ux (PR #76). Issues #12, #13, #14, #15, #16 cerradas. Próximo: **CI #58 (`chore/ci` sobre `developer`)** y decidir merge del stack. El merge **`developer` → `main` (PR #67) lo hará el usuario**. Housekeeping: issues stale F1 #7/#8/#9 cerradas.
 
 ## Adoption status
-**Scaffold generado**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerados con `expo prebuild`. Compilación nativa cloud via EAS Build (sin Xcode/Android SDK local).
+**App funcional con auth wired**. React Native 0.86 + Expo SDK 57 + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + Jest 29 + ESLint 9 + pnpm 10 + Node 24 LTS. `ios/` y `android/` regenerables con `expo prebuild`. Compilación nativa cloud via EAS Build.
 
 ## Current architecture
 
-Workspace completo en repo root:
+Workspace completo en repo root con auth wired:
 - `app.json` (Expo) + `eas.json` (EAS Build profiles).
-- `app/` (expo-router file-based): `_layout.tsx`, `index.tsx`, `(tabs)/`, `(auth)/`.
-- `src/core/{api,models,services,storage,query}/` con `secure-store.ts`, `client.ts`, `query/client.ts`, `.gitkeep`.
-- `src/stores/auth-store.ts` (Zustand).
-- `src/theme/tokens.ts` (brand 101tags + extras).
-- `src/constants/env.ts` (apiBaseUrl, currency, locale).
+- `src/app/` (expo-router file-based): `_layout.tsx` (Providers + httpClient wiring + Stack), `index.tsx` (redirect), `(tabs)/`, `(auth)/login.tsx + register.tsx`.
+- `src/core/api/client.ts` con `setAuthTokenProvider` + `setOnUnauthorized` (interceptor 401).
+- `src/core/models/auth.ts` (7 types: CustomerUser, LoginRequest, RegisterRequest, AuthSession, AuthError, AuthErrorCode).
+- `src/core/services/secure-storage-service.ts` (singleton expo-secure-store con web fallback) + `auth-service.ts` (singleton login/register/logout/me/refresh).
+- `src/stores/auth-store.ts` (Zustand) usa AuthService.
+- `src/theme/tokens.ts` (brandColors + brandFonts + spacing).
+- `src/constants/env.ts` (getApiBaseUrl/getApiTimeoutMs dev/prod).
 - `src/global.css` (Tailwind directives).
+- `src/__tests__/quality/` (4 tests: hex-color-guard, no-any, type-imports, workspace).
 - `babel.config.js` + `metro.config.js` + `tailwind.config.js` (Nativewind).
-- `tsconfig.json` + `jest.config.js` + `jest.setup.js` + `eslint.config.js` (FlatCompat).
-- `assets/images/` (icon, splash, favicon, android adaptive icons).
-- `ios/` + `android/` regenerados con `expo prebuild` (regenerables; no commiteados a git).
+- `tsconfig.json` + `jest.config.js` + `jest.setup.js` + `eslint.config.js` (FlatCompat + custom rules).
+- `assets/images/` + `ios/` + `android/` (regenerables).
 
 ## Stack (instalado y verificado)
 
@@ -39,7 +41,7 @@ Workspace completo en repo root:
 | TypeScript | 5.9.3 |
 | Jest | 29.7.0 |
 | jest-expo | 57.0.2 |
-| ESLint | 9.39.0 + eslint-config-expo 9.1.0 (FlatCompat) |
+| ESLint | 9.39.0 + eslint-config-expo 9.1.0 + 3 custom rules (no-hex, no-any, type-imports) |
 | Nativewind | 4.2.6 |
 | Tailwind CSS | 3.4.17 |
 | Zustand | 5.0.4 |
@@ -48,184 +50,186 @@ Workspace completo en repo root:
 | eas-cli | 24.0.0 |
 
 ### Native (gestionado por `expo prebuild`)
-
 | Capa | Versión |
 |---|---|
-| iOS deployment target | 15.1 (default 16.4 para react-native itself) |
+| iOS deployment target | 15.1 |
 | Android `compileSdkVersion` | 36 |
 | Android `targetSdkVersion` | 36 |
 | Android `minSdkVersion` | 24 (Android 7.0) |
 | App ID iOS | `mx.com.tags.movil` |
-| App ID Android | `mx.com.tags.movil` (namespace + applicationId) |
+| App ID Android | `mx.com.tags.movil` |
 | Hermes | default ON |
 | New Architecture (Fabric + TurboModules) | default ON |
 
-**Backend**: Laravel 12 existente en `101tags.com-/` (NO modificar).
-**Auth**: Sanctum bearer tokens (F1).
+**Backend**: Laravel 12 existente en `101tags.com-/` (NO modificar).  
+**Auth**: Sanctum bearer tokens.  
 **Secure storage**: **`expo-secure-store`** (built-in; Keychain iOS / Android Keystore AES-GCM).
 
-## Important files
+## Important files (post-M1.1)
 
-```text
+```
 /101tags-movil/
-├── AGENTS.md                       (preserved + stack actualizado)
-├── PLAN.md                         (preserved, stack objetivo a actualizar)
-├── DISCOVERY.md                    (preserved + §PIVOTE añadido)
-├── TASKS.md                        (preserved)
-├── ISSUES.md                       (preserved)
-├── README.md                       (rewrite — quick start Expo)
+├── AGENTS.md                       (§ Disciplina de I/O + § Cuotas multi-agente)
+├── PLAN.md, DISCOVERY.md, TASKS.md, ISSUES.md, README.md
 ├── STATE.md                        (este archivo)
-├── .gitignore                      (Expo defaults)
-├── .nvmrc                          (24)
-├── .prettierrc                     (100/singleQuote/trailingComma)
-├── app.json                        (Expo: name, slug, ios bundleId, android package, plugins)
-├── eas.json                        (EAS Build profiles: dev/preview/production)
-├── package.json                    (stack RN+Expo 57)
-├── pnpm-lock.yaml                  (único lockfile)
-├── babel.config.js                 (Nativewind + Reanimated)
-├── metro.config.js                 (Metro + Nativewind)
-├── tailwind.config.js              (Nativewind v4 + brand tokens)
-├── tsconfig.json                   (extends expo/tsconfig.base + strict)
-├── jest.config.js                  (jest-expo preset)
-├── jest.setup.js                   (mocks)
-├── eslint.config.js                (FlatCompat + eslint-config-expo)
+├── .gitignore, .nvmrc, .prettierrc, .prettierignore
+├── app.json, eas.json
+├── package.json, pnpm-lock.yaml
+├── babel.config.js, metro.config.js, tailwind.config.js
+├── tsconfig.json, jest.config.js, jest.setup.js, eslint.config.js
+├── scripts/baseline.js             (captura metrics de calidad)
+├── docs/quality/baseline.md        (snapshot)
 ├── src/
-│   ├── global.css                  (Tailwind directives)
+│   ├── global.css
 │   ├── app/
-│   │   ├── _layout.tsx             (Providers + hydration + Stack)
-│   │   ├── index.tsx               (redirect según auth)
-│   │   ├── (tabs)/
-│   │   │   ├── _layout.tsx         (Bottom tabs)
-│   │   │   └── index.tsx           (home screen)
-│   │   └── (auth)/
-│   │       ├── _layout.tsx
-│   │       ├── login.tsx
-│   │       └── register.tsx
+│   │   ├── _layout.tsx             (QueryClientProvider + httpClient wiring + Stack)
+│   │   ├── index.tsx               (redirect index)
+│   │   ├── (tabs)/{_layout,index}.tsx
+│   │   └── (auth)/{_layout,login,register}.tsx
 │   ├── theme/
-│   │   ├── tokens.ts               (brandColors + brandFonts + spacing)
-│   │   ├── tokens.css              (CSS custom props)
-│   │   └── __tests__/tokens.spec.ts
+│   │   ├── tokens.ts, tokens.css
+│   │   └── __tests__/{tokens,nativewind-tokens}.spec.ts
 │   ├── constants/
-│   │   ├── env.ts                  (Environment interface + impl dev/prod)
+│   │   ├── env.ts
 │   │   └── __tests__/env.spec.ts
 │   ├── core/
 │   │   ├── api/
-│   │   │   ├── client.ts           (HTTP client wrapper con bearer)
+│   │   │   ├── client.ts           (httpClient: bearer + 401 interceptor)
 │   │   │   └── __tests__/client.spec.ts
-│   │   ├── models/                 (.gitkeep — Auth en M1.1)
-│   │   ├── services/               (.gitkeep)
+│   │   ├── models/
+│   │   │   ├── auth.ts             (7 types)
+│   │   │   └── __tests__/auth.spec.ts
+│   │   ├── services/
+│   │   │   ├── secure-storage-service.ts  (singleton)
+│   │   │   ├── is-secure-storage-available.ts
+│   │   │   ├── auth-service.ts    (singleton login/register/logout/me/refresh)
+│   │   │   └── __tests__/{secure-storage-service,auth-service}.spec.ts
 │   │   ├── storage/
-│   │   │   ├── secure-store.ts     (expo-secure-store wrapper)
+│   │   │   ├── secure-store.ts
 │   │   │   └── __tests__/secure-store.spec.ts
-│   │   └── query/
-│   │       └── client.ts           (TanStack QueryClient singleton)
+│   │   └── query/client.ts
 │   ├── stores/
-│   │   ├── auth-store.ts           (Zustand)
+│   │   ├── auth-store.ts
 │   │   └── __tests__/auth-store.spec.ts
-│   └── components/                 (.gitkeep)
-├── assets/
-│   └── images/                     (icon, splash, favicon, android adaptive)
-├── ios/                            (regenerable con `expo prebuild`)
-├── android/                        (regenerable con `expo prebuild`)
-├── docs/audit/                     (preserved)
+│   ├── components/.gitkeep
+│   └── __tests__/
+│       ├── splash-theme.spec.ts
+│       └── quality/
+│           ├── hex-color-guard.spec.ts
+│           ├── no-any.spec.ts
+│           ├── type-imports.spec.ts
+│           └── workspace.spec.ts
+├── assets/images/
+├── ios/, android/                  (regenerable)
 └── .spec/
-    ├── README.md                   (actualizado: storage expo-secure-store)
-    ├── 00-rn-expo-scaffold.md      (APPROVED — pivote)
-    ├── 2026-09-09-m0-1-auditar-contratos.md   (DONE — agnóstico)
-    ├── 2026-09-09-m0-3-validar-versiones.md   (APPROVED — RN+Expo)
-    └── 2026-09-09-m0-4-workspace-rn-expo.md   (DRAFT → DONE)
+    ├── 00-rn-expo-scaffold.md                      (APPROVED)
+    ├── 2026-09-09-m0-1-auditar-contratos.md       (DONE)
+    ├── 2026-09-09-m0-3-validar-versiones.md       (APPROVED)
+    ├── 2026-09-09-m0-4-workspace-rn-expo.md       (DONE)
+    ├── 2026-09-09-m0-5-pivot-theme-nativewind-env.md (DONE)
+    ├── 2026-09-09-m0-6-pivot-quality-baseline.md  (DONE)
+    └── 2026-09-09-m1-1-auth-models-service.md     (DONE)
 ```
 
-## Testing
+## Testing (baseline post-M1.1)
 
-- **Runner**: Jest 29 + jest-expo preset + `@testing-library/react-native`.
-- **7 spec files / 49 tests verdes** (M0.5-PIVOT):
-  - `src/theme/__tests__/tokens.spec.ts` (8 tests — +3 fontWeights/radii/spacing-brand-1..8)
-  - `src/theme/__tests__/nativewind-tokens.spec.ts` (4 tests — sync tokens.ts ↔ tailwind.config.js)
-  - `src/constants/__tests__/env.spec.ts` (12 tests — +5 getApiBaseUrl/getApiTimeoutMs)
-  - `src/core/storage/__tests__/secure-store.spec.ts` (7 tests)
-  - `src/core/api/__tests__/client.spec.ts` (4 tests)
-  - `src/stores/__tests__/auth-store.spec.ts` (5 tests)
-  - `src/app/__tests__/splash-theme.spec.ts` (8 tests — no hex literals en componentes)
+**Runner**: Jest 29 + jest-expo preset + `@testing-library/react-native`.
 
-## Verification commands (reales, ejecutadas)
+**11 spec files / 90 tests verdes**:
+- `src/theme/__tests__/tokens.spec.ts` (8)
+- `src/theme/__tests__/nativewind-tokens.spec.ts` (4)
+- `src/constants/__tests__/env.spec.ts` (12)
+- `src/core/storage/__tests__/secure-store.spec.ts` (7)
+- `src/core/api/__tests__/client.spec.ts` (4)
+- `src/core/models/__tests__/auth.spec.ts` (~10)
+- `src/core/services/__tests__/secure-storage-service.spec.ts` (~8)
+- `src/core/services/__tests__/auth-service.spec.ts` (~12)
+- `src/stores/__tests__/auth-store.spec.ts` (5)
+- `src/app/__tests__/splash-theme.spec.ts` (8)
+- `src/__tests__/quality/{hex-color-guard,no-any,type-imports,workspace}.spec.ts` (~12)
 
-- `nvm use 24` → Node v24.21.0 (LTS)
-- `pnpm install` → exit 0, 11.8s
-- `pnpm typecheck` → exit 0 (tsc 5.9.3)
-- `pnpm lint` → exit 0 (expo lint → ESLint 9 flat)
-- `pnpm test:ci` → 28/28 tests verdes
-- `pnpm validate` → typecheck + lint + test:ci → exit 0
-- `pnpm exec expo prebuild --no-install --clean` → exit 0, ios/ + android/ generados
-  - iOS deployment target: 15.1
-  - Android compileSdk/targetSdk: 36, minSdk: 24
-  - App ID iOS: `mx.com.tags.movil` (PRODUCT_BUNDLE_IDENTIFIER)
-  - App ID Android: `mx.com.tags.movil` (namespace + applicationId)
-- `pnpm exec expo export --platform web --output-dir dist` → exit 0, 9 static routes, dist/ con `E31E24` y `Montserrat` en JS bundle
+Delta acumulado: 28 (M0.4) → 49 (M0.5, +21) → 78 (M1.1, +29) → 90 (M0.6 + tests quality, +12) → ~130 (M1.3, +40: errors.spec.ts 8 + auth.spec.ts 15 + login.spec.tsx 10 + register.spec.tsx 7).
+
+## Verification commands (ejecutadas)
+- `node -v` → v24.21.0
+- `pnpm -v` → 10.32.1
+- `pnpm typecheck` → exit 0
+- `pnpm lint` → exit 0
+- `pnpm test:ci` → 90/90 (verificado en cada issue, no re-ejecutado a posteriori)
+- `pnpm exec expo prebuild --no-install --clean` → exit 0 (cuando fue necesario)
+- `pnpm exec expo export --platform web --output-dir dist` → exit 0 (validación F0)
 - `pnpm exec eas --version` → `eas-cli/24.0.0`
-- `eas.json` valid JSON, `app.json` valid via `expo config --type public`
 
-## Existing test baseline
-- 28/28 smoke tests verdes.
+## Disciplina de I/O (permanente en AGENTS.md)
+- Max 2 workers I/O pesados simultáneos (tests/builds/installs/exports).
+- Max 3 subagentes de análisis/edición simultáneos.
+- Builds completos uno a uno.
+- `nice -n 10 ionice -c2 -n7` para procesos pesados.
+- **PROHIBIDO sin auth**: `pnpm install` (si node_modules existe), `pnpm test:ci` full suite, `pnpm validate`, `pnpm exec expo prebuild --clean`, `pnpm exec expo export --platform web`, `rm -rf node_modules`, find recursivo sobre node_modules.
+- **PERMITIDO sin preguntar**: typecheck, lint, `pnpm test <archivo>` único, `pnpm test -t "..."`, git status/diff/log, grep/read (excluyendo node_modules), gh pr/issue.
 
 ## Known pre-existing items
-- ESLint 9.39.0 deprecated (warning only); Next ESLint version pending.
+- ESLint 9.39.0 deprecated (warning only).
 - `jest-expo` 57.0.5 disponible (estamos en 57.0.2); upgrade opcional.
-- `typescript` 7.0.2 disponible (estamos en 5.9.3); TS 6 ya está soportado por RN 0.86; upgrade opcional en F1.
+- `typescript` 7.0.2 disponible (estamos en 5.9.3); upgrade opcional en F1.
 
 ## PIVOTE — Ionic+Angular+Cap → RN+Expo SDK 57
-
-Tras M0.1-M0.4-Ionic mergeados en `main` (commits 35822a7, ff1a808, 8925bea, 3157993), el usuario pivotó a RN+Expo por:
-1. Reutilización futura de código React del equipo.
-2. Tooling más moderno (expo-router file-based, EAS Build cloud, OTA updates).
-3. Mismas garantías de no-obsolecencia (SDK 57 es actual Sept 2026).
-
-Decisiones:
-- SDK 57 (no SDK 53 como el usuario mencionó inicialmente) por ser la versión actual.
-- TypeScript 5.9.3 (TS 6 funciona con RN 0.86, pero optamos por 5.9.x por estabilidad probada).
-- Expo Router 6 (file-based; reemplaza React Navigation).
-- Nativewind v4 + Tailwind 3.4 (Nativewind v5/Tailwind 4 aún pre-release).
-- Zustand 5 + TanStack Query 5 (estándar RN moderno).
-- expo-secure-store built-in (Keychain/Keystore).
-- EAS Build cloud (no requiere Xcode local).
-- App ID `mx.com.tags.movil` (mismo que M0.4-Ionic; coherencia).
-
-Lo que se descartó:
-- Ionic 9 + Angular 22 + Capacitor 8 (scaffold de M0.4-Ionic borrado).
-- @capacitor-community/secure-storage (no existe; sustituido por expo-secure-store built-in).
-- `@aparajita/capacitor-secure-storage` (ya no necesario).
-- M0.5/M0.6/M1.1 planeados para Angular/Ionic (Tailwind 4 CSS-first, ESLint angular-eslint, etc.) — se sustituyen por equivalentes RN+Expo en próximas specs.
+Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 + TS 5.9.x + Expo Router 6 + Nativewind v4 + Zustand 5 + TanStack Query 5 + expo-secure-store built-in.
 
 ## Active specifications
-- `.spec/00-rn-expo-scaffold.md` — **APPROVED** (pivote, sustituye 00-ionic-scaffold.md)
-- `.spec/2026-09-09-m0-3-validar-versiones.md` — **APPROVED** (RN+Expo 57 stack; sustituye versión Ionic)
-- `.spec/2026-09-09-m0-4-workspace-rn-expo.md` — **DRAFT → DONE** (scaffold RN+Expo)
-- `.spec/2026-09-09-m0-1-auditar-contratos.md` — **DONE** (preserved, agnóstico al stack)
+- `.spec/00-rn-expo-scaffold.md` — **APPROVED** (pivote)
+- `.spec/2026-09-09-m0-3-validar-versiones.md` — **APPROVED**
+- `.spec/2026-09-09-m0-1-auditar-contratos.md` — **DONE**
+- `.spec/2026-09-09-m0-4-workspace-rn-expo.md` — **DONE**
+- `.spec/2026-09-09-m0-5-pivot-theme-nativewind-env.md` — **DONE** (PR #45)
+- `.spec/2026-09-09-m0-6-pivot-quality-baseline.md` — **DONE** (PR #49)
+- `.spec/2026-09-09-m1-1-auth-models-service.md` — **DONE** (PR #47)
+- `.spec/2026-09-09-m1-2-session-restore-guards.md` — **DONE** (PR #50)
+- `.spec/2026-09-09-m1-3-login-register-ux.md` — **DONE** (PR #59)
+- `.spec/2026-09-10-m1-4-hardening.md` — **DONE** (PR #60)
+- `.spec/2026-09-10-m1-5-session-cycle.md` — **DONE** (PR #61)
+- `.spec/2026-09-10-m1-6-abort-timeout.md` — **DONE** (PR #62)
+- `.spec/2026-09-10-m1-7-gitignore.md` — **DONE** (PR #63)
+- `.spec/2026-09-10-m1-8-font-montserrat.md` — **DONE** (PR #64)
+- `.spec/2026-09-10-m1-9-forgot-reset.md` — **DONE** (PR #65)
+- `.spec/2026-09-10-m1-10-splash-tabs.md` — **DONE** (PR #66)
+- `.spec/2026-09-11-p0-hydrate-boot-bearer.md` — **DONE** (PR #68)
+- `.spec/2026-09-11-m2-0-setup.md` — **DONE** (PR #70)
+- `.spec/2026-09-11-m2-1-home.md` — **DONE** (PR #71)
+- `.spec/2026-09-11-m2-4-detail.md` — **DONE** (PR #72)
+- `.spec/2026-09-11-m2-2-categories.md` — **DONE (PR #74)**
+- `.spec/2026-09-11-m2-3-list.md` — **DONE (PR #75)**
+- `.spec/2026-09-11-m2-5-ux.md` — **DONE (PR #76)**
 
 ## Current phase
-F0 / M0.5-PIVOT DONE — Nativewind theme tokens en componentes + environments ajustados. Pendiente: PR + merge a `main`. Después M0.6 (ESLint baseline), M1.1 (Auth models + secure-storage wrapper funcional).
+**F2 COMPLETO E INTEGRADO en `developer`** (95c8f24, PR #73). Próximo: **`developer` → `main` (PR #67, requiere autorización del usuario)** y arrancar F3 (#17).
 
-## Next action
-
-1. **PR + merge**: rama `chore/m0-5-pivot` → `main`. Mensaje documenta M0.5-PIVOT + sustituciones.
-2. **M0.6-PIVOT**: ESLint custom rules + smoke tests reales + docs/quality/baseline.md.
-3. **M1.1**: Auth models (7) + SecureStorageService + AuthService + interceptor.
+## Next actions (roadmap)
+1. **Cierre F2** — `developer` → `main` (PR #67, con autorización) → iniciar F3.
+2. **F3.x** — Cart + checkout + pagos (issues #17-#22).
+3. **F4.x** — Pedidos + cancelaciones + rating (issues #23-#25).
+4. **F5.x** — Chat + notificaciones in-app (issues #26-#28).
+5. **F6.x** — Perfil + cupones + contenido estático (issues #29-#31).
+6. **F7.x** — Plugins nativos + Android/iOS signing + QA + release (issues #32-#36).
+7. **META** — Issues #37 (Notion sync), #38 (Project/Milestones), #58 (CI obligatorio).
 
 ## Handover
 
 [RELEVO DE AGENTE]
-- Fase actual: F0 / M0.5-PIVOT DONE — Nativewind theme tokens + environments ajustados
-- Specs activas:
-  - `.spec/00-rn-expo-scaffold.md` (APPROVED)
-  - `.spec/2026-09-09-m0-3-validar-versiones.md` (APPROVED — RN+Expo)
-  - `.spec/2026-09-09-m0-4-workspace-rn-expo.md` (DONE)
-  - `.spec/2026-09-09-m0-5-pivot-theme-nativewind-env.md` (DRAFT → DONE en este commit)
-  - `.spec/2026-09-09-m0-1-auditar-contratos.md` (DONE — preserved)
-- Componente actual: app/ (expo-router) + ios/ + android/ + 49/49 tests verdes
-- Stack real instalado y verificado: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6
-- Discrepancias activas: PIVOTE documentado (sustituye stack Ionic+Angular+Cap)
-- Tests: 49/49 smoke verdes (delta +21 vs M0.4-PIVOT)
-- Última acción: M0.5-PIVOT commit (theme tokens sincronizados entre tokens.ts + tailwind.config.js + global.css; getApiBaseUrl()/getApiTimeoutMs(); login/register/_layout/(tabs)/index refactorizados a Nativewind classes)
-- Próximo paso exacto: commit (ya ejecutado localmente en `chore/m0-5-pivot`); push + PR + merge quedan para el usuario
-- Decisiones pendientes: OpenPay nativo (M3.6), deep links reset (M1.4), EAS Update (F7)
-- Pre-F7: compilación nativa cloud via EAS Build (sin Xcode/Android SDK local; primera compilación EAS debe hacerse con `eas login` + `eas build`)
+- Fase actual: **F2 COMPLETO E INTEGRADO en `developer`** (95c8f24, PR #73). PRs #70-#72, #74, #75, #76. Issues #12, #13, #14, #15, #16 cerradas. Housekeeping: #7/#8/#9 cerradas. Rama `f2/catalogo` eliminada tras el squash.
+- Próximo paso exacto: el usuario hará **`developer` → `main`** (PR #67) cuando lo decida; el agente arranca F3 (#17, cart service) en ramas feature → `developer`.
+- **Contrato corregido en M2.3:** `Paginated<T>` flat camelCase (`data`, `currentPage`, `lastPage`, `perPage`, `total`, `from`, `to`, `nextPageUrl`, `prevPageUrl`), acorde al `LengthAwarePaginator` de `/api/catalog/products`. Documentado en `DISCOVERY.md §10.1`.
+- Stack: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6 + Zustand 5 + TanStack Query 5.
+- Decisiones pendientes: guest checkout (M3.3/DISCOVERY §8), OpenPay móvil (M3.6/§9), signing F7 (Apple/Google, insumos del usuario).
+- Nota: `pnpm format:check` puede marcar `SortChips.tsx`/`FiltersSheet.tsx`/`CategoryGrid.tsx` (prettier pre-existente); no forma parte del gate actual (`validate` = typecheck+lint+test).
+
+## PRs abiertos pendientes de revisión (sin merge)
+
+> Política vigente: el agente **no mergea a `developer`** ni cierra issues; deja PRs abiertos y el usuario los revisa/mergea después.
+
+- `fix/m2-review-p1` → PR **abierto** contra `developer`. Cierra 4 hallazgos P1 de revisión: test de paginator en `httpClient`, precio efectivo `variant.price`, selector con combinaciones disjuntas (Opción B: chips cruzados accionables + auto-limpieza del eje contrario), y `expo-image ~57.0.4`. Spec `.spec/2026-09-11-m2-review-p1-fixes.md`.
+- `feat/f3` → PR **abierto** (#78) contra `fix/m2-review-p1` (stacked). Implementa **F3 M3.1–M3.5** (#17 cart + badge, #18 checkout config/dirección, #19 request-orders con idempotencia + guest, #20 OXXO/SPEI, #21 comprobante). Deps aprobadas: `expo-document-picker`, `expo-clipboard`. **#22 OpenPay excluido** (pendiente). Specs `.spec/2026-09-11-m3-*.md`. **No merge.**
+- `feat/f4` → PR **abierto** (#79) contra `feat/f3` (stacked). Implementa **F4 M4.1–M4.3** (#23 mis pedidos/detalle/tracking, #24 cancelaciones y devoluciones, #25 calificación de proveedor). Specs `.spec/2026-09-11-m4-*.md`. **No merge.**
+- `feat/f5` → PR **abierto** (#80) contra `feat/f4` (stacked). Implementa **F5 M5.1–M5.3** (#26 chat con polling, #27 adjuntos, #28 notificaciones in-app). Specs `.spec/2026-09-11-m5-*.md`. **No merge.**
+- `feat/f6` → PR **abierto** (#81) contra `feat/f5` (stacked). Implementa **F6 M6.1–M6.3** (#29 perfil/settings/logout, #30 cupones, #31 legal/ayuda). Specs `.spec/2026-09-11-m6-*.md`. **No merge.**
+- `feat/f7` → PR **abierto** (#82) contra `feat/f6` (stacked). Implementa **F7 M7.1–M7.5 (PARCIAL)**: nativo/privacidad, release prep (eas.json/versiones/deep link), QA automatizado. **BLOQUEADO**: builds firmados, deep link/QA en dispositivo, subida a tiendas (cuentas/keystores/dispositivos). Specs `.spec/2026-09-11-m7-*.md`, `docs/release/RELEASE-CHECKLIST.md`. **No merge.**

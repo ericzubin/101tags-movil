@@ -81,6 +81,43 @@ describe('http client', () => {
     expect(data).toEqual({ a: 1, b: 2 });
   });
 
+  it('AC1 (M2-review): convierte un paginator Laravel flat a camelCase plano (/catalog/products)', async () => {
+    const mockFetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            current_page: 2,
+            data: [{ id: 1, min_price: 100 }],
+            last_page: 5,
+            per_page: 12,
+            total: 60,
+            from: 13,
+            to: 24,
+            next_page_url: 'https://api.test/api/catalog/products?page=3',
+            prev_page_url: 'https://api.test/api/catalog/products?page=1',
+          }),
+        ),
+    });
+    globalThis.fetch = mockFetch as any;
+
+    const client = createHttpClient(() => null);
+    const page = await client.get<Record<string, unknown>>('/catalog/products?page=2');
+
+    expect(page.currentPage).toBe(2);
+    expect(page.lastPage).toBe(5);
+    expect(page.perPage).toBe(12);
+    expect(page.total).toBe(60);
+    expect(page.from).toBe(13);
+    expect(page.to).toBe(24);
+    expect(page.nextPageUrl).toBe('https://api.test/api/catalog/products?page=3');
+    expect(page.prevPageUrl).toBe('https://api.test/api/catalog/products?page=1');
+    expect((page.data as { minPrice: number }[])[0].minPrice).toBe(100);
+    expect(page.meta).toBeUndefined();
+  });
+
   it('setAuthTokenProvider re-assigns the bearer token without re-instantiating', async () => {
     const mockFetch = jest
       .fn()
@@ -166,5 +203,44 @@ describe('http client', () => {
 
     await expect(client.get('/x')).rejects.toBeInstanceOf(HttpError);
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  describe('AC9 — no token leaks into console', () => {
+    let consoleSpies: jest.SpyInstance[];
+
+    beforeEach(() => {
+      consoleSpies = ['log', 'warn', 'error', 'info', 'debug'].map((m) =>
+        jest.spyOn(console, m as keyof Console).mockImplementation(() => undefined),
+      );
+    });
+
+    afterEach(() => {
+      consoleSpies.forEach((spy) => spy.mockRestore());
+    });
+
+    it('never emits the bearer token via console.* when making authenticated requests', async () => {
+      const secret = 'super-secret-token-XYZ';
+      const mockFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: () => Promise.resolve('null'),
+      });
+      globalThis.fetch = mockFetch as any;
+
+      const client = createHttpClient(() => secret);
+      await client.get('/api/auth/me');
+      await client.post('/api/auth/logout', {});
+      await expect(client.get('/api/auth/me')).resolves.toBeNull();
+
+      for (const spy of consoleSpies) {
+        for (const call of spy.mock.calls) {
+          for (const arg of call) {
+            const text = typeof arg === 'string' ? arg : JSON.stringify(arg);
+            expect(text).not.toContain(secret);
+          }
+        }
+      }
+    });
   });
 });

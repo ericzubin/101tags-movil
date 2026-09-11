@@ -31,3 +31,27 @@
     @apply bg-brand-medium text-brand-dark font-brand;
   }
 }
+
+/*
+ * M1.8 AC6 — Montserrat bundled font, registered for web export.
+ *
+ * The family name `Montserrat` is shared so that Nativewind / Tailwind
+ * uses font-weight to pick the right variant: `font-normal` → 400 (Regular),
+ * `font-bold` → 700 (Bold). On native (iOS/Android) the same weights are
+ * registered under explicit family names via `Font.loadAsync` in
+ * `src/app/_layout.tsx`.
+ */
+@font-face {
+  font-family: 'Montserrat';
+  font-weight: 400;
+  font-style: normal;
+  src: url('/assets/fonts/Montserrat-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-weight: 700;
+  font-style: normal;
+  src: url('/assets/fonts/Montserrat-Bold.ttf') format('truetype');
+  font-display: swap;
+}

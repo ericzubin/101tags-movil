@@ -3,7 +3,7 @@
     "name": "101tags",
     "slug": "101tags",
     "scheme": "101tags",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
@@ -16,8 +16,39 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "mx.com.tags.movil",
+      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": [
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePhoneNumber",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -37,6 +68,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "expo-font",
       [
         "expo-splash-screen",
         {
@@ -57,10 +89,23 @@
             "minSdkVersion": 24
           }
         }
+      ],
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a 101tags acceder a tus fotos para adjuntar el comprobante de tu pago.",
+          "cameraPermission": "Permite a 101tags usar la cámara para tomar la foto del comprobante de tu pago.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "https://api.101tags.com/api",
+      "apiTimeoutMs": 30000
     }
   }
 }
