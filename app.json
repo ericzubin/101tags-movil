@@ -58,7 +58,8 @@
             "minSdkVersion": 24
           }
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true

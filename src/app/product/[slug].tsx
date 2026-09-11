@@ -12,6 +12,7 @@ import {
   availableSizes,
   clampQuantity,
   findVariant,
+  isSelectable,
 } from '@/components/product/variant-logic';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -105,10 +106,24 @@ export default function ProductDetailScreen() {
 
   const canAdd = !!variant && variant.stock > 0;
   const priceLabel = variant
-    ? formatMXN(variant.priceOverride ?? product.minPrice)
+    ? formatMXN(variant.price)
     : product.minPrice === product.maxPrice
       ? formatMXN(product.minPrice)
       : `${formatMXN(product.minPrice)} – ${formatMXN(product.maxPrice)}`;
+
+  const handleSelectSize = (nextSize: string) => {
+    setSize(nextSize);
+    setColor((current) =>
+      current && !isSelectable(product.variants, nextSize, current) ? null : current,
+    );
+  };
+
+  const handleSelectColor = (nextColor: string) => {
+    setColor(nextColor);
+    setSize((current) =>
+      current && !isSelectable(product.variants, current, nextColor) ? null : current,
+    );
+  };
 
   return (
     <>
@@ -144,8 +159,8 @@ export default function ProductDetailScreen() {
                 variants={product.variants}
                 selectedSize={size}
                 selectedColor={color}
-                onSelectSize={setSize}
-                onSelectColor={setColor}
+                onSelectSize={handleSelectSize}
+                onSelectColor={handleSelectColor}
               />
             </View>
           )}

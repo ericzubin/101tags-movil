@@ -222,3 +222,9 @@ Histórico documentado en `DISCOVERY.md §PIVOTE`. Decisión: SDK 57 + RN 0.86 +
 - Stack: Node 24.21 + pnpm 10.32 + Expo SDK 57.0.21 + RN 0.86.3 + React 19.2.3 + TS 5.9.3 + ESLint 9.39 + Jest 29.7 + jest-expo 57.0.2 + Nativewind 4.2.6 + Zustand 5 + TanStack Query 5.
 - Decisiones pendientes: guest checkout (M3.3/DISCOVERY §8), OpenPay móvil (M3.6/§9), signing F7 (Apple/Google, insumos del usuario).
 - Nota: `pnpm format:check` puede marcar `SortChips.tsx`/`FiltersSheet.tsx`/`CategoryGrid.tsx` (prettier pre-existente); no forma parte del gate actual (`validate` = typecheck+lint+test).
+
+## PRs abiertos pendientes de revisión (sin merge)
+
+> Política vigente: el agente **no mergea a `developer`** ni cierra issues; deja PRs abiertos y el usuario los revisa/mergea después.
+
+- `fix/m2-review-p1` → PR **abierto** contra `developer`. Cierra 4 hallazgos P1 de revisión: test de paginator en `httpClient`, precio efectivo `variant.price`, selector con combinaciones disjuntas (Opción B: chips cruzados accionables + auto-limpieza del eje contrario), y `expo-image ~57.0.4`. Spec `.spec/2026-09-11-m2-review-p1-fixes.md`.
