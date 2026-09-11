@@ -103,6 +103,29 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="product/[slug]" />
+            <Stack.Screen name="checkout/address" options={{ title: 'Dirección de envío' }} />
+            <Stack.Screen name="checkout/review" options={{ title: 'Revisar pedido' }} />
+            <Stack.Screen name="checkout/confirmation" options={{ title: 'Pedido confirmado' }} />
+            <Stack.Screen
+              name="checkout/payment-instructions"
+              options={{ title: 'Instrucciones de pago' }}
+            />
+            <Stack.Screen
+              name="checkout/payment-proof"
+              options={{ title: 'Enviar comprobante' }}
+            />
+            <Stack.Screen name="orders/index" options={{ title: 'Mis pedidos' }} />
+            <Stack.Screen name="orders/[orderNumber]" options={{ title: 'Pedido' }} />
+            <Stack.Screen name="orders/request" options={{ title: 'Solicitar' }} />
+            <Stack.Screen name="returns/index" options={{ title: 'Mis devoluciones' }} />
+            <Stack.Screen name="chat/index" options={{ title: 'Mensajes' }} />
+            <Stack.Screen name="chat/[orderNumber]" options={{ title: 'Conversación' }} />
+            <Stack.Screen name="notifications" options={{ title: 'Notificaciones' }} />
+            <Stack.Screen name="coupons" options={{ title: 'Mis cupones' }} />
+            <Stack.Screen name="profile" options={{ title: 'Mi perfil' }} />
+            <Stack.Screen name="legal/terms" options={{ title: 'Términos y condiciones' }} />
+            <Stack.Screen name="legal/privacy" options={{ title: 'Aviso de privacidad' }} />
+            <Stack.Screen name="legal/help" options={{ title: 'Ayuda' }} />
           </Stack>
         </View>
       </QueryClientProvider>

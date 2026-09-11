@@ -41,6 +41,12 @@ jest.mock('@expo/vector-icons', () => ({
 
 let mockIsHydrated = true;
 let mockIsAuthenticated = true;
+let mockCartCount = 0;
+
+jest.mock('@/stores/cart-store', () => ({
+  useCartStore: (selector: (s: { items: unknown[] }) => unknown) => selector({ items: [] }),
+  selectTotalCount: () => mockCartCount,
+}));
 
 jest.mock('@/stores/auth-store', () => ({
   useAuthStore: (
@@ -61,6 +67,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockIsHydrated = true;
   mockIsAuthenticated = true;
+  mockCartCount = 0;
 });
 
 describe('TabsLayout — contract (M1.10 AC1-AC5)', () => {
@@ -123,5 +130,22 @@ describe('TabsLayout — contract (M1.10 AC1-AC5)', () => {
     render(<TabsLayout />);
     expect(mockTabs).not.toHaveBeenCalled();
     expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it('M3.1: cart tabBarBadge = totalCount cuando > 0, undefined cuando 0', () => {
+    mockCartCount = 0;
+    render(<TabsLayout />);
+    let cart = mockTabsScreen.mock.calls
+      .map((c) => c[0] as { name: string; options: { tabBarBadge?: number } })
+      .find((p) => p.name === 'cart');
+    expect(cart?.options.tabBarBadge).toBeUndefined();
+
+    mockTabsScreen.mockClear();
+    mockCartCount = 3;
+    render(<TabsLayout />);
+    cart = mockTabsScreen.mock.calls
+      .map((c) => c[0] as { name: string; options: { tabBarBadge?: number } })
+      .find((p) => p.name === 'cart');
+    expect(cart?.options.tabBarBadge).toBe(3);
   });
 });

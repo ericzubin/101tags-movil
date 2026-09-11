@@ -228,47 +228,52 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M3.1 — Cart service, sync API y badge
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** F2
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — ver `.spec/2026-09-11-m3-1-cart.md`
 
 **Aceptación**
-- [ ] Signal de carrito refleja GET/PUT/DELETE reales.
-- [ ] Actualización optimista, si existe, revierte correctamente en error.
-- [ ] Badge se actualiza sin recargar tabs.
-- [ ] Cantidad inválida/stock insuficiente se maneja sin corrupción de estado.
+- [x] Signal de carrito refleja GET/PUT/DELETE reales.
+- [x] Actualización optimista, si existe, revierte correctamente en error.
+- [x] Badge se actualiza sin recargar tabs.
+- [x] Cantidad inválida/stock insuficiente se maneja sin corrupción de estado.
 
 ## M3.2 — Checkout config, dirección y envío
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-2-checkout-address.md`
 
 **Aceptación**
-- [ ] Se consulta `/checkout/config` antes de ofrecer métodos.
-- [ ] Dirección valida campos requeridos y datos esperados por API.
-- [ ] Resumen conserva precios/cantidades del servidor.
-- [ ] No se confía en totales calculados solo por cliente.
+- [x] Se consulta `/checkout/config` antes de ofrecer métodos.
+- [x] Dirección valida campos requeridos y datos esperados por API.
+- [x] Resumen conserva precios/cantidades del servidor.
+- [x] No se confía en totales calculados solo por cliente.
 
 ## M3.3 — Request orders, idempotencia y guest checkout
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.2
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-3-request-orders.md`
 
 **Aceptación**
-- [ ] Cada intento lógico usa UUID estable en `Idempotency-Key`.
-- [ ] Reintento por timeout no crea pedidos duplicados.
-- [ ] Auth y guest siguen contratos distintos cuando aplique.
-- [ ] 422/429/5xx presentan acción de recuperación segura.
+- [x] Cada intento lógico usa clave estable en `Idempotency-Key`.
+- [x] Reintento por timeout no crea pedidos duplicados.
+- [x] Auth y guest siguen contratos distintos cuando aplique.
+- [x] 422/409/429/5xx presentan acción de recuperación segura.
 
 ## M3.4 — Pago pendiente OXXO/SPEI
 **Prioridad:** 🔥 Alta · **Estimación:** 3 h · **Dependencias:** M3.3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-4-payment-instructions.md`
 
 **Aceptación**
-- [ ] Se muestran instrucciones exactamente desde API.
-- [ ] Barcode/CLABE/referencia se renderizan con copy action cuando aplique.
-- [ ] Expiración/ausencia de instrucciones tiene estado explícito.
+- [x] Se muestran instrucciones exactamente desde API.
+- [x] Barcode/CLABE/referencia se renderizan con copy action cuando aplique.
+- [x] Expiración/ausencia de instrucciones tiene estado explícito.
 
 ## M3.5 — Subir comprobante de pago
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M3.4
+**Status:** 🚧 IMPLEMENTADO en PR de fase F3 (abierto, sin merge) — `.spec/2026-09-11-m3-5-payment-proof.md`
 
 **Aceptación**
-- [ ] Cámara/selector respetan tipos y tamaños aceptados por backend.
-- [ ] Multipart usa endpoint correcto.
-- [ ] Progress/loading y reintento no provocan dobles uploads involuntarios.
-- [ ] Errores del archivo se muestran antes o después del request según corresponda.
+- [x] Selector respeta tipos y tamaños aceptados por backend.
+- [x] Multipart usa endpoint correcto.
+- [x] Progress/loading y reintento no provocan dobles uploads involuntarios.
+- [x] Errores del archivo se muestran antes o después del request según corresponda.
 
 ## M3.6 — OpenPay tarjeta condicionado por config
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M3.2, M3.3
@@ -285,29 +290,32 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M4.1 — Mis pedidos + detalle + tracking
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** F3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-1-orders.md`
 
 **Aceptación**
-- [ ] Lista paginada/ordenada según API.
-- [ ] Detalle muestra items, total, estado y timeline.
-- [ ] Carrier/tracking se muestra solo cuando existe.
-- [ ] Pedido ajeno/no encontrado se maneja correctamente.
+- [x] Lista paginada/ordenada según API.
+- [x] Detalle muestra items, total, estado y timeline.
+- [x] Carrier/tracking se muestra solo cuando existe.
+- [x] Pedido ajeno/no encontrado se maneja correctamente.
 
 ## M4.2 — Cancelaciones y devoluciones
 **Prioridad:** 🔥 Alta · **Estimación:** 4 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-2-returns.md`
 
 **Aceptación**
-- [ ] Acciones solo aparecen en estados permitidos.
-- [ ] Solicitud valida motivo/datos requeridos.
-- [ ] Listado de devoluciones refleja status backend.
-- [ ] 403/409/422 no se presentan como éxito.
+- [x] Acciones solo aparecen en estados permitidos.
+- [x] Solicitud valida motivo/datos requeridos.
+- [x] Listado de devoluciones refleja status backend.
+- [x] 403/409/422 no se presentan como éxito.
 
 ## M4.3 — Calificación de proveedor
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F4 (abierto, sin merge) — `.spec/2026-09-11-m4-3-rating.md`
 
 **Aceptación**
-- [ ] Rating respeta rango y reglas backend.
-- [ ] No permite doble submit accidental.
-- [ ] Estado ya-calificado se representa correctamente.
+- [x] Rating respeta rango y reglas backend.
+- [x] No permite doble submit accidental.
+- [x] Estado ya-calificado se representa correctamente.
 
 ---
 
@@ -315,29 +323,32 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M5.1 — Conversaciones y chat de orden con polling
 **Prioridad:** 🔥 Alta · **Estimación:** 5 h · **Dependencias:** M4.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-1-chat.md`
 
 **Aceptación**
-- [ ] Lista/conversación usa contratos reales.
-- [ ] Polling se inicia al entrar y se cancela al salir/destroy.
-- [ ] No acumula timers ni requests en background.
-- [ ] Mensajes mantienen orden y no se duplican.
+- [x] Lista/conversación usa contratos reales.
+- [x] Polling se inicia al entrar y se cancela al salir/destroy.
+- [x] No acumula timers ni requests en background.
+- [x] Mensajes mantienen orden y no se duplican.
 
 ## M5.2 — Adjuntos del chat
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** M5.1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-2-chat-attachments.md`
 
 **Aceptación**
-- [ ] Multipart respeta tipos/tamaños backend.
-- [ ] Adjuntos descargables usan acceso autorizado/signed URL cuando corresponda.
-- [ ] `proof_of_payment` se trata según contrato sin duplicar lógica insegura.
+- [x] Multipart respeta tipos/tamaños backend.
+- [x] Adjuntos descargables usan acceso autorizado/signed URL cuando corresponda.
+- [x] `proof_of_payment` se trata según contrato sin duplicar lógica insegura.
 
 ## M5.3 — Notificaciones in-app
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F5 (abierto, sin merge) — `.spec/2026-09-11-m5-3-notifications.md`
 
 **Aceptación**
-- [ ] GET lista notificaciones.
-- [ ] PATCH marca individual leída.
-- [ ] POST read-all actualiza servidor y UI.
-- [ ] Push remoto queda explícitamente fuera del MVP salvo nueva spec.
+- [x] GET lista notificaciones.
+- [x] PATCH marca individual leída.
+- [x] POST read-all actualiza servidor y UI.
+- [x] Push remoto queda explícitamente fuera del MVP salvo nueva spec.
 
 ---
 
@@ -345,27 +356,30 @@ Este archivo convierte `PLAN.md` en trabajo ejecutable. Es la fuente de verdad d
 
 ## M6.1 — Perfil, settings y logout
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F1
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-1-profile.md`
 
 **Aceptación**
-- [ ] Perfil usa `/auth/customer/me`.
-- [ ] Logout invalida backend cuando aplique y limpia storage local.
-- [ ] Settings no expone secretos ni datos técnicos innecesarios.
+- [x] Perfil usa `/auth/customer/me`.
+- [x] Logout invalida backend cuando aplique y limpia storage local.
+- [x] Settings no expone secretos ni datos técnicos innecesarios.
 
 ## M6.2 — Cupones wallet/validación
 **Prioridad:** ⚡ Media · **Estimación:** 3 h · **Dependencias:** F3
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-2-coupons.md`
 
 **Aceptación**
-- [ ] Cupones del usuario se listan con estado/validez.
-- [ ] Validación usa endpoint real y contexto de checkout.
-- [ ] Cupón inválido/expirado muestra razón utilizable cuando API la entregue.
+- [x] Cupones del usuario se listan con estado/validez.
+- [x] Validación usa endpoint real y contexto de checkout.
+- [x] Cupón inválido/expirado muestra razón utilizable cuando API la entregue.
 
 ## M6.3 — Términos, privacidad y ayuda
 **Prioridad:** ⚡ Media · **Estimación:** 2 h · **Dependencias:** F0
+**Status:** 🚧 IMPLEMENTADO en PR de fase F6 (abierto, sin merge) — `.spec/2026-09-11-m6-3-legal-help.md`
 
 **Aceptación**
-- [ ] Rutas accesibles desde cuenta/checkout donde aplique.
-- [ ] Contenido y enlaces no quedan hardcodeados si backend/config ya ofrece una fuente.
-- [ ] Texto legal pendiente se marca como dependencia de negocio, no se inventa.
+- [x] Rutas accesibles desde cuenta/checkout donde aplique.
+- [x] Contenido y enlaces no quedan hardcodeados si backend/config ya ofrece una fuente.
+- [x] Texto legal pendiente se marca como dependencia de negocio, no se inventa.
 
 ---
 

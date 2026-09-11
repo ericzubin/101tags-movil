@@ -5,6 +5,11 @@ import { httpClient } from '@/core/api/client';
 import { authService } from '@/core/services/auth-service';
 import RootLayout from '../_layout';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const fs = require('fs') as { readFileSync: (path: string, encoding: string) => string };
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const nodePath = require('path') as { join: (...parts: string[]) => string };
+
 jest.mock('@/global.css', () => ({}));
 
 var mockRouterReplace: jest.Mock;
@@ -150,5 +155,65 @@ describe('RootLayout — wiring (M1.5 AC8, AC11)', () => {
     await waitFor(() => {
       expect(mockHydrate).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe('RootLayout — rutas registradas (M3.4 / M3.5)', () => {
+  const layoutSource = fs.readFileSync(nodePath.join(__dirname, '..', '_layout.tsx'), 'utf8');
+
+  it('registra checkout/payment-instructions en el root stack', () => {
+    expect(layoutSource).toContain('name="checkout/payment-instructions"');
+  });
+
+  it('registra checkout/payment-proof en el root stack', () => {
+    expect(layoutSource).toContain('name="checkout/payment-proof"');
+  });
+
+  it('M4.1: registra orders/index en el root stack', () => {
+    expect(layoutSource).toContain('name="orders/index"');
+  });
+
+  it('M4.1: registra orders/[orderNumber] en el root stack', () => {
+    expect(layoutSource).toContain('name="orders/[orderNumber]"');
+  });
+
+  it('M4.2: registra orders/request en el root stack', () => {
+    expect(layoutSource).toContain('name="orders/request"');
+  });
+
+  it('M4.2: registra returns/index en el root stack', () => {
+    expect(layoutSource).toContain('name="returns/index"');
+  });
+
+  it('M5.1: registra chat/index en el root stack', () => {
+    expect(layoutSource).toContain('name="chat/index"');
+  });
+
+  it('M5.1: registra chat/[orderNumber] en el root stack', () => {
+    expect(layoutSource).toContain('name="chat/[orderNumber]"');
+  });
+
+  it('M5.3: registra notifications en el root stack', () => {
+    expect(layoutSource).toContain('name="notifications"');
+  });
+
+  it('M6.1: registra profile en el root stack', () => {
+    expect(layoutSource).toContain('name="profile"');
+  });
+
+  it('M6.2: registra coupons en el root stack', () => {
+    expect(layoutSource).toContain('name="coupons"');
+  });
+
+  it('M6.3: registra legal/terms en el root stack', () => {
+    expect(layoutSource).toContain('name="legal/terms"');
+  });
+
+  it('M6.3: registra legal/privacy en el root stack', () => {
+    expect(layoutSource).toContain('name="legal/privacy"');
+  });
+
+  it('M6.3: registra legal/help en el root stack', () => {
+    expect(layoutSource).toContain('name="legal/help"');
   });
 });

@@ -158,6 +158,27 @@ describe('AuthService', () => {
     });
   });
 
+  describe('getMe (M6.1 AC1)', () => {
+    it('gets /auth/customer/me and UNWRAPS { user } → user', async () => {
+      const wrapped = { user: baseSession.user };
+      mockedHttpClient.get.mockResolvedValueOnce(wrapped);
+
+      const user = await authService.getMe();
+
+      expect(mockedHttpClient.get).toHaveBeenCalledWith('/auth/customer/me');
+      expect(user).toEqual(baseSession.user);
+      expect(user).not.toHaveProperty('user');
+    });
+
+    it('propagates HttpError when /me fails', async () => {
+      mockedHttpClient.get.mockRejectedValueOnce(
+        new HttpError(503, 'Service Unavailable', null, 'HTTP 503'),
+      );
+
+      await expect(authService.getMe()).rejects.toBeInstanceOf(HttpError);
+    });
+  });
+
   describe('forgotPassword (M1.9 AC10)', () => {
     it('posts to /auth/customer/forgot-password with body {email}', async () => {
       mockedHttpClient.post.mockResolvedValueOnce({

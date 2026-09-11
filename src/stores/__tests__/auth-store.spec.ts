@@ -14,6 +14,7 @@ jest.mock('@/core/services/auth-service', () => ({
     handleUnauthorized: jest.fn(),
     setUnauthorizedHandler: jest.fn(),
     hydrate: jest.fn(),
+    getMe: jest.fn(),
   },
 }));
 
@@ -156,6 +157,36 @@ describe('auth-store', () => {
     const s = useAuthStore.getState();
     expect(s.token).toBeNull();
     expect(s.user).toBeNull();
+    expect(s.isHydrated).toBe(true);
+  });
+
+  it('refreshUser calls authService.getMe and updates user (M6.1 AC1)', async () => {
+    useAuthStore.setState({ user: baseUser, token: 'tok-abc', isHydrated: true });
+    const freshUser = { ...baseUser, name: 'Ana María', phone: '+5255...' };
+    mockedAuthService.getMe.mockResolvedValueOnce(freshUser);
+
+    const refreshed = await useAuthStore.getState().refreshUser();
+
+    expect(refreshed).toBe(true);
+    expect(mockedAuthService.getMe).toHaveBeenCalledTimes(1);
+    const s = useAuthStore.getState();
+    expect(s.user).toEqual(freshUser);
+    expect(s.token).toBe('tok-abc');
+    expect(s.isHydrated).toBe(true);
+  });
+
+  it('refreshUser keeps cached user and resolves false when getMe fails (M6.1 AC2)', async () => {
+    useAuthStore.setState({ user: baseUser, token: 'tok-abc', isHydrated: true });
+    mockedAuthService.getMe.mockRejectedValueOnce(
+      new AuthError('NETWORK_ERROR', 'No se pudo conectar con el servidor', 0),
+    );
+
+    const refreshed = await useAuthStore.getState().refreshUser();
+
+    expect(refreshed).toBe(false);
+    const s = useAuthStore.getState();
+    expect(s.user).toEqual(baseUser);
+    expect(s.token).toBe('tok-abc');
     expect(s.isHydrated).toBe(true);
   });
 });

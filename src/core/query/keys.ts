@@ -19,3 +19,18 @@ export const catalogKeys = {
     ['catalog', 'filters', segment, category ?? null] as const,
   sponsoredAds: () => ['catalog', 'sponsored-ads'] as const,
 };
+
+export const orderKeys = {
+  all: ['orders'] as const,
+  list: (userId: string | number | null) => ['orders', 'list', userId ?? 'anonymous'] as const,
+  detail: (userId: string | number | null, orderNumber: string) =>
+    ['orders', 'detail', userId ?? 'anonymous', orderNumber] as const,
+  returns: (userId: string | number | null) =>
+    ['orders', 'returns', userId ?? 'anonymous'] as const,
+};
+
+export const chatKeys = {
+  all: ['chat'] as const,
+  conversations: () => ['chat', 'conversations'] as const,
+  conversation: (orderNumber: string) => ['chat', 'conversation', orderNumber] as const,
+};

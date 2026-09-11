@@ -53,9 +53,13 @@ class AuthService {
     }
   }
 
-  async me(): Promise<CustomerUser> {
+  async getMe(): Promise<CustomerUser> {
     const response = await httpClient.get<{ user: CustomerUser }>(ENDPOINTS.me);
     return response.user;
+  }
+
+  async me(): Promise<CustomerUser> {
+    return this.getMe();
   }
 
   async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
